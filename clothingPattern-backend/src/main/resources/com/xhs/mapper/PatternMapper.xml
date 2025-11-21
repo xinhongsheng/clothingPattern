@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.clothingpatternbackend.mapper.PatternMapper">
+
+    <resultMap id="BaseResultMap" type="com.xhs.clothingpatternbackend.model.entity.Pattern">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="userId" jdbcType="BIGINT"/>
+            <result property="patternName" column="patternName" jdbcType="VARCHAR"/>
+            <result property="description" column="description" jdbcType="VARCHAR"/>
+            <result property="generationType" column="generationType" jdbcType="VARCHAR"/>
+            <result property="referenceImageUrl" column="referenceImageUrl" jdbcType="VARCHAR"/>
+            <result property="patternUrl" column="patternUrl" jdbcType="VARCHAR"/>
+            <result property="thumbUrl" column="thumbUrl" jdbcType="VARCHAR"/>
+            <result property="fileSize" column="fileSize" jdbcType="INTEGER"/>
+            <result property="fileType" column="fileType" jdbcType="VARCHAR"/>
+            <result property="style" column="style" jdbcType="VARCHAR"/>
+            <result property="season" column="season" jdbcType="VARCHAR"/>
+            <result property="targetAudience" column="targetAudience" jdbcType="VARCHAR"/>
+            <result property="generationParams" column="generationParams" jdbcType="OTHER"/>
+            <result property="auditStatus" column="auditStatus" jdbcType="VARCHAR"/>
+            <result property="auditTime" column="auditTime" jdbcType="TIMESTAMP"/>
+            <result property="auditorId" column="auditorId" jdbcType="BIGINT"/>
+            <result property="rejectReason" column="rejectReason" jdbcType="VARCHAR"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userId,patternName,
+        description,generationType,referenceImageUrl,
+        patternUrl,thumbUrl,fileSize,
+        fileType,style,season,
+        targetAudience,generationParams,auditStatus,
+        auditTime,auditorId,rejectReason,
+        createTime,updateTime,isDelete
+    </sql>
+</mapper>

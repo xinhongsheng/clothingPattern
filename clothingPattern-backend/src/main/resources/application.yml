@@ -1,0 +1,60 @@
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+#    session:
+#      cookie:
+#        max-age: 2592000
+spring:
+  application:
+    name: clothingPattern-backend
+  #  session:
+  #    store-type: redis
+  #    timeout: 2592000
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/xhs_clothingPattern_db?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 123456
+    # Redis 配置
+#    redis:
+#      database: 0
+#      host: 127.0.0.1
+#      port: 6379
+#      timeout: 5000
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDelete
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+knife4j:
+  enable: true
+  openapi:
+    title: "接口文档"
+    version: "1.0.0"
+    group:
+      default:
+        api-rule: package
+        api-rule-resources:
+          - com.xhs.clothingptternbackend.controller
+tong-yi:
+  config:
+    dashscope-api-key: sk-237daf27898245a5abc6b575a56e2e23
+
+cos:
+  client:
+    host: https://clothingpattern-1317715434.cos.ap-guangzhou.myqcloud.com
+    secretId: AKIDbIo9TbVPEsMVVJ5dy694oOo13xhHh3JR
+    secretKey: 0mXSCj3A5oJbidLrAIFzOuFNJ3czA7sS
+    region: ap-guangzhou
+    bucket: clothingpattern-1317715434
