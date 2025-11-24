@@ -1,6 +1,10 @@
 package com.xhs.clothingpatternbackend.controller;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xhs.clothingpatternbackend.annotation.AuthCheck;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.DeleteRequest;
@@ -9,10 +13,7 @@ import com.xhs.clothingpatternbackend.constant.UserConstant;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
-import com.xhs.clothingpatternbackend.model.dto.pattern.PatternAuditRequest;
-import com.xhs.clothingpatternbackend.model.dto.pattern.PatternGenerateRequest;
-import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
-import com.xhs.clothingpatternbackend.model.dto.pattern.PatternUpdateRequest;
+import com.xhs.clothingpatternbackend.model.dto.pattern.*;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
@@ -21,9 +22,14 @@ import com.xhs.clothingpatternbackend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 图案接口
@@ -37,6 +43,16 @@ public class PatternController {
 
     @Resource
     private UserService userService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    private final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder().initialCapacity(1024)
+                    .maximumSize(10000L)
+                    // 缓存 5 分钟移除
+                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+                    .build();
 
     /**
      * 生成图案
@@ -115,11 +131,41 @@ public class PatternController {
         long size = patternQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        //构建缓存
+        String queryCondition = JSONUtil.toJsonStr(patternQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String cacheKey = String.format("xhs_pattern:listPictureVOByPage:%s", hashKey);
+        //先从本地缓存读取
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+        if(cachedValue!=null){
+            Page<PatternVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachePage);
+        }
+
+        //从redis中读取
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(cacheKey);
+        if(cachedValue!=null){
+            //存入本地缓存
+            LOCAL_CACHE.put(cacheKey, cachedValue);
+            Page<PatternVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachePage);
+        }
+
+
+
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));
         Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());
         List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords());
         patternVOPage.setRecords(patternVOList);
+
+        //存入缓存中
+        String cacheValue = JSONUtil.toJsonStr(patternVOPage);
+        int cacheExpireTime=300+ RandomUtil.randomInt(0, 300);
+        LOCAL_CACHE.put(cacheKey, cacheValue);
+        valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+
         return ResultUtils.success(patternVOPage);
     }
 
@@ -224,6 +270,19 @@ public class PatternController {
         User loginUser = userService.getLoginUser(request);
         boolean result = patternService.auditPattern(id, auditStatus, rejectReason, loginUser.getId());
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
+
+    /**
+     * 编辑图片（给用户使用）
+     */
+    @PostMapping("/edit")
+    public BaseResponse<Boolean> editPattern(@RequestBody PatternEditRequest patternEditRequest, HttpServletRequest request) {
+        if (patternEditRequest == null || patternEditRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        patternService.editPicture(patternEditRequest, userService.getLoginUser(request));
         return ResultUtils.success(true);
     }
 }

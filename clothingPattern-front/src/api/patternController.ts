@@ -29,6 +29,18 @@ export async function deletePattern(body: API.DeleteRequest, options?: { [key: s
   })
 }
 
+/** 此处后端没有提供注释 POST /pattern/edit */
+export async function editPattern(body: API.PatternEditRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/pattern/edit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /pattern/generate */
 export async function generatePattern(
   body: API.PatternGenerateRequest,

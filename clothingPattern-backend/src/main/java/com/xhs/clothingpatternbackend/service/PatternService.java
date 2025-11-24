@@ -2,6 +2,7 @@ package com.xhs.clothingpatternbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xhs.clothingpatternbackend.model.dto.pattern.PatternEditRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternGenerateRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
@@ -68,4 +69,22 @@ public interface PatternService extends IService<Pattern> {
      * @return
      */
     List<PatternVO> getPatternVOList(List<Pattern> patternList);
+    /**
+     * 编辑图片
+     * @param patternEditRequest
+     * @param loginUser
+     */
+    void editPicture(PatternEditRequest patternEditRequest, User loginUser);
+    /**
+     * 检查图片权限
+     * @param loginUser
+     * @param pattern
+     */
+    void checkPictureAuth(User loginUser, Pattern pattern);
+    /**
+     * 填充审核参数
+     * @param pattern
+     * @param loginUser
+     */
+    void fillReviewParams(Pattern pattern, User loginUser);
 }

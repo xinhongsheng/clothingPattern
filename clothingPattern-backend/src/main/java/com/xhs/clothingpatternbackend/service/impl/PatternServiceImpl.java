@@ -1,7 +1,6 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,19 +10,23 @@ import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.mapper.PatternMapper;
+import com.xhs.clothingpatternbackend.model.dto.pattern.PatternEditRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternGenerateRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
+import com.xhs.clothingpatternbackend.model.enums.UserRoleEnum;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.model.vo.UserVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.UserService;
-import com.xhs.clothingpatternbackend.DashScopeSDK.QwenImage;
+import com.xhs.clothingpatternbackend.sdk.dashscope.QwenImage;
 import com.xhs.clothingpatternbackend.utils.CosUtils;
+import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +43,7 @@ import java.util.stream.Collectors;
 * @createDate 2025-11-21 15:44:19
 */
 @Service
+@Slf4j
 public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
     implements PatternService{
 
@@ -55,6 +59,9 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
     @Resource
     private QwenImage qwenImage;
 
+    @Resource
+    private com.xhs.clothingpatternbackend.sdk.doubao.DouBaoImage douBaoImage;
+
 
     @Override
     public Long generatePattern(PatternGenerateRequest patternGenerateRequest, User loginUser) {
@@ -66,6 +73,12 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         String generationType = patternGenerateRequest.getGenerationType();
         String description = patternGenerateRequest.getDescription();
         String referenceImageUrl = patternGenerateRequest.getReferenceImageUrl();
+        String serviceType = patternGenerateRequest.getServiceType(); // 获取服务类型
+
+        // 默认使用千问服务
+        if (StrUtil.isBlank(serviceType)) {
+            serviceType = "qwen";
+        }
 
         // 校验生成类型
         GenerationTypeEnum typeEnum = GenerationTypeEnum.getEnumByValue(generationType);
@@ -79,23 +92,165 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         }
 
         File generatedImageFile = null;
+        String finalReferenceImageUrl = null; // 用于保存到数据库的参考图片URL
         try {
-            // 调用AI图片生成服务
-            if (GenerationTypeEnum.TEXT_GENERATED.equals(typeEnum)) {
-                // 文字生成模式
-                generatedImageFile = qwenImage.generateImageByText(
-                        description,
-                        patternGenerateRequest.getSize(),
-                        patternGenerateRequest.getNegativePrompt(),
-                        patternGenerateRequest.getPromptExtend()
-                );
-            } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
-                // 图片参考生成模式
-                generatedImageFile = qwenImage.generateImageByReference(
-                        referenceImageUrl,
-                        description,
-                        patternGenerateRequest.getSize()
-                );
+            // 根据serviceType选择不同AI服务
+            if ("doubao".equals(serviceType)) {
+                // 使用豆包服务，根据doubaoMode选择不同的生成方式
+                String doubaoMode = patternGenerateRequest.getDoubaoMode();
+                if (StrUtil.isBlank(doubaoMode)) {
+                    doubaoMode = "single_text"; // 默认文生图
+                }
+
+                switch (doubaoMode) {
+                    case "single_text": // 文生图（单张）
+                        generatedImageFile = douBaoImage.generateImageByText(
+                                description,
+                                patternGenerateRequest.getSize(),
+                                true
+                        );
+                        break;
+                    case "single_image": // 图生图（单张）
+                        generatedImageFile = douBaoImage.generateImageByReference(
+                                referenceImageUrl,
+                                description,
+                                patternGenerateRequest.getSize()
+                        );
+                        // 处理参考图片URL
+                        if (referenceImageUrl.startsWith("data:image")) {
+                            finalReferenceImageUrl = uploadBase64ToCos(referenceImageUrl, loginUser.getId());
+                        } else {
+                            finalReferenceImageUrl = referenceImageUrl;
+                        }
+                        break;
+                    case "multi_image": // 多图生图（单张）
+                        java.util.List<String> imageUrls = patternGenerateRequest.getReferenceImageUrls();
+                        if (imageUrls == null || imageUrls.size() < 2) {
+                            throw new BusinessException(ErrorCode.PARAMS_ERROR, "多图生图至少需要2张图片");
+                        }
+                        // 处理base64图片
+                        java.util.List<String> processedUrls = new java.util.ArrayList<>();
+                        for (String url : imageUrls) {
+                            if (url.startsWith("data:image")) {
+                                processedUrls.add(uploadBase64ToCos(url, loginUser.getId()));
+                            } else {
+                                processedUrls.add(url);
+                            }
+                        }
+                        generatedImageFile = douBaoImage.generateImageByMultipleReferences(
+                                processedUrls,
+                                description,
+                                patternGenerateRequest.getSize()
+                        );
+                        break;
+                    case "batch_text": // 文生组图（多张）
+                        java.util.List<File> batchFiles = douBaoImage.generateImagesByText(
+                                description,
+                                patternGenerateRequest.getMaxImages(),
+                                patternGenerateRequest.getSize()
+                        );
+                        if (batchFiles != null && !batchFiles.isEmpty()) {
+                            // 保存所有生成的图片
+                            return saveBatchPatterns(batchFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
+                        }
+                        break;
+                    case "batch_single_image": // 单图生组图（多张）
+                        java.util.List<File> batchSingleFiles = douBaoImage.generateImagesByReference(
+                                referenceImageUrl,
+                                description,
+                                patternGenerateRequest.getMaxImages(),
+                                patternGenerateRequest.getSize()
+                        );
+                        if (referenceImageUrl.startsWith("data:image")) {
+                            finalReferenceImageUrl = uploadBase64ToCos(referenceImageUrl, loginUser.getId());
+                        } else {
+                            finalReferenceImageUrl = referenceImageUrl;
+                        }
+                        if (batchSingleFiles != null && !batchSingleFiles.isEmpty()) {
+                            return saveBatchPatterns(batchSingleFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
+                        }
+                        break;
+                    case "batch_multi_image": // 多图生组图（多张）
+                        java.util.List<String> multiImageUrls = patternGenerateRequest.getReferenceImageUrls();
+                        if (multiImageUrls == null || multiImageUrls.size() < 2) {
+                            throw new BusinessException(ErrorCode.PARAMS_ERROR, "多图生组图至少需要2张图片");
+                        }
+                        java.util.List<String> processedMultiUrls = new java.util.ArrayList<>();
+                        for (String url : multiImageUrls) {
+                            if (url.startsWith("data:image")) {
+                                processedMultiUrls.add(uploadBase64ToCos(url, loginUser.getId()));
+                            } else {
+                                processedMultiUrls.add(url);
+                            }
+                        }
+                        java.util.List<File> batchMultiFiles = douBaoImage.generateImagesByMultipleReferences(
+                                processedMultiUrls,
+                                description,
+                                patternGenerateRequest.getMaxImages(),
+                                patternGenerateRequest.getSize()
+                        );
+                        if (batchMultiFiles != null && !batchMultiFiles.isEmpty()) {
+                            return saveBatchPatterns(batchMultiFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
+                        }
+                        break;
+                    default:
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的豆包生成模式");
+                }
+                finalReferenceImageUrl = null;
+            } else {
+                // 使用千问服务（支持文生图和图生图）
+                if (GenerationTypeEnum.TEXT_GENERATED.equals(typeEnum)) {
+                    // 文字生成模式，不需要参考图片URL
+                    generatedImageFile = qwenImage.generateImageByText(
+                            description,
+                            patternGenerateRequest.getSize(),
+                            patternGenerateRequest.getNegativePrompt(),
+                            patternGenerateRequest.getPromptExtend()
+                    );
+                    // 文生图模式，参考图片URL为空
+                    finalReferenceImageUrl = null;
+                } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
+                    // 图片参考生成模式
+                    // 如果是base64图片，会在generateImageByReference方法中上传到COS并返回COS URL
+                    generatedImageFile = qwenImage.generateImageByReference(
+                            referenceImageUrl,
+                            description,
+                            patternGenerateRequest.getSize()
+                    );
+                    
+                    // 如果原始URL是base64，需要上传到COS并获取URL用于保存到数据库
+                    if (referenceImageUrl.startsWith("data:image")) {
+                        // base64图片已经在generateImageByReference中上传到COS
+                        // 需要重新上传一份作为参考图片记录（或者从generateImageByReference返回COS URL）
+                        try {
+                            // 解码base64
+                            String base64Data = referenceImageUrl;
+                            if (base64Data.contains(",")) {
+                                base64Data = base64Data.split(",")[1];
+                            }
+                            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                            
+                            // 保存为临时文件
+                            File refTempFile = File.createTempFile("ref_save_", ".png");
+                            java.nio.file.Files.write(refTempFile.toPath(), imageBytes);
+                            
+                            // 上传到COS作为参考图片记录
+                            String refKey = "reference/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
+                            cosUtils.putObject(refKey, refTempFile);
+                            finalReferenceImageUrl = cosClientConfig.getHost() + "/" + refKey;
+                            
+                            // 删除临时文件
+                            deleteTempFile(refTempFile);
+                        } catch (Exception e) {
+                            log.error("上传参考图片到COS失败", e);
+                            // 如果上传失败，使用null，不影响主流程
+                            finalReferenceImageUrl = null;
+                        }
+                    } else {
+                        // 如果是URL，直接使用
+                        finalReferenceImageUrl = referenceImageUrl;
+                    }
+                }
             }
             
             // 上传到COS并生成缩略图
@@ -144,7 +299,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                     }
                 } catch (Exception e) {
                     // 如果获取处理结果失败，使用原图
-                    System.out.println("获取COS处理结果失败: " + e.getMessage());
+                    log.warn("获取COS处理结果失败: {}", e.getMessage());
                     generatedPatternUrl = cosClientConfig.getHost() + "/" + key;
                     thumbUrl = generatedPatternUrl;
                 }
@@ -158,13 +313,19 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             pattern.setPatternName(patternName);
             pattern.setDescription(description);
             pattern.setGenerationType(generationType);
-            pattern.setReferenceImageUrl(referenceImageUrl);
+            pattern.setReferenceImageUrl(finalReferenceImageUrl); // 使用处理后的URL（文生图为null，图生图为COS URL）
             pattern.setPatternUrl(generatedPatternUrl);
             pattern.setThumbUrl(thumbUrl);
             pattern.setStyle(patternGenerateRequest.getStyle());
             pattern.setSeason(patternGenerateRequest.getSeason());
             pattern.setTargetAudience(patternGenerateRequest.getTargetAudience());
-            pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+            //如果是管理员则直接通过
+            if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
+                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+            }else{
+                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+            }
+
             pattern.setFileType("image/png");
             pattern.setFileSize(fileSize);
 
@@ -325,6 +486,47 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         }).collect(Collectors.toList());
     }
 
+    @Override
+    public void editPicture(PatternEditRequest patternEditRequest, User loginUser) {
+        // 在此处将实体类和 DTO 进行转换
+        Pattern pattern = new Pattern();
+        BeanUtils.copyProperties(patternEditRequest, pattern);
+        // 设置编辑时间
+        pattern.setUpdateTime(new Date());
+        // 数据校验
+        this.validPattern(pattern);
+        // 判断是否存在
+        long id = patternEditRequest.getId();
+        Pattern oldPattern = this.getById(id);
+        ThrowUtils.throwIf(oldPattern == null, ErrorCode.NOT_FOUND_ERROR);
+        // 校验权限
+        checkPictureAuth(loginUser, oldPattern);
+        // 补充审核参数
+        this.fillReviewParams(pattern, loginUser);
+        // 操作数据库
+        boolean result = this.updateById(pattern);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+    }
+    /**
+     * 校验图案参数
+     */
+    private void validPattern(Pattern pattern) {
+        if (pattern == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        String patternName = pattern.getPatternName();
+        if (StringUtils.isBlank(patternName)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图案名称不能为空");
+        }
+        if (patternName.length() > 255) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图案名称过长");
+        }
+        String description = pattern.getDescription();
+        if (StringUtils.isNotBlank(description) && description.length() > 1024) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图案描述过长");
+        }
+    }
+
     /**
      * 删除临时文件
      */
@@ -332,11 +534,165 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         if (file != null && file.exists()) {
             boolean deleted = file.delete();
             if (!deleted) {
-                System.out.println("临时文件删除失败: " + file.getAbsolutePath());
+                log.warn("临时文件删除失败: {}", file.getAbsolutePath());
+            } else {
+                log.debug("临时文件已删除: {}", file.getAbsolutePath());
             }
         }
     }
-}
+
+    /**
+     * 上传base64图片到COS
+     */
+    private String uploadBase64ToCos(String base64Image, Long userId) {
+        try {
+            // 解码base64
+            String base64Data = base64Image;
+            if (base64Data.contains(",")) {
+                base64Data = base64Data.split(",")[1];
+            }
+            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+            
+            // 保存为临时文件
+            File refTempFile = File.createTempFile("ref_save_", ".png");
+            java.nio.file.Files.write(refTempFile.toPath(), imageBytes);
+            
+            // 上传到COS作为参考图片记录
+            String refKey = "reference/" + userId + "/" + System.currentTimeMillis() + ".png";
+            cosUtils.putObject(refKey, refTempFile);
+            String cosUrl = cosClientConfig.getHost() + "/" + refKey;
+            
+            // 删除临时文件
+            deleteTempFile(refTempFile);
+            
+            return cosUrl;
+        } catch (Exception e) {
+            log.error("上传参考图片到COS失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 批量保存生成的图片（组图模式）
+     * 返回第一张图片的ID，其他图片也会保存到数据库
+     */
+    private Long saveBatchPatterns(java.util.List<File> files, PatternGenerateRequest request, 
+                                    User loginUser, String referenceImageUrl) {
+        if (files == null || files.isEmpty()) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成的图片为空");
+        }
+
+        Long firstPatternId = null;
+        try {
+            for (int i = 0; i < files.size(); i++) {
+                File imageFile = files.get(i);
+                
+                // 上传到COS
+                String key = "pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + "_" + i + ".png";
+                PutObjectResult putResult = cosUtils.putPictureObject(key, imageFile);
+                Integer fileSize = (int) imageFile.length();
+                
+                // 获取COS处理结果
+                String patternUrl;
+                String thumbUrl;
+                try {
+                    com.qcloud.cos.model.ciModel.persistence.CIUploadResult ciResult = putResult.getCiUploadResult();
+                    if (ciResult != null && ciResult.getProcessResults() != null) {
+                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult.getProcessResults();
+                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults.getObjectList();
+                        
+                        if (objectList != null && !objectList.isEmpty()) {
+                            com.qcloud.cos.model.ciModel.persistence.CIObject compressedObject = objectList.get(0);
+                            patternUrl = cosClientConfig.getHost() + "/" + compressedObject.getKey();
+                            
+                            if (objectList.size() > 1) {
+                                com.qcloud.cos.model.ciModel.persistence.CIObject thumbnailObject = objectList.get(1);
+                                thumbUrl = cosClientConfig.getHost() + "/" + thumbnailObject.getKey();
+                            } else {
+                                thumbUrl = patternUrl;
+                            }
+                        } else {
+                            patternUrl = cosClientConfig.getHost() + "/" + key;
+                            thumbUrl = patternUrl;
+                        }
+                    } else {
+                        patternUrl = cosClientConfig.getHost() + "/" + key;
+                        thumbUrl = patternUrl;
+                    }
+                } catch (Exception e) {
+                    log.warn("获取COS处理结果失败: {}", e.getMessage());
+                    patternUrl = cosClientConfig.getHost() + "/" + key;
+                    thumbUrl = patternUrl;
+                }
+                
+                // 创建图案实体
+                Pattern pattern = new Pattern();
+                pattern.setUserId(loginUser.getId());
+                pattern.setPatternName(request.getPatternName() + " #" + (i + 1));
+                pattern.setDescription(request.getDescription());
+                pattern.setGenerationType(request.getGenerationType());
+                pattern.setReferenceImageUrl(referenceImageUrl);
+                pattern.setPatternUrl(patternUrl);
+                pattern.setThumbUrl(thumbUrl);
+                pattern.setStyle(request.getStyle());
+                pattern.setSeason(request.getSeason());
+                pattern.setTargetAudience(request.getTargetAudience());
+                pattern.setFileType("image/png");
+                pattern.setFileSize(fileSize);
+                
+                // 设置审核状态
+                if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
+                    pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+                } else {
+                    pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+                }
+                
+                // 校验数据
+                validPattern(pattern, true);
+                
+                // 保存到数据库
+                boolean result = this.save(pattern);
+                ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图案生成失败");
+                
+                // 记录第一张图片的ID
+                if (i == 0) {
+                    firstPatternId = pattern.getId();
+                }
+                
+                log.info("已保存第 {} 张图片，ID: {}", i + 1, pattern.getId());
+            }
+        } finally {
+            // 清理所有临时文件
+            files.forEach(this::deleteTempFile);
+        }
+        
+        return firstPatternId;
+    }
+
+    @Override
+    public void checkPictureAuth(User loginUser, Pattern pattern) {
+            // 只能修改自己的图案
+            if (!pattern.getUserId().equals(loginUser.getId())) {
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+            }
+        }
+    @Override
+    public void fillReviewParams(Pattern pattern, User loginUser) {
+        if (userService.isAdmin(loginUser)) {
+            // 管理员自动过审
+            pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+            pattern.setAuditorId(loginUser.getId());
+            pattern.setRejectReason("管理员自动过审");
+            pattern.setAuditTime(new Date());
+        } else {
+            // 非管理员，创建或编辑都要改为待审核
+            pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+        }
+
+
+    }
+    }
+
 
 
 

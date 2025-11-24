@@ -12,15 +12,28 @@
         <!-- 左侧：参数配置区 -->
         <a-col :xs="24" :lg="10">
           <div class="config-section">
-            <h2 class="section-title">
-              <EditOutlined /> 创作参数
-            </h2>
+            <h2 class="section-title"><EditOutlined /> 创作参数</h2>
 
-            <a-form
-              :model="formState"
-              layout="vertical"
-              @finish="handleGenerate"
-            >
+            <a-form :model="formState" layout="vertical" @finish="handleGenerate">
+              <!-- AI服务选择 -->
+              <a-form-item label="AI服务" name="serviceType">
+                <a-segmented
+                  v-model:value="formState.serviceType"
+                  size="large"
+                  block
+                  :options="[
+                    { label: '🌟 基础服务', value: 'qwen', icon: h(FileTextOutlined) },
+                    { label: '⭐ 高级服务', value: 'doubao', icon: h(ThunderboltOutlined) },
+                  ]"
+                />
+                <div class="tip-text" style="margin-top: 8px">
+                  <span v-if="formState.serviceType === 'qwen'"
+                    >💡 基础服务：使用千问图片模型，支持文字和图片生成</span
+                  >
+                  <span v-else>⚡ 高级服务：使用豆包图片模型，生成更高质量的图案</span>
+                </div>
+              </a-form-item>
+
               <!-- 图案名称 -->
               <a-form-item
                 label="图案名称"
@@ -36,8 +49,9 @@
                 />
               </a-form-item>
 
-              <!-- 生成方式 -->
+              <!-- 生成方式（基础服务） -->
               <a-form-item
+                v-if="formState.serviceType === 'qwen'"
                 label="生成方式"
                 name="generationType"
                 :rules="[{ required: true, message: '请选择生成方式' }]"
@@ -56,12 +70,156 @@
                 </a-radio-group>
               </a-form-item>
 
-              <!-- 文字描述模式 -->
+              <!-- 高级服务-生成模式选择 -->
               <a-form-item
-                v-if="formState.generationType === GENERATION_TYPE_ENUM.TEXT_GENERATED"
+                v-if="formState.serviceType === 'doubao'"
+                label="生成模式"
+                name="doubaoMode"
+              >
+                <a-select v-model:value="formState.doubaoMode" size="large">
+                  <a-select-option value="single_text">📝 文生图（单张）</a-select-option>
+                  <a-select-option value="single_image">🖼️ 图生图（单张）</a-select-option>
+                  <a-select-option value="multi_image">🎭 多图生图（单张）</a-select-option>
+                  <a-select-option value="batch_text">📦 文生组图（多张）</a-select-option>
+                  <a-select-option value="batch_single_image"
+                    >🌐 单图生组图（多张）</a-select-option
+                  >
+                  <a-select-option value="batch_multi_image">🎨 多图生组图（多张）</a-select-option>
+                </a-select>
+                <div class="tip-text" style="margin-top: 8px">
+                  <span v-if="formState.doubaoMode.startsWith('batch')"
+                    >💡 组图模式：一次生成多张图案，提供更多设计选择</span
+                  >
+                  <span v-else>⚡ 单图模式：生成一张高质量图案</span>
+                </div>
+              </a-form-item>
+
+              <!-- 高级服务-文字描述（文生图/文生组图） -->
+              <a-form-item
+                v-if="
+                  formState.serviceType === 'doubao' &&
+                  (formState.doubaoMode === 'single_text' || formState.doubaoMode === 'batch_text')
+                "
                 label="设计描述"
                 name="description"
-                :rules="[{ required: formState.generationType === GENERATION_TYPE_ENUM.TEXT_GENERATED, message: '请输入设计描述' }]"
+                :rules="[{ required: true, message: '请输入设计描述' }]"
+              >
+                <a-textarea
+                  v-model:value="formState.description"
+                  placeholder="简单描述你想要的图案，例如：
+• 花朵
+• 几何图形
+• 抽象线条
+• 动物图案"
+                  :rows="4"
+                  size="large"
+                  :maxlength="200"
+                  show-count
+                />
+                <div class="tip-text">
+                  ⚡ 高级服务：使用豆包模型，自动优化提示词，生成更专业的服装图案
+                </div>
+              </a-form-item>
+
+              <!-- 高级服务-单图上传（单图生图/单图生组图） -->
+              <a-form-item
+                v-if="
+                  formState.serviceType === 'doubao' &&
+                  (formState.doubaoMode === 'single_image' ||
+                    formState.doubaoMode === 'batch_single_image')
+                "
+                label="参考图片"
+                name="referenceImageUrl"
+                :rules="[{ required: true, message: '请上传参考图片' }]"
+              >
+                <a-upload
+                  list-type="picture-card"
+                  :max-count="1"
+                  :before-upload="beforeUpload"
+                  @remove="handleRemoveImage"
+                  accept="image/*"
+                >
+                  <div v-if="!formState.referenceImageUrl">
+                    <PlusOutlined />
+                    <div style="margin-top: 8px">上传图片</div>
+                  </div>
+                </a-upload>
+                <div class="tip-text">💡 支持JPG、PNG格式，图片会自动压缩</div>
+                <a-textarea
+                  v-model:value="formState.description"
+                  placeholder="补充描述（可选）"
+                  :rows="2"
+                  size="large"
+                  class="mt-2"
+                />
+              </a-form-item>
+
+              <!-- 高级服务-多图上传（多图生图/多图生组图） -->
+              <a-form-item
+                v-if="
+                  formState.serviceType === 'doubao' &&
+                  (formState.doubaoMode === 'multi_image' ||
+                    formState.doubaoMode === 'batch_multi_image')
+                "
+                label="参考图片"
+                name="referenceImageUrls"
+                :rules="[{ required: true, message: '请上传至少2张参考图片' }]"
+              >
+                <a-upload
+                  list-type="picture-card"
+                  :max-count="5"
+                  :before-upload="beforeUploadMultiple"
+                  @remove="handleRemoveMultipleImage"
+                  accept="image/*"
+                  multiple
+                >
+                  <div v-if="formState.referenceImageUrls.length < 5">
+                    <PlusOutlined />
+                    <div style="margin-top: 8px">上传图片</div>
+                  </div>
+                </a-upload>
+                <div class="tip-text">💡 支持2-5张图片，AI将融合这些图片生成新图案</div>
+                <a-textarea
+                  v-model:value="formState.description"
+                  placeholder="补充描述（可选）"
+                  :rows="2"
+                  size="large"
+                  class="mt-2"
+                />
+              </a-form-item>
+
+              <!-- 高级服务-生成数量（组图模式） -->
+              <a-form-item
+                v-if="
+                  formState.serviceType === 'doubao' && formState.doubaoMode.startsWith('batch')
+                "
+                label="生成数量"
+              >
+                <a-slider
+                  v-model:value="formState.maxImages"
+                  :min="2"
+                  :max="8"
+                  :marks="{ 2: '2', 4: '4', 6: '6', 8: '8' }"
+                />
+                <div class="tip-text">
+                  💡 一次生成 {{ formState.maxImages }} 张图案，提供更多设计选择
+                </div>
+              </a-form-item>
+
+              <!-- 基础服务-文字描述模式 -->
+              <a-form-item
+                v-if="
+                  formState.serviceType === 'qwen' &&
+                  formState.generationType === GENERATION_TYPE_ENUM.TEXT_GENERATED
+                "
+                label="设计描述"
+                name="description"
+                :rules="[
+                  {
+                    required: formState.generationType === GENERATION_TYPE_ENUM.TEXT_GENERATED,
+                    message: '请输入设计描述',
+                  },
+                ]"
               >
                 <a-textarea
                   v-model:value="formState.description"
@@ -76,18 +234,36 @@
                 </div>
               </a-form-item>
 
-              <!-- 参考图片模式 -->
+              <!-- 基础服务-参考图片模式 -->
               <a-form-item
-                v-if="formState.generationType === GENERATION_TYPE_ENUM.IMAGE_REFERENCED"
+                v-if="
+                  formState.serviceType === 'qwen' &&
+                  formState.generationType === GENERATION_TYPE_ENUM.IMAGE_REFERENCED
+                "
                 label="参考图片"
                 name="referenceImageUrl"
-                :rules="[{ required: formState.generationType === GENERATION_TYPE_ENUM.IMAGE_REFERENCED, message: '请输入参考图片URL' }]"
+                :rules="[
+                  {
+                    required: formState.generationType === GENERATION_TYPE_ENUM.IMAGE_REFERENCED,
+                    message: '请上传参考图片',
+                  },
+                ]"
               >
-                <a-input
-                  v-model:value="formState.referenceImageUrl"
-                  placeholder="请输入图片URL地址"
-                  size="large"
-                />
+                <a-upload
+                  list-type="picture-card"
+                  :max-count="1"
+                  :before-upload="beforeUpload"
+                  @remove="handleRemoveImage"
+                  accept="image/*"
+                >
+                  <div v-if="!formState.referenceImageUrl">
+                    <PlusOutlined />
+                    <div style="margin-top: 8px">上传图片</div>
+                  </div>
+                </a-upload>
+                <div class="tip-text">
+                  💡 支持JPG、PNG格式，图片会自动压缩至800px宽度，质量70%，建议上传较小的图片
+                </div>
                 <a-textarea
                   v-model:value="formState.description"
                   placeholder="补充描述（可选）"
@@ -106,6 +282,7 @@
                   allow-clear
                 >
                   <a-select-option value="简约">简约</a-select-option>
+                  <a-select-option value="可爱">可爱</a-select-option>
                   <a-select-option value="复古">复古</a-select-option>
                   <a-select-option value="卡通">卡通</a-select-option>
                   <a-select-option value="抽象">抽象</a-select-option>
@@ -149,17 +326,28 @@
               <!-- 高级选项 -->
               <a-collapse v-model:activeKey="advancedOpen" ghost>
                 <a-collapse-panel key="1" header="⚙️ 高级选项">
-                  <a-form-item label="图片尺寸">
+                  <!-- 豆包服务尺寸选项 -->
+                  <a-form-item v-if="formState.serviceType === 'doubao'" label="图片尺寸">
                     <a-radio-group v-model:value="formState.size">
+                      <a-radio value="1K">1K</a-radio>
+                      <a-radio value="2K">2K</a-radio>
+                      <a-radio value="4K">4K</a-radio>
+                    </a-radio-group>
+                  </a-form-item>
+
+                  <!-- 千问服务尺寸选项 -->
+                  <a-form-item v-if="formState.serviceType === 'qwen'" label="图片尺寸">
+                    <a-radio-group v-model:value="formState.size">
+                      <a-radio value="1328*1328">1328*1328</a-radio>
                       <a-radio value="1664*928">1664*928</a-radio>
                       <a-radio value="1472*1140">1472*1140</a-radio>
-                      <a-radio value="1328*1328">1328*1328</a-radio>
+
                       <a-radio value="1140*1472">1140*1472</a-radio>
                       <a-radio value="928*1664">928*1664</a-radio>
                     </a-radio-group>
                   </a-form-item>
 
-                  <a-form-item label="负面提示词">
+                  <a-form-item v-if="formState.serviceType === 'qwen'" label="负面提示词">
                     <a-input
                       v-model:value="formState.negativePrompt"
                       placeholder="不希望出现的元素（可选）"
@@ -196,15 +384,21 @@
         <!-- 右侧：预览区域 -->
         <a-col :xs="24" :lg="14">
           <div class="preview-section">
-            <h2 class="section-title">
-              <EyeOutlined /> 生成预览
-            </h2>
+            <h2 class="section-title"><EyeOutlined /> 生成预览</h2>
 
             <!-- 生成中状态 -->
             <div v-if="generating" class="generating-placeholder">
               <a-spin size="large" />
-              <p class="generating-text">AI正在创作中，请稍候...</p>
-              <p class="generating-tip">通常需要30-60秒</p>
+              <p class="generating-text">
+                {{ isBatchMode ? '正在生成组图，请耐心等待...' : 'AI正在创作中，请稍候...' }}
+              </p>
+              <p class="generating-tip">
+                {{
+                  isBatchMode
+                    ? `批量生成${formState.maxImages}张图片，预计需要2-4分钟`
+                    : '通常需要30-60秒'
+                }}
+              </p>
             </div>
 
             <!-- 生成结果 -->
@@ -243,12 +437,8 @@
                   <a-button type="primary" @click="downloadPattern">
                     <DownloadOutlined /> 下载图案
                   </a-button>
-                  <a-button @click="viewMyPatterns">
-                    <FolderOpenOutlined /> 我的作品
-                  </a-button>
-                  <a-button @click="resetForm">
-                    <ReloadOutlined /> 重新创作
-                  </a-button>
+                  <a-button @click="viewMyPatterns"> <FolderOpenOutlined /> 我的作品 </a-button>
+                  <a-button @click="resetForm"> <ReloadOutlined /> 重新创作 </a-button>
                 </div>
               </div>
             </div>
@@ -260,7 +450,10 @@
               class="empty-placeholder"
             >
               <template #image>
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIgcng9IjEwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiNkOWQ5ZDkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn46oPC90ZXh0Pjwvc3ZnPg==" alt="empty" />
+                <img
+                  src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIgcng9IjEwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiNkOWQ5ZDkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn46oPC90ZXh0Pjwvc3ZnPg=="
+                  alt="empty"
+                />
               </template>
             </a-empty>
           </div>
@@ -271,7 +464,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, h, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   EditOutlined,
@@ -281,24 +474,31 @@ import {
   ThunderboltOutlined,
   DownloadOutlined,
   FolderOpenOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  PlusOutlined,
 } from '@ant-design/icons-vue'
 import { generatePattern } from '@/api/patternController'
 import { useRouter } from 'vue-router'
-import {
-  AUDIT_STATUS_MAP,
-  AUDIT_STATUS_COLOR_MAP,
-  GENERATION_TYPE_ENUM
-} from '@/constants/pattern'
+import { AUDIT_STATUS_MAP, AUDIT_STATUS_COLOR_MAP, GENERATION_TYPE_ENUM } from '@/constants/pattern'
 
 const router = useRouter()
 
 // 表单状态
 const formState = reactive<{
+  serviceType: 'qwen' | 'doubao'
   patternName: string
   generationType: 'TEXT_GENERATED' | 'IMAGE_REFERENCED'
+  doubaoMode:
+    | 'single_text'
+    | 'single_image'
+    | 'multi_image'
+    | 'batch_text'
+    | 'batch_single_image'
+    | 'batch_multi_image'
   description: string
   referenceImageUrl: string
+  referenceImageUrls: string[] // 多图上传
+  maxImages: number // 批量生成数量
   style: string | undefined
   season: string | undefined
   targetAudience: string | undefined
@@ -306,16 +506,20 @@ const formState = reactive<{
   negativePrompt: string
   promptExtend: boolean
 }>({
+  serviceType: 'qwen',
   patternName: '',
   generationType: GENERATION_TYPE_ENUM.TEXT_GENERATED,
+  doubaoMode: 'single_text',
   description: '',
   referenceImageUrl: '',
+  referenceImageUrls: [],
+  maxImages: 4,
   style: undefined,
   season: undefined,
   targetAudience: undefined,
-  size: '1024*1024',
+  size: '1328*1328',
   negativePrompt: '',
-  promptExtend: true
+  promptExtend: true,
 })
 
 // 生成状态
@@ -323,21 +527,222 @@ const generating = ref(false)
 const generatedPattern = ref<any>(null)
 const advancedOpen = ref<string[]>([])
 
+// 计算是否是批量模式
+const isBatchMode = ref(false)
+
+// 监听服务类型变化，自动调整尺寸默认值
+watch(
+  () => formState.serviceType,
+  (newType) => {
+    if (newType === 'doubao') {
+      formState.size = '2K' // 豆包默认2K
+    } else {
+      formState.size = '1328*1328' // 千问默认1328*1328
+    }
+  },
+)
+
+// 图片压缩函数
+const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (e) => {
+      const img = new Image()
+      img.src = e.target?.result as string
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        // 计算缩放比例
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height
+          width = maxWidth
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob)
+            } else {
+              reject(new Error('图片压缩失败'))
+            }
+          },
+          'image/jpeg',
+          quality,
+        )
+      }
+      img.onerror = () => reject(new Error('图片加载失败'))
+    }
+    reader.onerror = () => reject(new Error('文件读取失败'))
+  })
+}
+
+// 将Blob转换为base64
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(blob)
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('转换失败'))
+  })
+}
+
+// 上传前处理
+const beforeUpload = async (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    message.error('只能上传图片文件！')
+    return false
+  }
+
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    message.error('图片大小不能超过10MB！')
+    return false
+  }
+
+  try {
+    message.loading({ content: '正在压缩图片...', key: 'compress', duration: 0 })
+
+    // 压缩图片（更小的尺寸和质量以减少base64长度）
+    const compressedBlob = await compressImage(file, 800, 0.7)
+
+    // 检查压缩后的大小
+    const compressedSizeKB = compressedBlob.size / 1024
+    console.log(
+      `原始大小: ${(file.size / 1024).toFixed(2)}KB, 压缩后: ${compressedSizeKB.toFixed(2)}KB`,
+    )
+
+    // 转换为base64
+    const base64 = await blobToBase64(compressedBlob)
+
+    // 检查base64长度（Qwen API有长度限制）
+    if (base64.length > 100000) {
+      message.error({
+        content: `图片仍然过大（${(base64.length / 1000).toFixed(0)}K字符），请选择更小的图片`,
+        key: 'compress',
+      })
+      return false
+    }
+
+    // 保存到表单
+    formState.referenceImageUrl = base64
+
+    message.success({
+      content: `图片上传成功！压缩后: ${compressedSizeKB.toFixed(1)}KB`,
+      key: 'compress',
+    })
+  } catch (error: any) {
+    message.error({ content: '图片处理失败：' + error.message, key: 'compress' })
+  }
+
+  return false // 阻止自动上传
+}
+
+// 移除图片
+const handleRemoveImage = () => {
+  formState.referenceImageUrl = ''
+}
+
+// 多图上传前处理
+const beforeUploadMultiple = async (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    message.error('只能上传图片文件！')
+    return false
+  }
+
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    message.error('图片大小不能超过10MB！')
+    return false
+  }
+
+  try {
+    const fileKey = 'compress_' + Date.now()
+    message.loading({ content: '正在压缩图片...', key: fileKey, duration: 0 })
+
+    const compressedBlob = await compressImage(file, 800, 0.7)
+    const compressedSizeKB = compressedBlob.size / 1024
+    const base64 = await blobToBase64(compressedBlob)
+
+    if (base64.length > 100000) {
+      message.error({
+        content: `图片仍然过大（${(base64.length / 1000).toFixed(0)}K字符），请选择更小的图片`,
+        key: fileKey,
+      })
+      return false
+    }
+
+    // 添加到多图数组
+    formState.referenceImageUrls.push(base64)
+
+    message.success({
+      content: `图片上传成功！压缩后: ${compressedSizeKB.toFixed(1)}KB`,
+      key: fileKey,
+    })
+  } catch (error: any) {
+    const fileKey = 'compress_' + Date.now()
+    message.error({ content: '图片处理失败：' + error.message, key: fileKey })
+  }
+
+  return false
+}
+
+// 移除多图中的某张图片
+const handleRemoveMultipleImage = (file: any) => {
+  const index = formState.referenceImageUrls.indexOf(file.url || file.thumbUrl)
+  if (index > -1) {
+    formState.referenceImageUrls.splice(index, 1)
+  }
+}
+
 // 生成图案
 const handleGenerate = async () => {
   try {
     generating.value = true
-    message.loading({ content: '正在生成图案，请稍候...', key: 'generating', duration: 0 })
+    isBatchMode.value =
+      formState.serviceType === 'doubao' && formState.doubaoMode.startsWith('batch')
+
+    message.loading({
+      content: isBatchMode.value ? '正在生成组图，请稍候...' : '正在生成图案，请稍候...',
+      key: 'generating',
+      duration: 0,
+    })
 
     const res = await generatePattern(formState)
-        
+
     if (res.data.code === 0 && res.data.data) {
-      message.success({ content: '图案生成成功！', key: 'generating' })
-          
-      // 直接使用后端返回的 PatternVO 对象
-      generatedPattern.value = res.data.data
-          
-      message.info('图案已提交审核，请稍后在"我的作品"中查看')
+      if (isBatchMode.value) {
+        // 组图模式：显示提示信息
+        message.success({
+          content: `组图生成成功！共生成 ${formState.maxImages} 张图案，已全部保存到数据库`,
+          key: 'generating',
+          duration: 5,
+        })
+
+        // 显示第一张图片的预览
+        generatedPattern.value = res.data.data
+
+        // 额外提示
+        message.info({
+          content: `所有 ${formState.maxImages} 张图案均已提交审核，请在管理后台查看全部图案`,
+          duration: 5,
+        })
+      } else {
+        // 单图模式：显示预览
+        message.success({ content: '图案生成成功！', key: 'generating' })
+        generatedPattern.value = res.data.data
+        message.info('图案已提交审核，请稍后在“我的作品”中查看')
+      }
     } else {
       throw new Error(res.data.message || '生成失败')
     }
@@ -389,12 +794,12 @@ const formatDateTime = (date: Date | string) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 </script>
 
-<style  scoped>
+<style scoped>
 .pattern-generation-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

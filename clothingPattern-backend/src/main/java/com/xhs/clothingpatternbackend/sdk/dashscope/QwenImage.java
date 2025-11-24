@@ -1,4 +1,4 @@
-package com.xhs.clothingpatternbackend.DashScopeSDK;
+package com.xhs.clothingpatternbackend.sdk.dashscope;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation;
@@ -11,9 +11,11 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.exception.UploadFileException;
 import com.alibaba.dashscope.utils.Constants;
+import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.config.TongYiConfig;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
+import com.xhs.clothingpatternbackend.utils.CosUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,12 @@ public class QwenImage {
     @Resource
     private TongYiConfig tongYiConfig;
 
+    @Resource
+    private CosUtils cosUtils;
+
+    @Resource
+    private CosClientConfig cosClientConfig;
+
     @PostConstruct
     public void init() {
         // 初始化API基础URL
@@ -48,14 +56,15 @@ public class QwenImage {
      */
     private String buildClothingPatternPrompt(String userDescription) {
         // 预设提示词模板：确保生成的是适合服装的图案设计
-        String promptTemplate = "设计一个精美的服装图案。" +
-                "要求：" +
-                "1. 图案风格：现代、时尚、适合印刷在服装上；" +
-                "2. 图案特点：清晰、对比度高、适合各种面料；" +
-                "3. 设计元素：%s；" +
-                "4. 色彩搭配：协调美观，适合服装设计；" +
-                "5. 图案布局：可平铺重复或作为单一图案使用；" +
-                "6. 输出要求：高清晰度，PNG格式，透明背景或纯色背景。";
+        String promptTemplate = "设计一个可直接用于服装印刷的高质量图案。"+
+        "核心要求："+
+        "设计风格：现代时尚，符合当前流行趋势，具备商业应用价值"+
+        "技术规格： 分辨率：300 DPI以上 格式：PNG透明背景 色彩模式：CMYK/RGB双模式适配"+
+        "设计元素：%s"+
+        "视觉特征： 清晰锐利的边缘线条,协调的色彩搭配（建议使用互补色或类比色方案）,适当的负空间处理 ,良好的视觉平衡"+
+        "布局方案： 提供平铺重复版本（无缝衔接）,提供独立中心图案版本 ,考虑服装剪裁的适配性"+
+        "专业要求： 避免过于复杂的细节,确保不同尺寸下的可识别性, 适配各种面料材质,印刷友好的色彩对比度"+
+        "请确保设计兼具艺术美感与商业实用性，符合大规模印刷生产标准。";
         
         return String.format(promptTemplate, userDescription);
     }
@@ -89,7 +98,7 @@ public class QwenImage {
                     ? negativePrompt + ", " + defaultNegativePrompt 
                     : defaultNegativePrompt;
             parameters.put("negative_prompt", finalNegativePrompt);
-            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1024*1024");
+            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1328*1328");
 
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(tongYiConfig.getDashscopeApiKey())
@@ -120,14 +129,52 @@ public class QwenImage {
      * 根据参考图片生成图片
      */
     public File generateImageByReference(String referenceImageUrl, String description, String size) {
+        File uploadedTempFile = null;
         try {
             MultiModalConversation conv = new MultiModalConversation();
 
+            // 处理base64图片：上传到COS获取URL（避免API长度限制）
+            if (referenceImageUrl.startsWith("data:image")) {
+                log.info("检测到base64图片，长度: {} 字符，准备上传到COS", referenceImageUrl.length());
+                
+                try {
+                    // 1. 解码base64并保存为临时文件
+                    String base64Data = referenceImageUrl;
+                    if (base64Data.contains(",")) {
+                        base64Data = base64Data.split(",")[1];
+                    }
+                    byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+                    
+                    uploadedTempFile = File.createTempFile("ref_image_", ".png");
+                    java.nio.file.Files.write(uploadedTempFile.toPath(), imageBytes);
+                    log.info("Base64图片已解码为临时文件: {}, 大小: {} bytes", 
+                            uploadedTempFile.getAbsolutePath(), uploadedTempFile.length());
+                    
+                    // 2. 上传到COS
+                    String key = "temp/reference/" + System.currentTimeMillis() + "_" + RandomUtil.randomString(8) + ".png";
+                    cosUtils.putObject(key, uploadedTempFile);
+                    
+                    // 3. 使用COS URL替换base64
+                    referenceImageUrl = cosClientConfig.getHost() + "/" + key;
+                    log.info("图片已上传到COS，URL: {}", referenceImageUrl);
+                    
+                } catch (Exception e) {
+                    log.error("Base64图片上传到COS失败", e);
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, 
+                            "参考图片处理失败：" + e.getMessage());
+                }
+            }
+
+            // 确保有描述文本，如果没有则使用默认提示词
+            String textPrompt = StrUtil.isNotBlank(description) 
+                    ? description 
+                    : "基于参考图片，生成一个适合服装印花的精美图案设计";
+
+            log.info("参考图片URL: {}, 描述: {}", referenceImageUrl, textPrompt);
+
             List<Map<String, Object>> content = new ArrayList<>();
             content.add(Collections.singletonMap("image", referenceImageUrl));
-            if (StrUtil.isNotBlank(description)) {
-                content.add(Collections.singletonMap("text", description));
-            }
+            content.add(Collections.singletonMap("text", textPrompt));
 
             MultiModalMessage userMessage = MultiModalMessage.builder()
                     .role(Role.USER.getValue())
@@ -136,7 +183,7 @@ public class QwenImage {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("watermark", false);
-            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1024*1024");
+            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1328*1328");
 
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(tongYiConfig.getDashscopeApiKey())
@@ -163,11 +210,13 @@ public class QwenImage {
         } catch (IOException e) {
             log.error("图片下载失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片下载失败：" + e.getMessage());
+        } finally {
+            // 清理上传的临时文件
+            if (uploadedTempFile != null && uploadedTempFile.exists()) {
+                deleteTempFile(uploadedTempFile);
+            }
         }
     }
-    /**
-     * 从API响应中提取图片URL
-     */
     private String extractImageUrl(MultiModalConversationResult result) {
         if (result == null) {
             log.error("MultiModalConversationResult is null");
@@ -240,6 +289,7 @@ public class QwenImage {
     }
     /**
      * 下载图片到临时文件
+     * 注意：调用者负责删除返回的临时文件
      */
     private File downloadImageToTempFile(String imageUrl) throws IOException {
         String uuid = RandomUtil.randomString(10);

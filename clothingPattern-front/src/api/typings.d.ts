@@ -174,6 +174,15 @@ declare namespace API {
     rejectReason?: string
   }
 
+  type PatternEditRequest = {
+    id?: number
+    patternName?: string
+    description?: string
+    style?: string
+    season?: string
+    targetAudience?: string
+  }
+
   type PatternGenerateRequest = {
     patternName?: string
     description?: string

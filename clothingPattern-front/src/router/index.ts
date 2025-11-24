@@ -5,6 +5,7 @@ import UserRegisterPage from '../pages/user/UserRegisterPage.vue'
 import UserManagePage from '../pages/admin/UserManagePage.vue'
 import PatternGenerationPage from '@/pages/PatternGenerationPage.vue'
 import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
+import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 
 
 const router = createRouter({
@@ -41,6 +42,12 @@ const router = createRouter({
     path: '/admin/patternManage',
     name: '图案管理',
     component: PatternManagePage,
+  },
+  {
+    path: '/pattern/:id',
+    name: '图案详情',
+    component: PatternDetailPage,
+    props: true,
   },
 
 

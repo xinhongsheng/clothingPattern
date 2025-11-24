@@ -10,9 +10,17 @@ export const useLoginUserStore = defineStore('loginUser', () => {
   })
   /** 获取登录用户信息 */
   async function fetchLoginUser() {
-    const res = await getLoginUser();
-    if (res.data.code === 0 && res.data.data) {
-      loginUser.value = res.data.data;
+    try {
+      const res = await getLoginUser();
+      if (res.data.code === 0 && res.data.data) {
+        loginUser.value = res.data.data;
+      } else {
+        // 未登录或登录失效，设置为默认值
+        loginUser.value = { userName: '未登录' };
+      }
+    } catch (error) {
+      // 请求失败（未登录），设置为默认值
+      loginUser.value = { userName: '未登录' };
     }
   }
 
