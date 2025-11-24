@@ -185,7 +185,7 @@ public class PatternController {
         long current = patternQueryRequest.getCurrent();
         long size = patternQueryRequest.getPageSize();
         // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+//        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));
         Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());

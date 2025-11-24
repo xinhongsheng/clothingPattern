@@ -7,6 +7,7 @@ import PatternGenerationPage from '@/pages/PatternGenerationPage.vue'
 import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
 import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 import AiPage from '@/pages/AiPage.vue'
+import MyIdeaPage from '@/pages/MyIdeaPage.vue'
 
 
 const router = createRouter({
@@ -54,6 +55,11 @@ const router = createRouter({
     path: '/ai',
     name: 'AI问答',
     component: AiPage,
+  },
+  {
+    path: '/my_idea',
+    name: '我的创意',
+    component: MyIdeaPage,
   },
 
 
