@@ -28,9 +28,9 @@
               <template #overlay>
                 <a-menu>
                   <a-menu-item>
-                    <router-link to="/my_space">
+                    <router-link to="/my_idea">
                       <UserOutlined />
-                      我的空间
+                      我的创意
                     </router-link>
                   </a-menu-item>
                   <!-- 退出登录：直接放在同一个 a-menu 内，去掉多余的 a-menu 嵌套 -->
@@ -86,6 +86,11 @@ const originItems = [
     key: '/admin/patternManage',
     label: '图案管理',
     title: '图案管理',
+  },
+  {
+    key: '/ai',
+    label: 'AI服装知识问答',
+    title: 'AI服装知识问答',
   },
   {
     key: 'others',

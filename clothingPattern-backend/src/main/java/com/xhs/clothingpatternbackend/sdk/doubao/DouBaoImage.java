@@ -416,9 +416,10 @@ public class DouBaoImage {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "参考图片不能为空");
             }
 
-            String textPrompt = StrUtil.isNotBlank(description) 
-                    ? description 
-                    : "基于参考图片，生成一系列融合设计的服装图案方案";
+//            String textPrompt = StrUtil.isNotBlank(description)
+//                    ? description
+//                    : "基于参考图片，生成一系列融合设计的服装图案方案";
+            String textPrompt=buildBatchClothingPatternPrompt(description, maxImages);
 
             log.info("多图生成一组 - 参考图片数量: {}, 描述: {}", imageUrls.size(), textPrompt);
 

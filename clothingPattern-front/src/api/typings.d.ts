@@ -1,4 +1,21 @@
 declare namespace API {
+  type AiAnswerVO = {
+    question?: string
+    answer?: string
+    imageUrl?: string
+  }
+
+  type AiQuestionRequest = {
+    question?: string
+    imageUrl?: string
+  }
+
+  type BaseResponseAiAnswerVO = {
+    code?: number
+    data?: AiAnswerVO
+    message?: string
+  }
+
   type BaseResponseBoolean = {
     code?: number
     data?: boolean
@@ -50,6 +67,12 @@ declare namespace API {
   type BaseResponseString = {
     code?: number
     data?: string
+    message?: string
+  }
+
+  type BaseResponseStringArray = {
+    code?: number
+    data?: string[]
     message?: string
   }
 
@@ -184,6 +207,10 @@ declare namespace API {
   }
 
   type PatternGenerateRequest = {
+    serviceType?: string
+    doubaoMode?: string
+    referenceImageUrls?: string[]
+    maxImages?: number
     patternName?: string
     description?: string
     generationType?: string
@@ -240,6 +267,10 @@ declare namespace API {
     createTime?: string
     updateTime?: string
     user?: UserVO
+  }
+
+  type SseEmitter = {
+    timeout?: number
   }
 
   type User = {

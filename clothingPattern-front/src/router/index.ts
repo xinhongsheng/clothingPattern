@@ -6,6 +6,7 @@ import UserManagePage from '../pages/admin/UserManagePage.vue'
 import PatternGenerationPage from '@/pages/PatternGenerationPage.vue'
 import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
 import PatternDetailPage from '@/pages/PatternDetailPage.vue'
+import AiPage from '@/pages/AiPage.vue'
 
 
 const router = createRouter({
@@ -48,6 +49,11 @@ const router = createRouter({
     name: '图案详情',
     component: PatternDetailPage,
     props: true,
+  },
+  {
+    path: '/ai',
+    name: 'AI问答',
+    component: AiPage,
   },
 
 
