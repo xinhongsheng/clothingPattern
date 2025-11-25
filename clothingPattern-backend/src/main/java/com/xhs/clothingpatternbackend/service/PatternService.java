@@ -2,13 +2,17 @@ package com.xhs.clothingpatternbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xhs.clothingpatternbackend.model.dto.pattern.DataExportRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternEditRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternGenerateRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
+import com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -58,17 +62,19 @@ public interface PatternService extends IService<Pattern> {
      * 获取图案封装
      *
      * @param pattern
+     * @param loginUserId 当前登录用户ID，可为null（未登录）
      * @return
      */
-    PatternVO getPatternVO(Pattern pattern);
+    PatternVO getPatternVO(Pattern pattern, Long loginUserId);
 
     /**
      * 获取图案封装列表
      *
      * @param patternList
+     * @param loginUserId 当前登录用户ID，可为null（未登录）
      * @return
      */
-    List<PatternVO> getPatternVOList(List<Pattern> patternList);
+    List<PatternVO> getPatternVOList(List<Pattern> patternList, Long loginUserId);
     /**
      * 编辑图片
      * @param patternEditRequest
@@ -87,4 +93,18 @@ public interface PatternService extends IService<Pattern> {
      * @param loginUser
      */
     void fillReviewParams(Pattern pattern, User loginUser);
+
+    /**
+     * 获取首页统计数据
+     * @return
+     */
+    HomeStatisticsVO getHomeStatistics();
+
+    /**
+     * 导出数据报告
+     * @param exportRequest
+     * @param outputStream
+     */
+    void exportDataReport(DataExportRequest exportRequest,
+                          OutputStream outputStream) throws IOException;
 }

@@ -8,6 +8,7 @@ import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
 import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 import AiPage from '@/pages/AiPage.vue'
 import MyIdeaPage from '@/pages/MyIdeaPage.vue'
+import DataAnalysisPage from '@/pages/admin/DataAnalysisPage.vue'
 
 
 const router = createRouter({
@@ -60,6 +61,11 @@ const router = createRouter({
     path: '/my_idea',
     name: '我的创意',
     component: MyIdeaPage,
+  },
+  {
+    path: '/admin/dataAnalysis',
+    name: '数据分析',
+    component: DataAnalysisPage,
   },
 
 

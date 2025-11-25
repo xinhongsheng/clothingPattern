@@ -46,8 +46,15 @@
                 </div>
               </template>
             </a-card-meta>
-            <template v-if="showOp" #actions>
-              <a-space @click="(e: Event) => doDelete(pattern, e)">
+            <template #actions>
+              <!-- 点赞按钮 -->
+              <a-space @click="(e: Event) => handleLike(pattern, e)" class="like-action">
+                <HeartOutlined v-if="!pattern.isLiked" class="like-icon" />
+                <HeartFilled v-else class="like-icon liked" />
+                <span>{{ pattern.likeCount || 0 }}</span>
+              </a-space>
+              <!-- 删除按钮（仅在showOp为true时显示） -->
+              <a-space v-if="showOp" @click="(e: Event) => doDelete(pattern, e)">
                 <DeleteOutlined />
                 删除
               </a-space>
@@ -63,8 +70,10 @@
 import { withDefaults } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { DeleteOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, HeartOutlined, HeartFilled } from '@ant-design/icons-vue'
 import { deletePattern } from '@/api/patternController'
+import { toggleLike } from '@/api/likeController'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import {
   AUDIT_STATUS_MAP,
   AUDIT_STATUS_COLOR_MAP,
@@ -86,12 +95,43 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const router = useRouter()
+const loginUserStore = useLoginUserStore()
 
 // 跳转至图案详情
 const doClickPattern = (pattern: API.PatternVO) => {
   router.push({
     path: `/pattern/${pattern.id}`
   })
+}
+
+// 点赞/取消点赞
+const handleLike = async (pattern: API.PatternVO, e: Event) => {
+  e.stopPropagation()
+  
+  const id = pattern.id
+  if (!id) {
+    return
+  }
+
+  // 检查用户是否登录
+  if (!loginUserStore.loginUser || !loginUserStore.loginUser.id) {
+    message.warning('登录后即可点赞')
+    return
+  }
+
+  try {
+    const res = await toggleLike({ patternId: id })
+    if (res.data.code === 0 && res.data.data) {
+      // 使用后端返回的准确数据更新
+      const result = res.data.data
+      pattern.isLiked = result.isLiked
+      pattern.likeCount = result.likeCount
+    } else {
+      message.error('操作失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    message.error('操作失败：' + error.message)
+  }
 }
 
 // 删除
@@ -145,6 +185,37 @@ const doDelete = async (pattern: API.PatternVO, e: Event) => {
           color: #1890ff;
         }
       }
+    }
+  }
+
+  .like-action {
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover .like-icon {
+      transform: scale(1.2);
+    }
+
+    .like-icon {
+      font-size: 18px;
+      transition: all 0.3s ease;
+
+      &.liked {
+        color: #ff4d4f;
+        animation: heartBeat 0.3s ease;
+      }
+    }
+  }
+
+  @keyframes heartBeat {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
     }
   }
 

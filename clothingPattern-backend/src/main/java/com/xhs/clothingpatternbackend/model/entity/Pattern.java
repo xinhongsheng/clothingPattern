@@ -1,7 +1,7 @@
 package com.xhs.clothingpatternbackend.model.entity;
 
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -15,6 +15,7 @@ public class Pattern implements Serializable {
     /**
      * 主键
      */
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /**
@@ -101,6 +102,6 @@ public class Pattern implements Serializable {
     private Date updateTime;
     @TableLogic
     private Integer isDelete;
-
+    @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

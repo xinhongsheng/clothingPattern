@@ -45,3 +45,32 @@ CREATE TABLE `pattern`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1991861493981306882 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '服装图案表（智能图案生成模块核心表）' ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE `userLike` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '点赞记录ID',
+    `userId` bigint NOT NULL COMMENT '点赞用户ID（关联user表）',
+    `patternId` bigint NOT NULL COMMENT '被点赞图案ID（关联pattern表）',
+    `createTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+    `isDelete` tinyint DEFAULT 0 NOT NULL COMMENT '逻辑删除：0-未删除（有效），1-已删除',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `uk_user_pattern` (`userId`, `patternId`),
+    INDEX `idx_pattern_id` (`patternId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图案点赞表';
+
+
+CREATE TABLE `comment` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+    `userId` bigint NOT NULL COMMENT '评论用户ID（关联user表）',
+    `patternId` bigint NOT NULL COMMENT '被评论图案ID（关联pattern表）',
+    `content` text NOT NULL COMMENT '评论内容',
+    `parentId` bigint NULL DEFAULT NULL COMMENT '父评论ID：null-主评论，非null-回复某条评论',
+    `createTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '评论时间',
+    `updateTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（编辑评论时更新）',
+    `isDelete` tinyint DEFAULT 0 NOT NULL COMMENT '逻辑删除：0-未删除，1-已删除',
+    PRIMARY KEY (`id`) USING BTREE,
+    -- 索引：优化查询效率
+    INDEX `idx_pattern_id` (`patternId`), -- 按图案查询所有评论
+    INDEX `idx_parent_id` (`parentId`) -- 按父评论ID查询回复（层级评论）
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图案评论表';
+
+ALTER TABLE `userLike` RENAME TO `user_like`;

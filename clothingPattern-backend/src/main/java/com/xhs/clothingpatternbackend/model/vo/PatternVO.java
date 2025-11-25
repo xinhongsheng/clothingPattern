@@ -106,5 +106,15 @@ public class PatternVO implements Serializable {
      */
     private UserVO user;
 
+    /**
+     * 点赞数
+     */
+    private Long likeCount;
+
+    /**
+     * 当前用户是否已点赞
+     */
+    private Boolean isLiked;
+
     private static final long serialVersionUID = 1L;
 }

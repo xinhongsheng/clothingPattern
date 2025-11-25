@@ -1,4 +1,9 @@
 declare namespace API {
+  type ActiveUserVO = {
+    user?: UserVO
+    patternCount?: number
+  }
+
   type AiAnswerVO = {
     question?: string
     answer?: string
@@ -19,6 +24,18 @@ declare namespace API {
   type BaseResponseBoolean = {
     code?: number
     data?: boolean
+    message?: string
+  }
+
+  type BaseResponseHomeStatisticsVO = {
+    code?: number
+    data?: HomeStatisticsVO
+    message?: string
+  }
+
+  type BaseResponseLikeResultVO = {
+    code?: number
+    data?: LikeResultVO
     message?: string
   }
 
@@ -88,8 +105,22 @@ declare namespace API {
     message?: string
   }
 
+  type checkLikedParams = {
+    patternId: number
+  }
+
+  type DataExportRequest = {
+    format?: string
+    startDate?: string
+    endDate?: string
+  }
+
   type DeleteRequest = {
     id?: number
+  }
+
+  type getLikeCountParams = {
+    patternId: number
   }
 
   type getPatternByIdParams = {
@@ -106,6 +137,19 @@ declare namespace API {
 
   type getUserVOByIdParams = {
     id: number
+  }
+
+  type HomeStatisticsVO = {
+    styleDistribution?: Record<string, any>
+    activeUsers?: ActiveUserVO[]
+    trendData?: TrendDataVO[]
+    totalPatterns?: number
+    totalUsers?: number
+  }
+
+  type LikeResultVO = {
+    isLiked?: boolean
+    likeCount?: number
   }
 
   type LoginUserVO = {
@@ -267,10 +311,21 @@ declare namespace API {
     createTime?: string
     updateTime?: string
     user?: UserVO
+    likeCount?: number
+    isLiked?: boolean
   }
 
   type SseEmitter = {
     timeout?: number
+  }
+
+  type toggleLikeParams = {
+    patternId: number
+  }
+
+  type TrendDataVO = {
+    date?: string
+    count?: number
   }
 
   type User = {

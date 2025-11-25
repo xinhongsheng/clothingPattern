@@ -52,6 +52,21 @@
           </a-checkable-tag>
         </a-space>
       </div>
+
+      <!-- 目标受众标签 -->
+      <div class="filter-row">
+        <span class="filter-label">目标受众：</span>
+        <a-space :size="[0, 8]" wrap>
+          <a-checkable-tag
+            v-for="audience in targetAudienceList"
+            :key="audience"
+            :checked="searchParams.targetAudience === audience"
+            @change="(checked: boolean) => handleAudienceChange(audience, checked)"
+          >
+            {{ audience }}
+          </a-checkable-tag>
+        </a-space>
+      </div>
     </div>
 
     <!-- 图案列表 -->
@@ -94,6 +109,7 @@ const searchParams = reactive<API.PatternQueryRequest>({
 // 筛选选项
 const styleList = ref<string[]>(['简约','可爱', '复古', '卡通', '抽象', '民族', '未来'])
 const seasonList = ref<string[]>(['春季', '夏季', '秋季', '冬季', '四季通用'])
+const targetAudienceList = ref<string[]>(['儿童', '青少年', '成人', '中老年', '通用'])
 
 // 分页参数
 const onPageChange = (page: number, pageSize: number) => {
@@ -142,6 +158,16 @@ const handleSeasonChange = (season: string, checked: boolean) => {
     searchParams.season = season
   } else {
     searchParams.season = undefined
+  }
+  doSearch()
+}
+
+// 处理目标受众选择
+const handleAudienceChange = (audience: string, checked: boolean) => {
+  if (checked) {
+    searchParams.targetAudience = audience
+  } else {
+    searchParams.targetAudience = undefined
   }
   doSearch()
 }

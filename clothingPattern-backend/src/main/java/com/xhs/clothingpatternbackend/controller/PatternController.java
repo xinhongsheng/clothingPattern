@@ -70,7 +70,7 @@ public class PatternController {
         
         // 获取生成的图案详情并返回
         Pattern pattern = patternService.getById(patternId);
-        PatternVO patternVO = patternService.getPatternVO(pattern);
+        PatternVO patternVO = patternService.getPatternVO(pattern, loginUser.getId());
         
         return ResultUtils.success(patternVO);
     }
@@ -96,11 +96,23 @@ public class PatternController {
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<PatternVO> getPatternVOById(long id) {
+    public BaseResponse<PatternVO> getPatternVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         Pattern pattern = patternService.getById(id);
         ThrowUtils.throwIf(pattern == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(patternService.getPatternVO(pattern));
+        
+        // 获取当前登录用户ID（未登录用户为null）
+        Long loginUserId = null;
+        try {
+            User loginUser = userService.getLoginUser(request);
+            if (loginUser != null) {
+                loginUserId = loginUser.getId();
+            }
+        } catch (Exception e) {
+            // 未登录，保持loginUserId为null
+        }
+        
+        return ResultUtils.success(patternService.getPatternVO(pattern, loginUserId));
     }
 
     /**
@@ -126,11 +138,24 @@ public class PatternController {
      * @return
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<PatternVO>> listPatternVOByPage(@RequestBody PatternQueryRequest patternQueryRequest) {
+    public BaseResponse<Page<PatternVO>> listPatternVOByPage(@RequestBody PatternQueryRequest patternQueryRequest,
+                                                              HttpServletRequest request) {
         long current = patternQueryRequest.getCurrent();
         long size = patternQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        
+        // 获取当前登录用户ID（未登录用户为null）
+        Long loginUserId = null;
+        try {
+            User loginUser = userService.getLoginUser(request);
+            if (loginUser != null) {
+                loginUserId = loginUser.getId();
+            }
+        } catch (Exception e) {
+            // 未登录，保持loginUserId为null
+        }
+        
         //构建缓存
         String queryCondition = JSONUtil.toJsonStr(patternQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
@@ -157,7 +182,7 @@ public class PatternController {
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));
         Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());
-        List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords());
+        List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords(), loginUserId);
         patternVOPage.setRecords(patternVOList);
 
         //存入缓存中
@@ -185,11 +210,12 @@ public class PatternController {
         long current = patternQueryRequest.getCurrent();
         long size = patternQueryRequest.getPageSize();
         // 限制爬虫
+        //取消注释 为了统计所有图案
 //        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));
         Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());
-        List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords());
+        List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords(), loginUser.getId());
         patternVOPage.setRecords(patternVOList);
         return ResultUtils.success(patternVOPage);
     }

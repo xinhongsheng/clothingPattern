@@ -4,11 +4,15 @@
 // API 唯一标识：
 import * as userController from './userController'
 import * as patternController from './patternController'
+import * as likeController from './likeController'
+import * as homeController from './homeController'
 import * as aiController from './aiController'
 import * as mainController from './mainController'
 export default {
   userController,
   patternController,
+  likeController,
+  homeController,
   aiController,
   mainController,
 }

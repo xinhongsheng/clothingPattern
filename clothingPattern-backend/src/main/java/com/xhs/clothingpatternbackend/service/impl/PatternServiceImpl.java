@@ -10,6 +10,7 @@ import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.mapper.PatternMapper;
+import com.xhs.clothingpatternbackend.model.dto.pattern.DataExportRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternEditRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternGenerateRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
@@ -18,8 +19,10 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
 import com.xhs.clothingpatternbackend.model.enums.UserRoleEnum;
+import com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.model.vo.UserVO;
+import com.xhs.clothingpatternbackend.service.LikeService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.sdk.dashscope.QwenImage;
@@ -31,6 +34,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +54,9 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private LikeService likeService;
 
     @Resource
     private CosUtils cosUtils;
@@ -441,7 +449,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
     }
 
     @Override
-    public PatternVO getPatternVO(Pattern pattern) {
+    public PatternVO getPatternVO(Pattern pattern, Long loginUserId) {
         if (pattern == null) {
             return null;
         }
@@ -456,11 +464,27 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             patternVO.setUser(userVO);
         }
 
+        // 填充点赞信息
+        Long patternId = pattern.getId();
+        if (patternId != null) {
+            // 获取点赞数
+            long likeCount = likeService.getLikeCount(patternId);
+            patternVO.setLikeCount(likeCount);
+
+            // 获取当前用户是否点赞
+            if (loginUserId != null && loginUserId > 0) {
+                boolean isLiked = likeService.isLiked(patternId, loginUserId);
+                patternVO.setIsLiked(isLiked);
+            } else {
+                patternVO.setIsLiked(false);
+            }
+        }
+
         return patternVO;
     }
 
     @Override
-    public List<PatternVO> getPatternVOList(List<Pattern> patternList) {
+    public List<PatternVO> getPatternVOList(List<Pattern> patternList, Long loginUserId) {
         if (CollUtil.isEmpty(patternList)) {
             return List.of();
         }
@@ -472,6 +496,27 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
 
+        // 批量查询点赞信息
+        Set<Long> patternIdSet = patternList.stream()
+                .map(Pattern::getId)
+                .collect(Collectors.toSet());
+
+        // 获取每个图案的点赞数
+        Map<Long, Long> likeCountMap = new java.util.HashMap<>();
+        for (Long patternId : patternIdSet) {
+            long count = likeService.getLikeCount(patternId);
+            likeCountMap.put(patternId, count);
+        }
+
+        // 获取当前用户的点赞状态
+        Map<Long, Boolean> userLikeMap = new java.util.HashMap<>();
+        if (loginUserId != null && loginUserId > 0) {
+            for (Long patternId : patternIdSet) {
+                boolean isLiked = likeService.isLiked(patternId, loginUserId);
+                userLikeMap.put(patternId, isLiked);
+            }
+        }
+
         // 填充信息
         return patternList.stream().map(pattern -> {
             PatternVO patternVO = new PatternVO();
@@ -482,6 +527,12 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 user = userIdUserListMap.get(userId).get(0);
             }
             patternVO.setUser(userService.getUserVO(user));
+
+            // 填充点赞信息
+            Long patternId = pattern.getId();
+            patternVO.setLikeCount(likeCountMap.getOrDefault(patternId, 0L));
+            patternVO.setIsLiked(userLikeMap.getOrDefault(patternId, false));
+
             return patternVO;
         }).collect(Collectors.toList());
     }
@@ -691,7 +742,271 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
 
     }
+    /**
+     * 获取首页统计数据
+     * @return
+     */
+    @Override
+    public HomeStatisticsVO getHomeStatistics() {
+        HomeStatisticsVO statisticsVO = new HomeStatisticsVO();
+        // 1. 获取所有已通过审核的图案
+        QueryWrapper<Pattern> approvedWrapper = new QueryWrapper<>();
+        approvedWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue());
+        approvedWrapper.eq("isDelete", 0);
+        List<Pattern> approvedPatterns = this.list(approvedWrapper);
+
+        // 2. 统计总图案数
+        statisticsVO.setTotalPatterns((long) approvedPatterns.size());
+
+        // 3. 统计总用户数
+        long totalUsers = userService.count();
+        statisticsVO.setTotalUsers(totalUsers);
+
+        // 4. 统计热门风格分布
+        Map<String, Long> styleDistribution = approvedPatterns.stream()
+                .filter(pattern -> StrUtil.isNotBlank(pattern.getStyle()))
+                .collect(Collectors.groupingBy(Pattern::getStyle, Collectors.counting()));
+        statisticsVO.setStyleDistribution(styleDistribution);
+
+        // 5. 统计活跃用户排行（前5名）
+        Map<Long, Long> userPatternCount = approvedPatterns.stream()
+                .collect(Collectors.groupingBy(Pattern::getUserId, Collectors.counting()));
+
+        List<com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.ActiveUserVO> activeUsers = userPatternCount.entrySet().stream()
+                .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
+                .limit(5)
+                .map(entry -> {
+                    com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.ActiveUserVO activeUserVO = new com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.ActiveUserVO();
+                    User user = userService.getById(entry.getKey());
+                    activeUserVO.setUser(userService.getUserVO(user));
+                    activeUserVO.setPatternCount(entry.getValue());
+                    return activeUserVO;
+                })
+                .collect(Collectors.toList());
+        statisticsVO.setActiveUsers(activeUsers);
+
+        // 6. 统计创作趋势（最近7天）
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        List<com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.TrendDataVO> trendData = new java.util.ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            java.time.LocalDate date = today.minusDays(i);
+            String dateStr = date.format(formatter);
+
+            // 统计当天创建的图案数量
+            long count = approvedPatterns.stream()
+                    .filter(pattern -> {
+                        if (pattern.getCreateTime() == null) return false;
+                        java.time.LocalDate createDate = pattern.getCreateTime().toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate();
+                        return createDate.equals(date);
+                    })
+                    .count();
+
+            com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.TrendDataVO trendDataVO = new com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.TrendDataVO();
+            trendDataVO.setDate(dateStr);
+            trendDataVO.setCount(count);
+            trendData.add(trendDataVO);
+        }
+        statisticsVO.setTrendData(trendData);
+
+        return statisticsVO;
     }
+
+    @Override
+    public void exportDataReport(DataExportRequest exportRequest, OutputStream outputStream) throws IOException {
+        // 获取统计数据
+        HomeStatisticsVO statisticsVO = getHomeStatistics();
+        
+        // 根据导出格式调用不同的导出方法
+        String format = exportRequest.getFormat();
+        if ("csv".equalsIgnoreCase(format)) {
+            exportToCsv(statisticsVO, outputStream);
+        } else if ("excel".equalsIgnoreCase(format)) {
+            // Excel格式也使用CSV（Excel可以直接打开CSV文件）
+            exportToCsv(statisticsVO, outputStream);
+        } else if ("pdf".equalsIgnoreCase(format)) {
+            // PDF格式使用文本格式（简化实现）
+            exportToPdf(statisticsVO, outputStream);
+        } else {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的导出格式：" + format);
+        }
+    }
+
+    /**
+     * 导出CSV格式报告
+     */
+    private void exportToCsv(HomeStatisticsVO statisticsVO, OutputStream outputStream) throws IOException {
+        java.io.PrintWriter writer = new java.io.PrintWriter(
+            new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8)
+        );
+        
+        // 写入UTF-8 BOM，让Excel正确识别中文
+        outputStream.write(new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF});
+        
+        // 报告标题
+        writer.println("服装图案平台数据分析报告");
+        writer.println("生成时间," + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        writer.println();
+        
+        // 一、总体概况
+        writer.println("===== 一、总体概况 =====");
+        writer.println("指标,数值");
+        writer.println("总图案数," + (statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0));
+        writer.println("总用户数," + (statisticsVO.getTotalUsers() != null ? statisticsVO.getTotalUsers() : 0));
+        writer.println();
+        
+        // 二、风格分布统计
+        writer.println("===== 二、风格分布统计 =====");
+        writer.println("风格,图案数量,占比");
+        if (statisticsVO.getStyleDistribution() != null && !statisticsVO.getStyleDistribution().isEmpty()) {
+            long totalPatterns = statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0;
+            statisticsVO.getStyleDistribution().forEach((style, count) -> {
+                double percentage = totalPatterns > 0 ? (count.doubleValue() / totalPatterns * 100) : 0;
+                writer.println(String.format("%s,%d,%.2f%%", style, count, percentage));
+            });
+        } else {
+            writer.println("暂无数据,-,-");
+        }
+        writer.println();
+        
+        // 三、活跃用户TOP5
+        writer.println("===== 三、活跃用户TOP5 =====");
+        writer.println("排名,用户名,账号,图案数量");
+        if (statisticsVO.getActiveUsers() != null && !statisticsVO.getActiveUsers().isEmpty()) {
+            for (int i = 0; i < statisticsVO.getActiveUsers().size(); i++) {
+                HomeStatisticsVO.ActiveUserVO activeUser = statisticsVO.getActiveUsers().get(i);
+                String userName = activeUser.getUser() != null ? activeUser.getUser().getUserName() : "未知";
+                String userAccount = activeUser.getUser() != null ? activeUser.getUser().getUserAccount() : "-";
+                Long patternCount = activeUser.getPatternCount() != null ? activeUser.getPatternCount() : 0;
+                writer.println(String.format("%d,%s,%s,%d", i + 1, userName, userAccount, patternCount));
+            }
+        } else {
+            writer.println("暂无数据,-,-,-");
+        }
+        writer.println();
+        
+        // 四、创作趋势（最近7天）
+        writer.println("===== 四、创作趋势（最近7天） =====");
+        writer.println("日期,图案数量");
+        if (statisticsVO.getTrendData() != null && !statisticsVO.getTrendData().isEmpty()) {
+            statisticsVO.getTrendData().forEach(trend -> {
+                String date = trend.getDate() != null ? trend.getDate() : "-";
+                Long count = trend.getCount() != null ? trend.getCount() : 0;
+                writer.println(String.format("%s,%d", date, count));
+            });
+        } else {
+            writer.println("暂无数据,-");
+        }
+        writer.println();
+        
+        // 五、数据统计汇总
+        writer.println("===== 五、数据统计汇总 =====");
+        if (statisticsVO.getTrendData() != null && !statisticsVO.getTrendData().isEmpty()) {
+            long totalTrendCount = statisticsVO.getTrendData().stream()
+                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                .sum();
+            double avgDailyCount = totalTrendCount / 7.0;
+            writer.println("指标,数值");
+            writer.println("近7天总图案数," + totalTrendCount);
+            writer.println(String.format("日均图案数,%.2f", avgDailyCount));
+        }
+        
+        writer.flush();
+    }
+
+    /**
+     * 导出PDF格式报告（文本格式）
+     */
+    private void exportToPdf(HomeStatisticsVO statisticsVO, OutputStream outputStream) throws IOException {
+        java.io.PrintWriter writer = new java.io.PrintWriter(
+            new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8)
+        );
+        
+        // 报告头部
+        writer.println("===============================================");
+        writer.println("       服装图案平台数据分析报告");
+        writer.println("===============================================");
+        writer.println("生成时间：" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        writer.println("报告类型：综合数据统计报告");
+        writer.println();
+        
+        // 一、总体概况
+        writer.println("【一、总体概况】");
+        writer.println("  • 总图案数：" + (statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0) + " 个");
+        writer.println("  • 总用户数：" + (statisticsVO.getTotalUsers() != null ? statisticsVO.getTotalUsers() : 0) + " 人");
+        writer.println();
+        
+        // 二、风格分布分析
+        writer.println("【二、风格分布分析】");
+        if (statisticsVO.getStyleDistribution() != null && !statisticsVO.getStyleDistribution().isEmpty()) {
+            long totalPatterns = statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0;
+            statisticsVO.getStyleDistribution().forEach((style, count) -> {
+                double percentage = totalPatterns > 0 ? (count.doubleValue() / totalPatterns * 100) : 0;
+                writer.println(String.format("  • %-8s : %4d 个 (%.2f%%)", style, count, percentage));
+            });
+        } else {
+            writer.println("  暂无风格分布数据");
+        }
+        writer.println();
+        
+        // 三、活跃用户榜单
+        writer.println("【三、活跃用户榜单】");
+        if (statisticsVO.getActiveUsers() != null && !statisticsVO.getActiveUsers().isEmpty()) {
+            for (int i = 0; i < statisticsVO.getActiveUsers().size(); i++) {
+                HomeStatisticsVO.ActiveUserVO activeUser = statisticsVO.getActiveUsers().get(i);
+                String userName = activeUser.getUser() != null ? activeUser.getUser().getUserName() : "未知用户";
+                Long patternCount = activeUser.getPatternCount() != null ? activeUser.getPatternCount() : 0;
+                String medal = i == 0 ? "🥇" : i == 1 ? "🥈" : i == 2 ? "🥉" : "  ";
+                writer.println(String.format("  %s TOP%d. %-12s - %d 个图案", medal, i + 1, userName, patternCount));
+            }
+        } else {
+            writer.println("  暂无活跃用户数据");
+        }
+        writer.println();
+        
+        // 四、创作趋势图表
+        writer.println("【四、创作趋势图表（最近7天）】");
+        if (statisticsVO.getTrendData() != null && !statisticsVO.getTrendData().isEmpty()) {
+            // 找出最大值用于绘制简易图表
+            long maxCount = statisticsVO.getTrendData().stream()
+                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                .max()
+                .orElse(1);
+            
+            for (HomeStatisticsVO.TrendDataVO trend : statisticsVO.getTrendData()) {
+                String date = trend.getDate() != null ? trend.getDate() : "-";
+                Long count = trend.getCount() != null ? trend.getCount() : 0;
+                // 简易柱状图（最多20个字符）
+                int barLength = maxCount > 0 ? (int)(count * 20.0 / maxCount) : 0;
+                String bar = "█".repeat(Math.max(0, barLength));
+                writer.println(String.format("  %s | %-20s %d", date, bar, count));
+            }
+            
+            // 统计汇总
+            long totalTrendCount = statisticsVO.getTrendData().stream()
+                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                .sum();
+            double avgDailyCount = totalTrendCount / 7.0;
+            writer.println();
+            writer.println("  趋势统计：");
+            writer.println("    - 近7天总计：" + totalTrendCount + " 个图案");
+            writer.println(String.format("    - 日均创作：%.2f 个图案", avgDailyCount));
+        } else {
+            writer.println("  暂无趋势数据");
+        }
+        writer.println();
+        
+        // 报告尾部
+        writer.println("===============================================");
+        writer.println("              报告生成完成");
+        writer.println("===============================================");
+        
+        writer.flush();
+    }
+}
 
 
 

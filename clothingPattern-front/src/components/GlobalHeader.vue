@@ -93,6 +93,11 @@ const originItems = [
     title: 'AI服装知识问答',
   },
   {
+    key: '/admin/DataAnalysis',
+    label: '作品库分析',
+    title: '作品库分析',
+  },
+  {
     key: 'others',
     label: h('a', { href: 'https://chat.deepseek.com/', target: '_blank' }, '免费壁纸库'),
     title: 'deepseek',
