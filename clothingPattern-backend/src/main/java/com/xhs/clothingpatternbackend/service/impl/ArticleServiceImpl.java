@@ -1,0 +1,494 @@
+package com.xhs.clothingpatternbackend.service.impl;
+
+import com.alibaba.fastjson2.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xhs.clothingpatternbackend.exception.BusinessException;
+import com.xhs.clothingpatternbackend.exception.ErrorCode;
+import com.xhs.clothingpatternbackend.mapper.ArticleCollectMapper;
+import com.xhs.clothingpatternbackend.mapper.ArticleLikeMapper;
+import com.xhs.clothingpatternbackend.mapper.ArticleMapper;
+import com.xhs.clothingpatternbackend.model.dto.article.ArticleAddRequest;
+import com.xhs.clothingpatternbackend.model.dto.article.ArticleQueryRequest;
+import com.xhs.clothingpatternbackend.model.entity.Article;
+import com.xhs.clothingpatternbackend.model.entity.ArticleCollect;
+import com.xhs.clothingpatternbackend.model.entity.ArticleLike;
+import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
+import com.xhs.clothingpatternbackend.model.vo.LikeResult;
+import com.xhs.clothingpatternbackend.model.vo.PageResult;
+import com.xhs.clothingpatternbackend.service.ArticleService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 文章服务实现
+*/
+@Service
+@Slf4j
+public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
+        implements ArticleService {
+
+    @Autowired
+    private ArticleMapper articleMapper;
+
+    @Autowired
+    private ArticleLikeMapper articleLikeMapper;
+
+    @Autowired
+    private ArticleCollectMapper articleCollectMapper;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    private static final String ARTICLE_VIEW_KEY_PREFIX = "article:view:";
+    private static final String ARTICLE_LIKE_KEY_PREFIX = "article:like:";
+    private static final String ARTICLE_LIKE_COUNT_KEY_PREFIX = "article:like:count:";
+    private static final String ARTICLE_COLLECT_KEY_PREFIX = "article:collect:";
+    private static final String HOT_ARTICLES_KEY = "article:hot:list";
+    private static final String RECOMMEND_ARTICLES_KEY = "article:recommend:list";
+
+    @Override
+    public PageResult<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId) {
+        // 1. 查询文章列表
+        List<ArticleVO> articleList = articleMapper.selectArticleList(query);
+
+        // 2. 批量设置用户交互状态
+        if (currentUserId != null && !articleList.isEmpty()) {
+            setUserInteractionStatus(articleList, currentUserId);
+        }
+
+        // 3. 分页处理（在内存中分页）
+        int total = articleList.size();
+        int fromIndex = (query.getPageNum() - 1) * query.getPageSize();
+        int toIndex = Math.min(fromIndex + query.getPageSize(), total);
+
+        if (fromIndex >= total) {
+            return new PageResult<>(Collections.emptyList(), total);
+        }
+
+        List<ArticleVO> pageList = articleList.subList(fromIndex, toIndex);
+        return new PageResult<>(pageList, total);
+    }
+
+    @Override
+    public ArticleVO getArticleDetail(Long id, Long currentUserId) {
+        // 1. 查询文章详情
+        ArticleVO article = articleMapper.selectArticleDetail(id);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        // 2. 增加阅读量（Redis异步更新）
+        incrementViewCount(id);
+
+        // 3. 设置用户交互状态
+        if (currentUserId != null) {
+            boolean liked = getLikeStatusFromRedis(id, currentUserId);
+            boolean collected = getCollectStatusFromRedis(id, currentUserId);
+            article.setLiked(liked);
+            article.setCollected(collected);
+        }
+
+        return article;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean addArticle(ArticleAddRequest request, Long userId) {
+        Article article = new Article();
+        BeanUtils.copyProperties(request, article);
+        article.setStatus("DRAFT");
+        article.setAuditStatus("PENDING");
+        article.setViewCount(0);
+        article.setLikeCount(0);
+        article.setCommentCount(0);
+        article.setShareCount(0);
+        article.setCollectCount(0);
+        article.setCreateTime(new Date());
+        article.setUpdateTime(new Date());
+
+        return this.save(article);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean updateArticle(Article article, Long userId) {
+        Article existArticle = this.getById(article.getId());
+        if (existArticle == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        article.setUpdateTime(new Date());
+        return this.updateById(article);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean deleteArticle(Long id, Long userId) {
+        Article article = this.getById(id);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        return this.removeById(id);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean publishArticle(Long id, Long userId) {
+        Article article = this.getById(id);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        article.setStatus("PUBLISHED");
+        article.setAuditStatus("APPROVED");  // 发布时自动审核通过
+        article.setPublishTime(new Date());
+        article.setUpdateTime(new Date());
+        return this.updateById(article);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean offlineArticle(Long id, Long userId) {
+        Article article = this.getById(id);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        article.setStatus("OFFLINE");
+        article.setUpdateTime(new Date());
+        return this.updateById(article);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public LikeResult likeArticle(Long articleId, Long userId) {
+        // 1. 检查文章是否存在
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        // 2. 查询点赞记录
+        QueryWrapper<ArticleLike> wrapper = new QueryWrapper<>();
+        wrapper.eq("articleId", articleId)
+                .eq("userId", userId)
+                .eq("isDelete", 0);
+        ArticleLike existLike = articleLikeMapper.selectOne(wrapper);
+
+        boolean newStatus;
+        long likeChange;
+
+        if (existLike != null) {
+            // 已点赞，取消点赞
+            existLike.setIsDelete(1);
+            articleLikeMapper.updateById(existLike);
+            newStatus = false;
+            likeChange = -1;
+        } else {
+            // 未点赞，添加点赞
+            ArticleLike like = new ArticleLike();
+            like.setArticleId(articleId);
+            like.setUserId(userId);
+            like.setCreateTime(new Date());
+            like.setIsDelete(0);
+            articleLikeMapper.insert(like);
+            newStatus = true;
+            likeChange = 1;
+        }
+
+        // 3. 更新文章点赞数
+        articleMapper.incrementLikeCount(articleId, (int) likeChange);
+
+        // 4. 更新Redis缓存
+        String likeKey = ARTICLE_LIKE_KEY_PREFIX + articleId;
+        String countKey = ARTICLE_LIKE_COUNT_KEY_PREFIX + articleId;
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), newStatus);
+        Long currentCount = safeIncrement(countKey, likeChange);
+
+        // 5. 清除热门文章缓存
+        clearHotArticlesCache();
+
+        return new LikeResult(newStatus, currentCount != null ? currentCount : article.getLikeCount() + likeChange);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean collectArticle(Long articleId, Long userId) {
+        // 1. 检查文章是否存在
+        Article article = this.getById(articleId);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        // 2. 检查是否已收藏
+        QueryWrapper<ArticleCollect> wrapper = new QueryWrapper<>();
+        wrapper.eq("articleId", articleId)
+                .eq("userId", userId)
+                .eq("isDelete", 0);
+        ArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
+
+        if (existCollect != null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "已收藏该文章");
+        }
+
+        // 3. 添加收藏
+        ArticleCollect collect = new ArticleCollect();
+        collect.setArticleId(articleId);
+        collect.setUserId(userId);
+        collect.setCreateTime(new Date());
+        collect.setIsDelete(0);
+        articleCollectMapper.insert(collect);
+
+        // 4. 更新文章收藏数
+        articleMapper.incrementCollectCount(articleId, 1);
+
+        // 5. 更新Redis缓存
+        String collectKey = ARTICLE_COLLECT_KEY_PREFIX + articleId;
+        redisTemplate.opsForHash().put(collectKey, userId.toString(), true);
+
+        return true;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean cancelCollectArticle(Long articleId, Long userId) {
+        // 1. 查询收藏记录
+        QueryWrapper<ArticleCollect> wrapper = new QueryWrapper<>();
+        wrapper.eq("articleId", articleId)
+                .eq("userId", userId)
+                .eq("isDelete", 0);
+        ArticleCollect collect = articleCollectMapper.selectOne(wrapper);
+
+        if (collect == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未收藏该文章");
+        }
+
+        // 2. 删除收藏
+        collect.setIsDelete(1);
+        articleCollectMapper.updateById(collect);
+
+        // 3. 更新文章收藏数
+        articleMapper.incrementCollectCount(articleId, -1);
+
+        // 4. 更新Redis缓存
+        String collectKey = ARTICLE_COLLECT_KEY_PREFIX + articleId;
+        redisTemplate.opsForHash().put(collectKey, userId.toString(), false);
+
+        return true;
+    }
+
+    @Override
+    public boolean getLikeStatus(Long articleId, Long userId) {
+        return getLikeStatusFromRedis(articleId, userId);
+    }
+
+    @Override
+    public boolean getCollectStatus(Long articleId, Long userId) {
+        return getCollectStatusFromRedis(articleId, userId);
+    }
+
+    @Override
+    public List<ArticleVO> getHotArticles(int limit, Long currentUserId) {
+        // 1. 尝试从Redis获取
+        try {
+            String cached = (String) redisTemplate.opsForValue().get(HOT_ARTICLES_KEY);
+            if (cached != null) {
+                List<ArticleVO> articles = JSON.parseArray(cached, ArticleVO.class);
+                if (currentUserId != null && !articles.isEmpty()) {
+                    setUserInteractionStatus(articles, currentUserId);
+                }
+                return articles;
+            }
+        } catch (Exception e) {
+            log.warn("获取缓存热门文章失败", e);
+        }
+
+        // 2. 从数据库查询
+        List<Article> hotArticles = articleMapper.selectHotArticles(limit);
+        List<ArticleVO> articleVOS = hotArticles.stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+
+        // 3. 设置用户交互状态
+        if (currentUserId != null && !articleVOS.isEmpty()) {
+            setUserInteractionStatus(articleVOS, currentUserId);
+        }
+
+        // 4. 缓存到Redis（1小时）
+        try {
+            redisTemplate.opsForValue().set(HOT_ARTICLES_KEY, JSON.toJSONString(articleVOS),
+                    Duration.ofHours(1));
+        } catch (Exception e) {
+            log.warn("缓存热门文章失败", e);
+        }
+
+        return articleVOS;
+    }
+
+    @Override
+    public List<ArticleVO> getRecommendArticles(int limit, Long currentUserId) {
+        // 1. 尝试从Redis获取
+        try {
+            String cached = (String) redisTemplate.opsForValue().get(RECOMMEND_ARTICLES_KEY);
+            if (cached != null) {
+                List<ArticleVO> articles = JSON.parseArray(cached, ArticleVO.class);
+                if (currentUserId != null && !articles.isEmpty()) {
+                    setUserInteractionStatus(articles, currentUserId);
+                }
+                return articles;
+            }
+        } catch (Exception e) {
+            log.warn("获取缓存推荐文章失败", e);
+        }
+
+        // 2. 从数据库查询
+        QueryWrapper<Article> wrapper = new QueryWrapper<>();
+        wrapper.eq("status", "PUBLISHED")
+                .eq("auditStatus", "APPROVED")
+                .eq("isRecommend", 1)
+                .eq("isDelete", 0)
+                .orderByDesc("publishTime")
+                .last("LIMIT " + limit);
+        List<Article> recommendArticles = this.list(wrapper);
+        List<ArticleVO> articleVOS = recommendArticles.stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+
+        // 3. 设置用户交互状态
+        if (currentUserId != null && !articleVOS.isEmpty()) {
+            setUserInteractionStatus(articleVOS, currentUserId);
+        }
+
+        // 4. 缓存到Redis（1小时）
+        try {
+            redisTemplate.opsForValue().set(RECOMMEND_ARTICLES_KEY, JSON.toJSONString(articleVOS),
+                    Duration.ofHours(1));
+        } catch (Exception e) {
+            log.warn("缓存推荐文章失败", e);
+        }
+
+        return articleVOS;
+    }
+
+    /**
+     * 增加阅读量（Redis异步）
+     */
+    private void incrementViewCount(Long articleId) {
+        String viewKey = ARTICLE_VIEW_KEY_PREFIX + articleId;
+        stringRedisTemplate.opsForValue().increment(viewKey);
+    }
+
+    /**
+     * 批量设置用户交互状态
+     */
+    private void setUserInteractionStatus(List<ArticleVO> articles, Long userId) {
+        List<Long> articleIds = articles.stream()
+                .map(ArticleVO::getId)
+                .collect(Collectors.toList());
+
+        // 批量查询点赞状态
+        List<Long> likedArticleIds = articleLikeMapper.selectLikedArticleIds(userId, articleIds);
+        Set<Long> likedSet = new HashSet<>(likedArticleIds);
+
+        // 批量查询收藏状态
+        List<Long> collectedArticleIds = articleCollectMapper.selectCollectedArticleIds(userId, articleIds);
+        Set<Long> collectedSet = new HashSet<>(collectedArticleIds);
+
+        // 设置状态
+        articles.forEach(article -> {
+            article.setLiked(likedSet.contains(article.getId()));
+            article.setCollected(collectedSet.contains(article.getId()));
+        });
+    }
+
+    /**
+     * 从Redis获取点赞状态
+     */
+    private boolean getLikeStatusFromRedis(Long articleId, Long userId) {
+        String likeKey = ARTICLE_LIKE_KEY_PREFIX + articleId;
+        Boolean hasLiked = (Boolean) redisTemplate.opsForHash().get(likeKey, userId.toString());
+        if (hasLiked != null) {
+            return hasLiked;
+        }
+
+        // Redis中没有，从数据库查询
+        QueryWrapper<ArticleLike> wrapper = new QueryWrapper<>();
+        wrapper.eq("articleId", articleId)
+                .eq("userId", userId)
+                .eq("isDelete", 0);
+        boolean liked = articleLikeMapper.selectCount(wrapper) > 0;
+
+        // 写入Redis
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), liked);
+        return liked;
+    }
+
+    /**
+     * 从Redis获取收藏状态
+     */
+    private boolean getCollectStatusFromRedis(Long articleId, Long userId) {
+        String collectKey = ARTICLE_COLLECT_KEY_PREFIX + articleId;
+        Boolean hasCollected = (Boolean) redisTemplate.opsForHash().get(collectKey, userId.toString());
+        if (hasCollected != null) {
+            return hasCollected;
+        }
+
+        // Redis中没有，从数据库查询
+        QueryWrapper<ArticleCollect> wrapper = new QueryWrapper<>();
+        wrapper.eq("articleId", articleId)
+                .eq("userId", userId)
+                .eq("isDelete", 0);
+        boolean collected = articleCollectMapper.selectCount(wrapper) > 0;
+
+        // 写入Redis
+        redisTemplate.opsForHash().put(collectKey, userId.toString(), collected);
+        return collected;
+    }
+
+    /**
+     * 安全地增加计数
+     */
+    private Long safeIncrement(String key, long delta) {
+        try {
+            return stringRedisTemplate.opsForValue().increment(key, delta);
+        } catch (Exception e) {
+            log.error("Redis increment failed for key: {}", key, e);
+            return null;
+        }
+    }
+
+    /**
+     * 清除热门文章缓存
+     */
+    private void clearHotArticlesCache() {
+        try {
+            redisTemplate.delete(HOT_ARTICLES_KEY);
+            redisTemplate.delete(RECOMMEND_ARTICLES_KEY);
+        } catch (Exception e) {
+            log.error("清除热门文章缓存失败", e);
+        }
+    }
+
+    /**
+     * 转换为VO
+     */
+    private ArticleVO convertToVO(Article article) {
+        ArticleVO vo = new ArticleVO();
+        BeanUtils.copyProperties(article, vo);
+        return vo;
+    }
+}

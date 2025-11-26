@@ -56,6 +56,7 @@ mybatis-plus:
       logic-delete-field: isDelete
       logic-delete-value: 1
       logic-not-delete-value: 0
+  mapper-locations: classpath:com/xhs/mapper/*.xml  # 指定 Mapper XML 文件位置
 knife4j:
   enable: true
   openapi:

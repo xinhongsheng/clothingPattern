@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.clothingpatternbackend.mapper.ArticleCategoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.xhs.clothingpatternbackend.model.entity.ArticleCategory">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="categoryName" column="categoryName" jdbcType="VARCHAR"/>
+            <result property="categoryDesc" column="categoryDesc" jdbcType="VARCHAR"/>
+            <result property="icon" column="icon" jdbcType="VARCHAR"/>
+            <result property="sortOrder" column="sortOrder" jdbcType="INTEGER"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,categoryName,categoryDesc,
+        icon,sortOrder,status,
+        createTime,updateTime,isDelete
+    </sql>
+</mapper>

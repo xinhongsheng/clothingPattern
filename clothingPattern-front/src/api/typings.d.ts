@@ -15,9 +15,112 @@ declare namespace API {
     imageUrl?: string
   }
 
+  type Article = {
+    id?: number
+    categoryId?: number
+    title?: string
+    coverImage?: string
+    summary?: string
+    content?: string
+    author?: string
+    source?: string
+    tags?: string
+    viewCount?: number
+    likeCount?: number
+    commentCount?: number
+    shareCount?: number
+    collectCount?: number
+    isTop?: number
+    isHot?: number
+    isRecommend?: number
+    status?: string
+    auditStatus?: string
+    publishTime?: string
+    createTime?: string
+    updateTime?: string
+    categoryName?: string
+    liked?: boolean
+    collected?: boolean
+    isDelete?: number
+  }
+
+  type ArticleAddRequest = {
+    categoryId: number
+    title: string
+    coverImage?: string
+    summary: string
+    content: string
+    author?: string
+    source?: string
+    tags?: string
+    isTop?: number
+    isRecommend?: number
+  }
+
+  type ArticleCategory = {
+    id?: number
+    categoryName?: string
+    categoryDesc?: string
+    icon?: string
+    sortOrder?: number
+    status?: number
+    createTime?: string
+    updateTime?: string
+    isDelete?: number
+  }
+
+  type ArticleQueryRequest = {
+    categoryId?: number
+    keyword?: string
+    tag?: string[]
+    status?: string
+    auditStatus?: string
+    isTop?: number
+    isHot?: number
+    isRecommend?: number
+    pageNum?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+  }
+
+  type ArticleVO = {
+    id?: number
+    categoryId?: number
+    categoryName?: string
+    title?: string
+    coverImage?: string
+    summary?: string
+    content?: string
+    author?: string
+    source?: string
+    tags?: string
+    viewCount?: number
+    likeCount?: number
+    commentCount?: number
+    shareCount?: number
+    collectCount?: number
+    isTop?: number
+    isHot?: number
+    isRecommend?: number
+    status?: string
+    auditStatus?: string
+    publishTime?: string
+    createTime?: string
+    updateTime?: string
+    liked?: boolean
+    collected?: boolean
+  }
+
   type BaseResponseAiAnswerVO = {
     code?: number
     data?: AiAnswerVO
+    message?: string
+  }
+
+  type BaseResponseArticleVO = {
+    code?: number
+    data?: ArticleVO
     message?: string
   }
 
@@ -45,9 +148,33 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseLikeResult = {
+    code?: number
+    data?: LikeResult
+    message?: string
+  }
+
   type BaseResponseLikeResultVO = {
     code?: number
     data?: LikeResultVO
+    message?: string
+  }
+
+  type BaseResponseListArticleCategory = {
+    code?: number
+    data?: ArticleCategory[]
+    message?: string
+  }
+
+  type BaseResponseListArticleVO = {
+    code?: number
+    data?: ArticleVO[]
+    message?: string
+  }
+
+  type BaseResponseListCommentVO = {
+    code?: number
+    data?: CommentVO[]
     message?: string
   }
 
@@ -78,6 +205,12 @@ declare namespace API {
   type BaseResponsePagePatternVO = {
     code?: number
     data?: PagePatternVO
+    message?: string
+  }
+
+  type BaseResponsePageResultArticleVO = {
+    code?: number
+    data?: PageResultArticleVO
     message?: string
   }
 
@@ -129,8 +262,33 @@ declare namespace API {
     message?: string
   }
 
+  type cancelCollectArticleParams = {
+    articleId: number
+  }
+
+  type CategoryAddRequest = {
+    categoryName: string
+    categoryDesc?: string
+    icon?: string
+    sortOrder?: number
+    status?: number
+  }
+
+  type CategoryUpdateRequest = {
+    id: number
+    categoryName: string
+    categoryDesc?: string
+    icon?: string
+    sortOrder?: number
+    status?: number
+  }
+
   type clearCacheParams = {
     patternId?: number
+  }
+
+  type collectArticleParams = {
+    articleId: number
   }
 
   type CommentAddRequest = {
@@ -160,6 +318,8 @@ declare namespace API {
     patternId?: number
     content?: string
     parentId?: number
+    rootId?: number
+    replyToUserId?: number
     likeCount?: number
     replyCount?: number
     topStatus?: number
@@ -167,6 +327,7 @@ declare namespace API {
     createTime?: string
     userName?: string
     userAvatar?: string
+    replyToUserName?: string
     liked?: boolean
   }
 
@@ -174,6 +335,14 @@ declare namespace API {
     format?: string
     startDate?: string
     endDate?: string
+  }
+
+  type deleteArticleParams = {
+    id: number
+  }
+
+  type deleteCategoryParams = {
+    id: number
   }
 
   type deleteCommentParams = {
@@ -184,16 +353,36 @@ declare namespace API {
     id?: number
   }
 
+  type getArticleDetailParams = {
+    id: number
+  }
+
   type getBatchLikeStatusParams = {
     patternIds: number[]
+  }
+
+  type getCollectStatusParams = {
+    articleId: number
   }
 
   type getCommentDetailParams = {
     commentId: number
   }
 
+  type getCommentRepliesParams = {
+    commentId: number
+  }
+
   type getCommentStatisticsParams = {
     patternId: number
+  }
+
+  type getHotArticlesParams = {
+    limit?: number
+  }
+
+  type getLikeStatus1Params = {
+    articleId: number
   }
 
   type getLikeStatusParams = {
@@ -206,6 +395,10 @@ declare namespace API {
 
   type getPatternVOByIdParams = {
     id: number
+  }
+
+  type getRecommendArticlesParams = {
+    limit?: number
   }
 
   type getUserByIdParams = {
@@ -224,6 +417,15 @@ declare namespace API {
     totalUsers?: number
   }
 
+  type likeArticleParams = {
+    articleId: number
+  }
+
+  type LikeResult = {
+    liked?: boolean
+    likeCount?: number
+  }
+
   type LikeResultVO = {
     isLiked?: boolean
     likeCount?: number
@@ -239,6 +441,10 @@ declare namespace API {
     editTime?: string
     createTime?: string
     updateTime?: string
+  }
+
+  type offlineArticleParams = {
+    id: number
   }
 
   type OrderItem = {
@@ -274,11 +480,14 @@ declare namespace API {
     pages?: number
   }
 
-  type PageResultCommentVO = {
-    records?: CommentVO[]
+  type PageResultArticleVO = {
+    list?: ArticleVO[]
     total?: number
-    current?: number
-    size?: number
+  }
+
+  type PageResultCommentVO = {
+    list?: CommentVO[]
+    total?: number
   }
 
   type PageUserVO = {
@@ -398,6 +607,16 @@ declare namespace API {
     user?: UserVO
     likeCount?: number
     isLiked?: boolean
+  }
+
+  type publishArticleParams = {
+    id: number
+  }
+
+  type searchArticlesParams = {
+    keyword: string
+    pageNum?: number
+    pageSize?: number
   }
 
   type SseEmitter = {

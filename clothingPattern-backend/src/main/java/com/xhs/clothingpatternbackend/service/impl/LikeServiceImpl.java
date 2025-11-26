@@ -12,6 +12,7 @@ import com.xhs.clothingpatternbackend.mapper.LikeMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
     private  LikeMapper likeMapper;
 
     @Autowired
-    private org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
 
     /**

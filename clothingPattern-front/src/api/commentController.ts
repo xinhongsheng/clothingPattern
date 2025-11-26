@@ -1,4 +1,4 @@
-
+// @ts-ignore
 /* eslint-disable */
 import request from '@/request'
 
@@ -71,6 +71,20 @@ export async function getPatternComments(
   })
 }
 
+/** 此处后端没有提供注释 GET /comment/replies/${param0} */
+export async function getCommentReplies(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getCommentRepliesParams,
+  options?: { [key: string]: any }
+) {
+  const { commentId: param0, ...queryParams } = params
+  return request<API.BaseResponseListCommentVO>(`/comment/replies/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /comment/statistics/${param0} */
 export async function getCommentStatistics(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -81,17 +95,6 @@ export async function getCommentStatistics(
   return request<API.BaseResponseCommentStatisticsVO>(`/comment/statistics/${param0}`, {
     method: 'GET',
     params: { ...queryParams },
-    ...(options || {}),
-  })
-}
-
-/** 获取评论的所有回复 GET /comment/replies/${param0} */
-export async function getCommentReplies(
-  commentId: number,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseListCommentVO>(`/comment/replies/${commentId}`, {
-    method: 'GET',
     ...(options || {}),
   })
 }

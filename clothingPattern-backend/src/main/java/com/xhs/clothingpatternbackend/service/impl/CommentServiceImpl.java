@@ -143,7 +143,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
             fillLikeStatus(commentVOList, currentUserId);
         }
 
-        return new PageResult<>(commentVOList, total.longValue(), current, size);
+        return new PageResult<>(commentVOList, total.longValue());
     }
 
     @Override

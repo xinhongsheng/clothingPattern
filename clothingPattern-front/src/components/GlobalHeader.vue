@@ -98,6 +98,17 @@ const originItems = [
     title: '作品库分析',
   },
   {
+    key: '/article',
+    label: '文章资讯',
+    title: '文章资讯',
+  },
+  {
+    key: '/admin/article/manage',
+    label: '文章管理',
+    title: '文章管理',
+  },
+
+  {
     key: 'others',
     label: h('a', { href: 'https://chat.deepseek.com/', target: '_blank' }, '免费壁纸库'),
     title: 'deepseek',

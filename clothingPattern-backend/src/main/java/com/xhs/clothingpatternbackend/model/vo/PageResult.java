@@ -11,26 +11,23 @@ import java.util.List;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class PageResult<T> {
     /**
      * 数据列表
      */
-    private List<T> records;
+    private List<T> list;
     
     /**
      * 总记录数
      */
-    private Long total;
+    private long total;
     
     /**
-     * 当前页码
+     * 便捷构造函数（只需要list和total）
      */
-    private Long current;
-    
-    /**
-     * 每页大小
-     */
-    private Long size;
+    public PageResult(List<T> list, long total) {
+        this.list = list;
+        this.total = total;
+    }
 }
 

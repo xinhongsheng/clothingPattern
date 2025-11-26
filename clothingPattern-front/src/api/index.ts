@@ -6,7 +6,10 @@ import * as userController from './userController'
 import * as patternController from './patternController'
 import * as likeController from './likeController'
 import * as homeController from './homeController'
+import * as fileUploadController from './fileUploadController'
 import * as commentController from './commentController'
+import * as articleController from './articleController'
+import * as articleCategoryController from './articleCategoryController'
 import * as aiController from './aiController'
 import * as mainController from './mainController'
 export default {
@@ -14,7 +17,10 @@ export default {
   patternController,
   likeController,
   homeController,
+  fileUploadController,
   commentController,
+  articleController,
+  articleCategoryController,
   aiController,
   mainController,
 }

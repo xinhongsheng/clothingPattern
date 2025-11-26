@@ -9,6 +9,10 @@ import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 import AiPage from '@/pages/AiPage.vue'
 import MyIdeaPage from '@/pages/MyIdeaPage.vue'
 import DataAnalysisPage from '@/pages/admin/DataAnalysisPage.vue'
+import ArticlePage from '@/pages/ArticlePage.vue'
+import ArticleDetailPage from '@/pages/ArticleDetailPage.vue'
+import ArticleManagePage from '@/pages/admin/ArticleManagePage.vue'
+import ArticleEditPage from '@/pages/admin/ArticleEditPage.vue'
 
 
 const router = createRouter({
@@ -67,10 +71,33 @@ const router = createRouter({
     name: '数据分析',
     component: DataAnalysisPage,
   },
-
-
-
-
+  {
+    path: '/article',
+    name: '文章资讯',
+    component: ArticlePage,
+  },
+  {
+    path: '/article/:id',
+    name: '文章详情',
+    component: ArticleDetailPage,
+    props: true,
+  },
+  {
+    path: '/admin/article/manage',
+    name: '文章管理',
+    component: ArticleManagePage,
+  },
+  {
+    path: '/admin/article/edit',
+    name: '新建文章',
+    component: ArticleEditPage,
+  },
+  {
+    path: '/admin/article/edit/:id',
+    name: '编辑文章',
+    component: ArticleEditPage,
+    props: true,
+  },
 ],
 
 

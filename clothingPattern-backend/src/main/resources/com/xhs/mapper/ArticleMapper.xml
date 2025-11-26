@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.clothingpatternbackend.mapper.ArticleMapper">
+    <resultMap id="BaseResultMap" type="com.xhs.clothingpatternbackend.model.entity.Article">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="categoryId" column="categoryId" jdbcType="BIGINT"/>
+            <result property="title" column="title" jdbcType="VARCHAR"/>
+            <result property="coverImage" column="coverImage" jdbcType="VARCHAR"/>
+            <result property="summary" column="summary" jdbcType="VARCHAR"/>
+            <result property="content" column="content" jdbcType="VARCHAR"/>
+            <result property="author" column="author" jdbcType="VARCHAR"/>
+            <result property="source" column="source" jdbcType="VARCHAR"/>
+            <result property="tags" column="tags" jdbcType="VARCHAR"/>
+            <result property="viewCount" column="viewCount" jdbcType="INTEGER"/>
+            <result property="likeCount" column="likeCount" jdbcType="INTEGER"/>
+            <result property="commentCount" column="commentCount" jdbcType="INTEGER"/>
+            <result property="shareCount" column="shareCount" jdbcType="INTEGER"/>
+            <result property="collectCount" column="collectCount" jdbcType="INTEGER"/>
+            <result property="isTop" column="isTop" jdbcType="TINYINT"/>
+            <result property="isHot" column="isHot" jdbcType="TINYINT"/>
+            <result property="isRecommend" column="isRecommend" jdbcType="TINYINT"/>
+            <result property="status" column="status" jdbcType="VARCHAR"/>
+            <result property="auditStatus" column="auditStatus" jdbcType="VARCHAR"/>
+            <result property="publishTime" column="publishTime" jdbcType="TIMESTAMP"/>
+            <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,categoryId,title,
+        coverImage,summary,content,
+        author,source,tags,
+        viewCount,likeCount,commentCount,
+        shareCount,collectCount,isTop,
+        isHot,isRecommend,status,
+        auditStatus,publishTime,createTime,
+        updateTime,isDelete
+    </sql>
+
+    <!-- 查询文章列表 -->
+    <select id="selectArticleList" resultType="com.xhs.clothingpatternbackend.model.vo.ArticleVO">
+        SELECT 
+            a.*,
+            ac.categoryName as categoryName
+        FROM article a
+        LEFT JOIN article_category ac ON a.categoryId = ac.id
+        WHERE a.isDelete = 0
+        <if test="query.status != null and query.status != ''">
+            AND a.status = #{query.status}
+        </if>
+        <if test="query.auditStatus != null and query.auditStatus != ''">
+            AND a.auditStatus = #{query.auditStatus}
+        </if>
+        <if test="query.categoryId != null">
+            AND a.categoryId = #{query.categoryId}
+        </if>
+        <if test="query.keyword != null and query.keyword != ''">
+            AND (a.title LIKE CONCAT('%', #{query.keyword}, '%') 
+                 OR a.summary LIKE CONCAT('%', #{query.keyword}, '%')
+                 OR a.content LIKE CONCAT('%', #{query.keyword}, '%'))
+        </if>
+        <if test="query.tag != null and query.tag.size() > 0">
+            AND (
+            <foreach collection="query.tag" item="tagItem" separator="OR">
+                a.tags LIKE CONCAT('%', #{tagItem}, '%')
+            </foreach>
+            )
+        </if>
+        <if test="query.isTop != null">
+            AND a.isTop = #{query.isTop}
+        </if>
+        <if test="query.isHot != null">
+            AND a.isHot = #{query.isHot}
+        </if>
+        <if test="query.isRecommend != null">
+            AND a.isRecommend = #{query.isRecommend}
+        </if>
+        ORDER BY 
+        <choose>
+            <when test="query.sortField == 'publishTime' and query.sortOrder == 'desc'">
+                a.isTop DESC, a.publishTime DESC
+            </when>
+            <when test="query.sortField == 'publishTime' and query.sortOrder == 'asc'">
+                a.isTop DESC, a.publishTime ASC
+            </when>
+            <when test="query.sortField == 'viewCount' and query.sortOrder == 'desc'">
+                a.isTop DESC, a.viewCount DESC
+            </when>
+            <when test="query.sortField == 'viewCount' and query.sortOrder == 'asc'">
+                a.isTop DESC, a.viewCount ASC
+            </when>
+            <when test="query.sortField == 'likeCount' and query.sortOrder == 'desc'">
+                a.isTop DESC, a.likeCount DESC
+            </when>
+            <when test="query.sortField == 'likeCount' and query.sortOrder == 'asc'">
+                a.isTop DESC, a.likeCount ASC
+            </when>
+            <when test="query.sortField == 'createTime' and query.sortOrder == 'desc'">
+                a.isTop DESC, a.createTime DESC
+            </when>
+            <when test="query.sortField == 'createTime' and query.sortOrder == 'asc'">
+                a.isTop DESC, a.createTime ASC
+            </when>
+            <otherwise>
+                a.isTop DESC, a.publishTime DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询文章详情 -->
+    <select id="selectArticleDetail" resultType="com.xhs.clothingpatternbackend.model.vo.ArticleVO">
+        SELECT 
+            a.*,
+            ac.categoryName as categoryName
+        FROM article a
+        LEFT JOIN article_category ac ON a.categoryId = ac.id
+        WHERE a.id = #{id} AND a.isDelete = 0
+    </select>
+</mapper>

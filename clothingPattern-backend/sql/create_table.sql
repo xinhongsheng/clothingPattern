@@ -158,3 +158,79 @@ FROM comment
 WHERE isDelete = 0
 ORDER BY COALESCE(rootId, id), createTime;
 
+
+-- 文章资讯功能
+CREATE TABLE `articleCategory` (
+                                   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '分类ID',
+                                   `categoryName` varchar(100) NOT NULL COMMENT '分类名称',
+                                   `categoryDesc` varchar(500) DEFAULT NULL COMMENT '分类描述',
+                                   `icon` varchar(255) DEFAULT NULL COMMENT '分类图标',
+                                   `sortOrder` int DEFAULT 0 COMMENT '排序字段，越大越靠前',
+                                   `status` tinyint DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+                                   `createTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                                   `updateTime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                                   `isDelete` tinyint DEFAULT 0 COMMENT '逻辑删除',
+                                   PRIMARY KEY (`id`),
+                                   INDEX `idxSortOrder` (`sortOrder`),
+                                   INDEX `idxStatus` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章分类表';
+
+CREATE TABLE `article` (
+                           `id` bigint NOT NULL AUTO_INCREMENT COMMENT '文章ID',
+                           `categoryId` bigint NOT NULL COMMENT '分类ID',
+                           `title` varchar(200) NOT NULL COMMENT '文章标题',
+                           `coverImage` varchar(500) DEFAULT NULL COMMENT '封面图',
+                           `summary` varchar(500) DEFAULT NULL COMMENT '文章摘要',
+                           `content` longtext COMMENT '文章内容',
+                           `author` varchar(100) DEFAULT NULL COMMENT '作者',
+                           `source` varchar(100) DEFAULT NULL COMMENT '来源',
+                           `tags` varchar(255) DEFAULT NULL COMMENT '标签，逗号分隔',
+                           `viewCount` int DEFAULT 0 COMMENT '浏览量',
+                           `likeCount` int DEFAULT 0 COMMENT '点赞量',
+                           `commentCount` int DEFAULT 0 COMMENT '评论量',
+                           `shareCount` int DEFAULT 0 COMMENT '分享量',
+                           `collectCount` int DEFAULT 0 COMMENT '收藏量',
+                           `isTop` tinyint DEFAULT 0 COMMENT '是否置顶：0-否，1-是',
+                           `isHot` tinyint DEFAULT 0 COMMENT '是否热门：0-否，1-是',
+                           `isRecommend` tinyint DEFAULT 0 COMMENT '是否推荐：0-否，1-是',
+                           `status` varchar(50) DEFAULT 'DRAFT' COMMENT '状态：DRAFT-草稿，PUBLISHED-已发布，OFFLINE-已下架',
+                           `auditStatus` varchar(50) DEFAULT 'PENDING' COMMENT '审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝',
+                           `publishTime` datetime DEFAULT NULL COMMENT '发布时间',
+                           `createTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                           `updateTime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                           `isDelete` tinyint DEFAULT 0 COMMENT '逻辑删除',
+                           PRIMARY KEY (`id`),
+                           INDEX `idxCategoryId` (`categoryId`),
+                           INDEX `idxPublishTime` (`publishTime`),
+                           INDEX `idxIsTop` (`isTop`),
+                           INDEX `idxIsHot` (`isHot`),
+                           INDEX `idxIsRecommend` (`isRecommend`),
+                           INDEX `idxStatus` (`status`),
+                           INDEX `idxAuditStatus` (`auditStatus`),
+                           INDEX `idxViewCount` (`viewCount`),
+                           INDEX `idxCreateTime` (`createTime`),
+                           FULLTEXT KEY `ftTitleSummary` (`title`, `summary`) -- 全文索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章资讯表';
+
+CREATE TABLE `articleLike` (
+                               `id` bigint NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+                               `userId` bigint NOT NULL COMMENT '用户ID',
+                               `articleId` bigint NOT NULL COMMENT '文章ID',
+                               `createTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+                               `isDelete` tinyint DEFAULT 0 NOT NULL COMMENT '逻辑删除',
+                               PRIMARY KEY (`id`),
+                               UNIQUE KEY `ukUserArticle` (`userId`, `articleId`),
+                               INDEX `idxArticleId` (`articleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章点赞表';
+
+CREATE TABLE `articleCollect` (
+                                  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+                                  `userId` bigint NOT NULL COMMENT '用户ID',
+                                  `articleId` bigint NOT NULL COMMENT '文章ID',
+                                  `createTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+                                  `isDelete` tinyint DEFAULT 0 NOT NULL COMMENT '逻辑删除',
+                                  PRIMARY KEY (`id`),
+                                  UNIQUE KEY `ukUserArticle` (`userId`, `articleId`),
+                                  INDEX `idxArticleId` (`articleId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章收藏表';
+
