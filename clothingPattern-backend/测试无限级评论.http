@@ -1,0 +1,127 @@
+### 测试无限级评论功能
+
+### 1. 添加主评论
+POST http://localhost:8101/api/comment/add
+Content-Type: application/json
+userId: 1
+
+{
+  "patternId": 1,
+  "content": "这是一条主评论，测试无限级评论功能"
+}
+
+### 2. 添加二级回复（回复主评论）
+POST http://localhost:8101/api/comment/add
+Content-Type: application/json
+userId: 2
+
+{
+  "patternId": 1,
+  "parentId": 1001,  # 替换为上面返回的主评论ID
+  "content": "这是二级回复，回复主评论"
+}
+
+### 3. 添加三级回复（回复二级回复）
+POST http://localhost:8101/api/comment/add
+Content-Type: application/json
+userId: 3
+
+{
+  "patternId": 1,
+  "parentId": 1002,  # 替换为上面返回的二级回复ID
+  "content": "这是三级回复，回复二级回复"
+}
+
+### 4. 添加四级回复（回复三级回复）
+POST http://localhost:8101/api/comment/add
+Content-Type: application/json
+userId: 1
+
+{
+  "patternId": 1,
+  "parentId": 1003,  # 替换为上面返回的三级回复ID
+  "content": "这是四级回复，回复三级回复"
+}
+
+### 5. 添加五级回复（回复四级回复）
+POST http://localhost:8101/api/comment/add
+Content-Type: application/json
+userId: 2
+
+{
+  "patternId": 1,
+  "parentId": 1004,  # 替换为上面返回的四级回复ID
+  "content": "这是五级回复，继续深入讨论"
+}
+
+### 6. 查询评论列表（验证无限级评论）
+GET http://localhost:8101/api/comment/list/1?pageNum=1&pageSize=10
+userId: 1
+
+### 7. 查询评论统计
+GET http://localhost:8101/api/comment/statistics/1
+
+### 8. 验证数据库中的 rootId 和 replyToUserId
+# 在 MySQL 中执行以下查询
+/*
+SELECT 
+    id,
+    parentId,
+    rootId,
+    replyToUserId,
+    content,
+    CASE 
+        WHEN parentId IS NULL THEN '主评论'
+        WHEN rootId IS NULL THEN '未设置rootId的回复'
+        ELSE CONCAT('回复（rootId=', rootId, ', replyToUserId=', replyToUserId, '）')
+    END as commentType
+FROM comment
+WHERE patternId = 1 AND isDelete = 0
+ORDER BY COALESCE(rootId, id), createTime;
+*/
+
+### 9. 点赞评论
+POST http://localhost:8101/api/comment/like?commentId=1001
+userId: 2
+
+### 10. 删除评论（验证回复数减少）
+DELETE http://localhost:8101/api/comment/delete?commentId=1005
+userId: 2
+
+### 预期结果验证
+
+# 1. 主评论
+# - id: 1001
+# - parentId: null
+# - rootId: null
+# - replyToUserId: null
+# - replyCount: 4 (所有子回复数)
+
+# 2. 二级回复
+# - id: 1002
+# - parentId: 1001
+# - rootId: 1001
+# - replyToUserId: 用户1的ID
+# - 显示: @用户1 这是二级回复，回复主评论
+
+# 3. 三级回复
+# - id: 1003
+# - parentId: 1002
+# - rootId: 1001
+# - replyToUserId: 用户2的ID
+# - 显示: @用户2 这是三级回复，回复二级回复
+
+# 4. 四级回复
+# - id: 1004
+# - parentId: 1003
+# - rootId: 1001
+# - replyToUserId: 用户3的ID
+# - 显示: @用户3 这是四级回复，回复三级回复
+
+# 5. 五级回复
+# - id: 1005
+# - parentId: 1004
+# - rootId: 1001
+# - replyToUserId: 用户1的ID
+# - 显示: @用户1 这是五级回复，继续深入讨论
+

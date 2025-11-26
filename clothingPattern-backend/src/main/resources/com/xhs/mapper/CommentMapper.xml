@@ -13,11 +13,16 @@
             <result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
+            <result property="likeCount" column="likeCount" jdbcType="INTEGER"/>
+            <result property="replyCount" column="replyCount" jdbcType="INTEGER"/>
+            <result property="topStatus" column="topStatus" jdbcType="TINYINT"/>
+            <result property="auditStatus" column="auditStatus" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,userId,patternId,
         content,parentId,createTime,
-        updateTime,isDelete
+        updateTime,isDelete,likeCount,
+        replyCount,topStatus,auditStatus
     </sql>
 </mapper>

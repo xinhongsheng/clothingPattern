@@ -17,6 +17,29 @@ export async function getBatchLikeStatus(
   })
 }
 
+/** 此处后端没有提供注释 POST /like/clear-cache */
+export async function clearCache(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.clearCacheParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseString>('/like/clear-cache', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
+/** 此处后端没有提供注释 POST /like/fix-data-type */
+export async function fixLikeCountDataType(options?: { [key: string]: any }) {
+  return request<API.BaseResponseString>('/like/fix-data-type', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /like/status */
 export async function getLikeStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)

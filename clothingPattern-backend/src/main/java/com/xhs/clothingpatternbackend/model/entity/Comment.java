@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
+
 import lombok.Data;
 
 /**
@@ -40,6 +42,16 @@ public class Comment implements Serializable {
     private Long parentId;
 
     /**
+     * 根评论ID：null-主评论，非null-所有回复都指向根评论
+     */
+    private Long rootId;
+
+    /**
+     * 被回复的用户ID：用于显示 @用户名
+     */
+    private Long replyToUserId;
+
+    /**
      * 评论时间
      */
     private Date createTime;
@@ -54,6 +66,42 @@ public class Comment implements Serializable {
      */
     @TableLogic
     private Integer isDelete;
+
+    /**
+     * 点赞数
+     */
+    private Integer likeCount;
+
+    /**
+     * 回复数
+     */
+    private Integer replyCount;
+
+    /**
+     * 置顶状态：0-否，1-是
+     */
+    private Integer topStatus;
+
+    /**
+     * 审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝
+     */
+    private String auditStatus;
+
+    // 非数据库字段
+    @TableField(exist = false)
+    private String userName;
+
+    @TableField(exist = false)
+    private String userAvatar;
+
+    @TableField(exist = false)
+    private String replyToUserName;
+
+    @TableField(exist = false)
+    private List<Comment> children;
+
+    @TableField(exist = false)
+    private Boolean liked;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

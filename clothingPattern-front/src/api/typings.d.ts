@@ -27,6 +27,18 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseCommentStatisticsVO = {
+    code?: number
+    data?: CommentStatisticsVO
+    message?: string
+  }
+
+  type BaseResponseCommentVO = {
+    code?: number
+    data?: CommentVO
+    message?: string
+  }
+
   type BaseResponseHomeStatisticsVO = {
     code?: number
     data?: HomeStatisticsVO
@@ -66,6 +78,12 @@ declare namespace API {
   type BaseResponsePagePatternVO = {
     code?: number
     data?: PagePatternVO
+    message?: string
+  }
+
+  type BaseResponsePageResultCommentVO = {
+    code?: number
+    data?: PageResultCommentVO
     message?: string
   }
 
@@ -111,10 +129,55 @@ declare namespace API {
     message?: string
   }
 
+  type clearCacheParams = {
+    patternId?: number
+  }
+
+  type CommentAddRequest = {
+    patternId: number
+    content: string
+    parentId?: number
+  }
+
+  type CommentQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    patternId: number
+    parentId?: number
+  }
+
+  type CommentStatisticsVO = {
+    totalComments?: number
+    mainComments?: number
+    totalLikes?: number
+  }
+
+  type CommentVO = {
+    id?: number
+    userId?: number
+    patternId?: number
+    content?: string
+    parentId?: number
+    likeCount?: number
+    replyCount?: number
+    topStatus?: number
+    auditStatus?: string
+    createTime?: string
+    userName?: string
+    userAvatar?: string
+    liked?: boolean
+  }
+
   type DataExportRequest = {
     format?: string
     startDate?: string
     endDate?: string
+  }
+
+  type deleteCommentParams = {
+    commentId: number
   }
 
   type DeleteRequest = {
@@ -123,6 +186,14 @@ declare namespace API {
 
   type getBatchLikeStatusParams = {
     patternIds: number[]
+  }
+
+  type getCommentDetailParams = {
+    commentId: number
+  }
+
+  type getCommentStatisticsParams = {
+    patternId: number
   }
 
   type getLikeStatusParams = {
@@ -201,6 +272,13 @@ declare namespace API {
     maxLimit?: number
     countId?: string
     pages?: number
+  }
+
+  type PageResultCommentVO = {
+    records?: CommentVO[]
+    total?: number
+    current?: number
+    size?: number
   }
 
   type PageUserVO = {
@@ -324,6 +402,10 @@ declare namespace API {
 
   type SseEmitter = {
     timeout?: number
+  }
+
+  type toggleCommentLikeParams = {
+    commentId: number
   }
 
   type toggleLikeParams = {

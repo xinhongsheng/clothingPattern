@@ -124,6 +124,9 @@
         </a-row>
       </a-card>
 
+      <!-- 评论区 -->
+      <CommentSection v-if="pattern" :patternId="pattern.id!" />
+
       <!-- 空状态 -->
       <a-empty v-else description="图案不存在" />
     </a-spin>
@@ -201,6 +204,7 @@ import {
   GENERATION_TYPE_COLOR_MAP
 } from '@/constants/pattern'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import CommentSection from '@/components/CommentSection.vue'
 
 const route = useRoute()
 const router = useRouter()

@@ -82,3 +82,79 @@ ALTER TABLE `user_like`
 
 -- 添加复合索引
 ALTER TABLE `user_like` ADD INDEX `idx_user_pattern_status` (`userId`, `patternId`, `isDelete`);
+
+ALTER TABLE `comment`
+    ADD COLUMN `likeCount` int DEFAULT 0 COMMENT '点赞数',
+    ADD COLUMN `replyCount` int DEFAULT 0 COMMENT '回复数',
+    ADD COLUMN `topStatus` tinyint DEFAULT 0 COMMENT '置顶状态：0-否，1-是',
+    ADD COLUMN `auditStatus` varchar(50) DEFAULT 'PENDING' COMMENT '审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝',
+    ADD INDEX `idx_user_id` (`userId`),
+    ADD INDEX `idx_create_time` (`createTime`);
+
+-- 创建评论点赞表
+CREATE TABLE `comment_like` (
+                                `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评论点赞ID',
+                                `userId` bigint NOT NULL COMMENT '点赞用户ID',
+                                `commentId` bigint NOT NULL COMMENT '被点赞评论ID',
+                                `createTime` datetime DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '创建时间',
+                                `isDelete` tinyint DEFAULT 0 NOT NULL COMMENT '逻辑删除',
+                                PRIMARY KEY (`id`),
+                                UNIQUE KEY `uk_user_comment` (`userId`, `commentId`),
+                                INDEX `idx_comment_id` (`commentId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论点赞表';
+
+-- 确保索引优化
+ALTER TABLE `comment`
+    ADD INDEX `idx_pattern_create_time` (`patternId`, `createTime`),
+    ADD INDEX `idx_pattern_parent` (`patternId`, `parentId`);
+
+-- 评论点赞表也建议添加图案ID索引（可选，便于管理）
+ALTER TABLE `comment_like`
+    ADD COLUMN `patternId` bigint COMMENT '图案ID（冗余字段，便于查询）',
+    ADD INDEX `idx_pattern_id` (`patternId`);
+
+-- 更新评论点赞表数据（如果已有数据）
+UPDATE comment_like cl
+    JOIN comment c ON cl.commentId = c.id
+SET cl.patternId = c.patternId
+WHERE cl.patternId IS NULL;
+
+
+-- 无限级评论数据库升级脚本
+
+-- 1. 添加 rootId 字段（根评论ID）
+ALTER TABLE `comment`
+    ADD COLUMN `rootId` bigint DEFAULT NULL COMMENT '根评论ID：null-主评论，非null-所有回复都指向根评论' AFTER `parentId`;
+
+-- 2. 添加 replyToUserId 字段（被回复的用户ID）
+ALTER TABLE `comment`
+    ADD COLUMN `replyToUserId` bigint DEFAULT NULL COMMENT '被回复的用户ID：用于显示 @用户名' AFTER `rootId`;
+
+-- 3. 添加索引优化查询性能
+ALTER TABLE `comment`
+    ADD INDEX `idx_rootId` (`rootId`);
+
+-- 4. 更新现有数据：将所有回复的 rootId 设置为其父评论的 rootId（如果父评论也是回复）或父评论的 id（如果父评论是主评论）
+UPDATE `comment` c1
+    LEFT JOIN `comment` c2 ON c1.parentId = c2.id
+SET c1.rootId = CASE
+                    WHEN c2.parentId IS NULL THEN c2.id  -- 父评论是主评论，rootId = 父评论ID
+                    ELSE c2.rootId                        -- 父评论是回复，rootId = 父评论的rootId
+    END
+WHERE c1.parentId IS NOT NULL;
+
+-- 5. 查看更新结果
+SELECT
+    id,
+    parentId,
+    rootId,
+    content,
+    CASE
+        WHEN parentId IS NULL THEN '主评论'
+        WHEN rootId IS NULL THEN '二级评论（未设置rootId）'
+        ELSE CONCAT('回复（rootId=', rootId, '）')
+        END as commentType
+FROM comment
+WHERE isDelete = 0
+ORDER BY COALESCE(rootId, id), createTime;
+
