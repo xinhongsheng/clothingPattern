@@ -71,6 +71,22 @@ public class LikeController {
     }
 
     /**
+     * 清空Redis缓存（调试用，生产环境应该删除）
+     */
+    @PostMapping("/clear-cache")
+    public BaseResponse<String> clearCache(@RequestParam(required = false) Long patternId) {
+        if (patternId != null) {
+            // 清空特定图案的缓存
+            likeSyncTask.clearPatternCache(patternId);
+            return ResultUtils.success("已清空图案 " + patternId + " 的缓存");
+        } else {
+            // 清空所有点赞缓存
+            likeSyncTask.clearAllCache();
+            return ResultUtils.success("已清空所有点赞缓存");
+        }
+    }
+
+    /**
      * 检查用户是否点赞了某个图案
      * 
      * @param patternId 图案ID

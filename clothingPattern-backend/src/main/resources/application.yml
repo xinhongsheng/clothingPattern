@@ -50,6 +50,7 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    local-cache-scope: statement  # 禁用一级缓存，避免读取到旧数据
   global-config:
     db-config:
       logic-delete-field: isDelete

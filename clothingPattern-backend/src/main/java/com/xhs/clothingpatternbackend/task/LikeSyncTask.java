@@ -158,6 +158,39 @@ public class LikeSyncTask {
     }
 
     /**
+     * 清空特定图案的Redis缓存
+     */
+    public void clearPatternCache(Long patternId) {
+        log.info("清空图案 {} 的Redis缓存", patternId);
+        String likeKey = LIKE_KEY_PREFIX + patternId;
+        String countKey = LIKE_COUNT_KEY_PREFIX + patternId;
+        redisTemplate.delete(likeKey);
+        redisTemplate.delete(countKey);
+        log.info("已清空图案 {} 的Redis缓存", patternId);
+    }
+
+    /**
+     * 清空所有点赞相关的Redis缓存
+     */
+    public void clearAllCache() {
+        log.info("开始清空所有点赞Redis缓存");
+        Set<String> likeKeys = redisTemplate.keys(LIKE_KEY_PREFIX + "*");
+        Set<String> countKeys = redisTemplate.keys(LIKE_COUNT_KEY_PREFIX + "*");
+        
+        if (likeKeys != null && !likeKeys.isEmpty()) {
+            redisTemplate.delete(likeKeys);
+            log.info("已删除 {} 个点赞状态缓存", likeKeys.size());
+        }
+        
+        if (countKeys != null && !countKeys.isEmpty()) {
+            redisTemplate.delete(countKeys);
+            log.info("已删除 {} 个点赞计数缓存", countKeys.size());
+        }
+        
+        log.info("所有点赞Redis缓存清空完成");
+    }
+
+    /**
      * 修复Redis中点赞计数的数据类型
      * 将字符串类型转换为Long类型，以支持increment操作
      */

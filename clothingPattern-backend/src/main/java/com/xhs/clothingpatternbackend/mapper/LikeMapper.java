@@ -40,6 +40,22 @@ public interface LikeMapper extends BaseMapper<UserLike> {
      */
     @Select("SELECT COUNT(*) FROM user_like WHERE userId = #{userId} AND patternId = #{patternId} AND isDelete = 0")
     Long countValidLike(@Param("userId") Long userId, @Param("patternId") Long patternId);
+
+    /**
+     * 查询用户点赞记录（包括已删除的记录，用于同步数据）
+     * 注意：这个方法会查询所有记录，包括 isDelete = 1 的记录
+     */
+    @Select("SELECT id, userId, patternId, createTime, isDelete FROM user_like WHERE userId = #{userId} AND patternId = #{patternId} LIMIT 1")
+    UserLike selectOneIncludeDeleted(@Param("userId") Long userId, @Param("patternId") Long patternId);
+
+    /**
+     * 更新点赞状态（直接更新 isDelete 字段，绕过 @TableLogic）
+     * @param id 点赞记录ID
+     * @param isDelete 0-有效，1-已删除
+     * @return 更新的行数
+     */
+    @org.apache.ibatis.annotations.Update("UPDATE user_like SET isDelete = #{isDelete} WHERE id = #{id}")
+    int updateLikeStatus(@Param("id") Long id, @Param("isDelete") Integer isDelete);
 }
 
 

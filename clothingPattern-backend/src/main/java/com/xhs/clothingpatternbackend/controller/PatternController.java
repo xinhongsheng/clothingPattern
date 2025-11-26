@@ -47,7 +47,8 @@ public class PatternController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    private final Cache<String, String> LOCAL_CACHE =
+    // 改为公共静态变量，方便其他服务清空缓存
+    public static final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
                     .maximumSize(10000L)
                     // 缓存 5 分钟移除
