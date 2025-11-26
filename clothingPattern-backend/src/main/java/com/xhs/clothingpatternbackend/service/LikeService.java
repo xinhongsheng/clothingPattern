@@ -2,6 +2,11 @@ package com.xhs.clothingpatternbackend.service;
 
 import com.xhs.clothingpatternbackend.model.entity.UserLike;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
 
 /**
 * @author 小辛
@@ -11,28 +16,28 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface LikeService extends IService<UserLike> {
 
     /**
-     * 点赞/取消点赞（切换状态）
-     * 
-     * @param patternId 图案ID
-     * @param userId 用户ID
-     * @return true-已点赞，false-已取消点赞
+     * 处理点赞/取消点赞
      */
-    boolean toggleLike(Long patternId, Long userId);
-
+    @Transactional
+    LikeResultVO handleLike(Long userId, Long patternId);
     /**
-     * 获取图案点赞数
-     * 
-     * @param patternId 图案ID
-     * @return 点赞数
+     * 获取用户对图案的点赞状态
+     */
+    boolean getLikeStatus(Long userId, Long patternId);
+    /**
+     * 获取图案点赞数量
      */
     long getLikeCount(Long patternId);
-
     /**
-     * 检查用户是否点赞了某个图案
-     * 
-     * @param patternId 图案ID
-     * @param userId 用户ID
-     * @return true-已点赞，false-未点赞
+     * 批量获取用户点赞状态
      */
-    boolean isLiked(Long patternId, Long userId);
+    Map<Long, Boolean> getBatchLikeStatus(Long userId, List<Long> patternIds);
+
+    void warmUpLikeData(Long patternId);
+
+    void batchWarmUpLikeData(List<Long> patternIds);
+
+    void warmUpUserLikeData(Long userId, List<Long> patternIds);
 }
+
+

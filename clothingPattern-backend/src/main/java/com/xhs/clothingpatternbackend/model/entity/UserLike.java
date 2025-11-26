@@ -37,7 +37,7 @@ public class UserLike implements Serializable {
     /**
      * 逻辑删除：0-未删除（有效），1-已删除
      */
-//    @TableLogic
+    @TableLogic
     private Integer isDelete;
 
     @TableField(exist = false)

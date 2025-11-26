@@ -87,6 +87,12 @@
               <!-- 操作按钮 -->
               <a-divider />
               <a-space class="action-buttons">
+                <!-- 点赞按钮 -->
+                <a-button size="large" @click="handleLike" :loading="likeLoading">
+                  <HeartOutlined v-if="!pattern.isLiked" />
+                  <HeartFilled v-else style="color: #ff4d4f" />
+                  {{ pattern.isLiked ? '已点赞' : '点赞' }} ({{ pattern.likeCount || 0 }})
+                </a-button>
                 <a-button type="primary" size="large" @click="downloadPattern">
                   <DownloadOutlined /> 下载图案
                 </a-button>
@@ -182,9 +188,12 @@ import {
   ArrowLeftOutlined,
   DownloadOutlined,
   DeleteOutlined,
-  EditOutlined
+  EditOutlined,
+  HeartOutlined,
+  HeartFilled
 } from '@ant-design/icons-vue'
 import { getPatternVoById, deletePattern, updatePattern } from '@/api/patternController'
+import { toggleLike } from '@/api/likeController'
 import {
   AUDIT_STATUS_MAP,
   AUDIT_STATUS_COLOR_MAP,
@@ -199,6 +208,7 @@ const loginUserStore = useLoginUserStore()
 
 const pattern = ref<API.PatternVO>()
 const loading = ref(true)
+const likeLoading = ref(false)
 const editModalVisible = ref(false)
 const editLoading = ref(false)
 const editForm = ref<API.PatternUpdateRequest>({})
@@ -243,6 +253,53 @@ const goBack = () => {
 const downloadPattern = () => {
   if (pattern.value?.patternUrl) {
     window.open(pattern.value.patternUrl, '_blank')
+  }
+}
+
+// 点赞/取消点赞
+const handleLike = async () => {
+  if (!pattern.value?.id) {
+    return
+  }
+
+  // 检查用户是否登录
+  if (!loginUserStore.loginUser || !loginUserStore.loginUser.id) {
+    message.warning('登录后即可点赞')
+    return
+  }
+
+  // 乐观更新UI
+  const previousLiked = pattern.value.isLiked
+  const previousCount = pattern.value.likeCount || 0
+  
+  // 立即更新UI
+  pattern.value.isLiked = !previousLiked
+  pattern.value.likeCount = previousLiked ? previousCount - 1 : previousCount + 1
+
+  likeLoading.value = true
+  try {
+    const res = await toggleLike({ patternId: pattern.value.id })
+    if (res.data.code === 0 && res.data.data) {
+      // 使用后端返回的准确数据更新
+      const result = res.data.data
+      pattern.value.isLiked = result.isLiked
+      pattern.value.likeCount = result.likeCount
+      
+      message.success(result.isLiked ? '点赞成功' : '已取消点赞', 1)
+    } else {
+      // 失败时回滚UI
+      pattern.value.isLiked = previousLiked
+      pattern.value.likeCount = previousCount
+      message.error('操作失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    // 失败时回滚UI
+    pattern.value.isLiked = previousLiked
+    pattern.value.likeCount = previousCount
+    message.error('操作失败，请稍后重试')
+    console.error('点赞操作失败：', error)
+  } finally {
+    likeLoading.value = false
   }
 }
 
@@ -409,9 +466,17 @@ onMounted(() => {
         width: 100%;
         display: flex;
         gap: 12px;
+        flex-wrap: wrap;
 
         .ant-btn {
           flex: 1;
+          min-width: 120px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          }
         }
       }
     }

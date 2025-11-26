@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.model.vo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -8,6 +9,7 @@ import java.io.Serializable;
  * 点赞结果视图对象
  */
 @Data
+@AllArgsConstructor
 public class LikeResultVO implements Serializable {
 
     /**

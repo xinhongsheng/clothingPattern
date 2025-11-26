@@ -80,3 +80,12 @@ dou-bao:
   config:
     api-key: 03befb04-b894-4755-9454-0e4737d0f0f3
     model-id: doubao-seedream-4-0-250828
+
+# 点赞相关配置
+like:
+  warmup:
+    days: 30    # 预热最近多少天的数据
+    limit: 1000 # 预热数据条数限制
+#  sync:
+#    enabled: true
+#    interval: 300000  # 同步间隔，单位毫秒（5分钟）

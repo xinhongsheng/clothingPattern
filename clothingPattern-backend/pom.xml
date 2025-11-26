@@ -103,6 +103,12 @@
             <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
             <version>LATEST</version>
         </dependency>
+
+        <!-- Jackson 处理 Java 8 日期时间（JSR310 规范） -->
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.datatype</groupId>-->
+<!--            <artifactId>jackson-datatype-jsr310</artifactId>-->
+<!--        </dependency>-->
     </dependencies>
     <dependencyManagement>
         <dependencies>

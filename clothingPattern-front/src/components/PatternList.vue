@@ -119,18 +119,36 @@ const handleLike = async (pattern: API.PatternVO, e: Event) => {
     return
   }
 
+  // 乐观更新UI（先更新界面，给用户即时反馈）
+  const previousLiked = pattern.isLiked
+  const previousCount = pattern.likeCount || 0
+  
+  // 立即更新UI
+  pattern.isLiked = !previousLiked
+  pattern.likeCount = previousLiked ? previousCount - 1 : previousCount + 1
+
   try {
     const res = await toggleLike({ patternId: id })
     if (res.data.code === 0 && res.data.data) {
-      // 使用后端返回的准确数据更新
+      // 使用后端返回的准确数据更新（确保数据一致性）
       const result = res.data.data
       pattern.isLiked = result.isLiked
       pattern.likeCount = result.likeCount
+      
+      // 提示用户操作成功
+      message.success(result.isLiked ? '点赞成功' : '已取消点赞', 1)
     } else {
+      // 失败时回滚UI
+      pattern.isLiked = previousLiked
+      pattern.likeCount = previousCount
       message.error('操作失败：' + res.data.message)
     }
   } catch (error: any) {
-    message.error('操作失败：' + error.message)
+    // 失败时回滚UI
+    pattern.isLiked = previousLiked
+    pattern.likeCount = previousCount
+    message.error('操作失败，请稍后重试')
+    console.error('点赞操作失败：', error)
   }
 }
 

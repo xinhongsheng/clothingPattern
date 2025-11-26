@@ -51,6 +51,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseMapLongBoolean = {
+    code?: number
+    data?: Record<string, any>
+    message?: string
+  }
+
   type BaseResponsePagePattern = {
     code?: number
     data?: PagePattern
@@ -105,10 +111,6 @@ declare namespace API {
     message?: string
   }
 
-  type checkLikedParams = {
-    patternId: number
-  }
-
   type DataExportRequest = {
     format?: string
     startDate?: string
@@ -119,7 +121,11 @@ declare namespace API {
     id?: number
   }
 
-  type getLikeCountParams = {
+  type getBatchLikeStatusParams = {
+    patternIds: number[]
+  }
+
+  type getLikeStatusParams = {
     patternId: number
   }
 
@@ -230,6 +236,7 @@ declare namespace API {
     auditTime?: string
     auditorId?: number
     rejectReason?: string
+    likeCount?: number
     createTime?: string
     updateTime?: string
     isDelete?: number

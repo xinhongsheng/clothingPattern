@@ -2,13 +2,13 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 GET /like/check */
-export async function checkLiked(
+/** 此处后端没有提供注释 GET /like/batch-status */
+export async function getBatchLikeStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.checkLikedParams,
+  params: API.getBatchLikeStatusParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean>('/like/check', {
+  return request<API.BaseResponseMapLongBoolean>('/like/batch-status', {
     method: 'GET',
     params: {
       ...params,
@@ -17,13 +17,13 @@ export async function checkLiked(
   })
 }
 
-/** 此处后端没有提供注释 GET /like/count */
-export async function getLikeCount(
+/** 此处后端没有提供注释 GET /like/status */
+export async function getLikeStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getLikeCountParams,
+  params: API.getLikeStatusParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong>('/like/count', {
+  return request<API.BaseResponseBoolean>('/like/status', {
     method: 'GET',
     params: {
       ...params,

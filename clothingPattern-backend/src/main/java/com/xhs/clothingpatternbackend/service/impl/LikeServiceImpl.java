@@ -1,17 +1,26 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
+import com.xhs.clothingpatternbackend.mapper.PatternMapper;
+import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.UserLike;
+import com.xhs.clothingpatternbackend.model.vo.LikeOperation;
+import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.service.LikeService;
 import com.xhs.clothingpatternbackend.mapper.LikeMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.*;
+
+import static com.xhs.clothingpatternbackend.constant.LikeConstant.LIKE_COUNT_KEY_PREFIX;
+import static com.xhs.clothingpatternbackend.constant.LikeConstant.LIKE_KEY_PREFIX;
 
 /**
 * @author 小辛
@@ -23,79 +32,243 @@ import org.springframework.transaction.annotation.Transactional;
 public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
     implements LikeService{
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private PatternMapper patternMapper;
+
+    @Autowired
+    private  LikeMapper likeMapper;
+
+
+    /**
+     * 处理点赞/取消点赞
+     */
+    @Transactional
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean toggleLike(Long patternId, Long userId) {
-        if (patternId == null || patternId <= 0 || userId == null || userId <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数错误");
+    public LikeResultVO handleLike(Long userId, Long patternId) {
+        // 1. 检查图案是否存在且已审核通过
+        Pattern pattern = patternMapper.selectById(patternId);
+        if (pattern == null || !"APPROVED".equals(pattern.getAuditStatus())) {
+            throw new BusinessException( ErrorCode.NO_AUTH_ERROR, "图案不存在或未审核通过");
         }
 
-        // 查询记录（必须包括已删除的，避免唯一索引冲突）
-        // 使用原生 SQL 查询，绕过 MyBatis-Plus 的逻辑删除过滤
-        LambdaQueryWrapper<UserLike> lambdaQuery = new LambdaQueryWrapper<>();
-        lambdaQuery.eq(UserLike::getUserId, userId)
-                   .eq(UserLike::getPatternId, patternId)
-                   .last("LIMIT 1"); // 确保只返回一条记录
-        UserLike existingUserLike = this.getOne(lambdaQuery, false); // false 表示不抛出异常
+        String likeKey = LIKE_KEY_PREFIX + patternId;
+        String countKey = LIKE_COUNT_KEY_PREFIX + patternId;
 
-        if (existingUserLike != null) {
-            // 记录当前状态
-            Integer oldStatus = existingUserLike.getIsDelete();
-            // 切换 isDelete 状态：1变0，0变1
-            Integer newStatus = oldStatus == 1 ? 0 : 1;
-            
-            // 使用 UpdateWrapper 明确更新 isDelete 字段
-            UpdateWrapper<UserLike> updateWrapper = new UpdateWrapper<>();
-            updateWrapper.eq("id", existingUserLike.getId())
-                        .set("isDelete", newStatus);
-            boolean result = this.update(updateWrapper);
-            
-            log.info("点赞状态切换: patternId={}, userId={}, oldStatus={}, newStatus={}, result={}", 
-                    patternId, userId, oldStatus, newStatus, result);
-
-            // 返回当前点赞状态：isDelete=0 表示已点赞，isDelete=1 表示已取消
-            return newStatus == 0;
+        // 2. 检查用户当前点赞状态（优先Redis，未命中则查数据库）
+        Boolean hasLiked = (Boolean) redisTemplate.opsForHash().get(likeKey, userId.toString());
+        boolean currentStatus;
+        
+        if (hasLiked != null) {
+            // Redis命中
+            currentStatus = hasLiked;
         } else {
-            // 新记录
-            UserLike userLike = new UserLike();
-            userLike.setUserId(userId);
-            userLike.setPatternId(patternId);
-            userLike.setIsDelete(0); // 0-未删除（点赞状态）
-            boolean result = this.save(userLike);
-            
-            log.info("新增点赞记录: patternId={}, userId={}, result={}", patternId, userId, result);
-            
-            return true; // 新点赞返回 true
+            // Redis未命中，查询数据库
+            Long count = likeMapper.countValidLike(userId, patternId);
+            currentStatus = count != null && count > 0;
+            // 不在这里写入Redis，后面统一写入新状态
         }
+
+        // 3. 切换状态：点赞 -> 取消，取消 -> 点赞
+        boolean newStatus = !currentStatus;
+        int likeChange = newStatus ? 1 : -1;
+
+        // 4. 更新Redis
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), newStatus);
+
+        // 5. 更新点赞计数
+        Long currentCount = redisTemplate.opsForValue().increment(countKey, likeChange);
+        if (currentCount == null || currentCount < 0) {
+            // 如果Redis中没有计数，先从数据库获取
+            Integer dbCount = patternMapper.selectLikeCount(patternId);
+            currentCount = dbCount != null ? dbCount.longValue() : 0L;
+            currentCount = Math.max(0, currentCount + likeChange);
+            redisTemplate.opsForValue().set(countKey, currentCount);
+        }
+
+        // 6. 记录操作日志（可选，用于数据恢复）
+//        redisTemplate.opsForList().leftPush("like:operation:log",
+//                new LikeOperation(userId, patternId, newStatus, LocalDateTime.now()));
+
+        return new LikeResultVO(newStatus, currentCount);
     }
 
+    /**
+     * 获取用户对图案的点赞状态
+     */
+    @Override
+    public boolean getLikeStatus(Long userId, Long patternId) {
+        String likeKey = LIKE_KEY_PREFIX + patternId;
+        Boolean status = (Boolean) redisTemplate.opsForHash().get(likeKey, userId.toString());
+        
+        // 如果Redis中有数据，直接返回
+        if (status != null) {
+            return status;
+        }
+        
+        // Redis未命中，查询数据库
+        Long count = likeMapper.countValidLike(userId, patternId);
+        boolean isLiked = count != null && count > 0;
+        
+        // 写入Redis缓存
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), isLiked);
+        
+        return isLiked;
+    }
+
+    /**
+     * 获取图案点赞数量
+     */
     @Override
     public long getLikeCount(Long patternId) {
-        if (patternId == null || patternId <= 0) {
-            return 0;
+        String countKey = LIKE_COUNT_KEY_PREFIX + patternId;
+        Object count = redisTemplate.opsForValue().get(countKey);
+        
+        // Redis命中，直接返回
+        if (count != null) {
+            if (count instanceof Long) {
+                return (Long) count;
+            }
+            if (count instanceof Integer) {
+                return ((Integer) count).longValue();
+            }
+            if (count instanceof String) {
+                return Long.parseLong((String) count);
+            }
         }
-
-        QueryWrapper<UserLike> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("patternId", patternId)
-                .eq("isDelete", 0); // 只统计有效的点赞
-        long count = this.count(queryWrapper);
         
-        log.debug("获取点赞数: patternId={}, count={}", patternId, count);
+        // Redis未命中，查询数据库
+        Integer dbCount = patternMapper.selectLikeCount(patternId);
+        long likeCount = dbCount != null ? dbCount.longValue() : 0L;
         
-        return count;
+        // 写入Redis缓存
+        redisTemplate.opsForValue().set(countKey, likeCount);
+        
+        return likeCount;
     }
 
+    /**
+     * 批量获取用户点赞状态
+     */
     @Override
-    public boolean isLiked(Long patternId, Long userId) {
-        if (patternId == null || patternId <= 0 || userId == null || userId <= 0) {
-            return false;
+    public Map<Long, Boolean> getBatchLikeStatus(Long userId, List<Long> patternIds) {
+        Map<Long, Boolean> result = new HashMap<>();
+        List<Long> missedPatternIds = new ArrayList<>();
+
+        // 先从Redis获取
+        for (Long patternId : patternIds) {
+            String likeKey = LIKE_KEY_PREFIX + patternId;
+            Boolean status = (Boolean) redisTemplate.opsForHash().get(likeKey, userId.toString());
+            if (status != null) {
+                result.put(patternId, status);
+            } else {
+                missedPatternIds.add(patternId);
+            }
         }
 
-        QueryWrapper<UserLike> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("userId", userId)
-                .eq("patternId", patternId)
-                .eq("isDelete", 0); // 只查询有效的点赞
-        return this.count(queryWrapper) > 0;
+        // Redis未命中的，批量查询数据库
+        if (!missedPatternIds.isEmpty()) {
+            List<Long> likedPatternIds = likeMapper.selectLikedPatternIds(userId, missedPatternIds);
+            Set<Long> likedSet = new HashSet<>(likedPatternIds);
+            
+            for (Long patternId : missedPatternIds) {
+                boolean isLiked = likedSet.contains(patternId);
+                result.put(patternId, isLiked);
+                
+                // 写入Redis缓存
+                String likeKey = LIKE_KEY_PREFIX + patternId;
+                redisTemplate.opsForHash().put(likeKey, userId.toString(), isLiked);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * 预热点赞数据到Redis
+     */
+    @Override
+    public void warmUpLikeData(Long patternId) {
+        try {
+            log.debug("预热点赞数据，patternId: {}", patternId);
+
+            String likeKey = LIKE_KEY_PREFIX + patternId;
+            String countKey = LIKE_COUNT_KEY_PREFIX + patternId;
+
+            // 1. 预热点赞总数（存储为Long类型，支持increment操作）
+            Integer mysqlLikeCount = patternMapper.selectLikeCount(patternId);
+            if (mysqlLikeCount != null) {
+                redisTemplate.opsForValue().set(countKey, mysqlLikeCount.longValue());
+                log.debug("预热图案 {} 点赞数: {}", patternId, mysqlLikeCount);
+            } else {
+                // 如果数据库中没有记录，初始化为0
+                redisTemplate.opsForValue().set(countKey, 0L);
+            }
+
+            // 2. 预热用户点赞状态
+            List<Long> likedUserIds = likeMapper.selectLikedUserIds(patternId);
+            if (!likedUserIds.isEmpty()) {
+                Map<String, Boolean> userLikeMap = new HashMap<>();
+                for (Long userId : likedUserIds) {
+                    userLikeMap.put(userId.toString(), true);
+                }
+                redisTemplate.opsForHash().putAll(likeKey, userLikeMap);
+                log.debug("预热图案 {} 用户点赞状态，涉及用户数: {}", patternId, likedUserIds.size());
+            }
+
+            // 3. 设置过期时间（可选，根据业务需求）
+            // redisTemplate.expire(likeKey, Duration.ofDays(7));
+            // redisTemplate.expire(countKey, Duration.ofDays(7));
+
+        } catch (Exception e) {
+            log.error("预热点赞数据失败, patternId: {}", patternId, e);
+        }
+    }
+
+    /**
+     * 批量预热点赞数据
+     */
+    @Override
+    public void batchWarmUpLikeData(List<Long> patternIds) {
+        if (patternIds == null || patternIds.isEmpty()) {
+            return;
+        }
+
+        log.info("批量预热点赞数据，图案数量: {}", patternIds.size());
+
+        for (Long patternId : patternIds) {
+            warmUpLikeData(patternId);
+        }
+    }
+
+    /**
+     * 预热用户相关的点赞数据
+     */
+    @Override
+    public void warmUpUserLikeData(Long userId, List<Long> patternIds) {
+        if (patternIds == null || patternIds.isEmpty()) {
+            return;
+        }
+
+        try {
+            // 批量查询用户对这些图案的点赞状态
+            List<Long> likedPatternIds = likeMapper.selectLikedPatternIds(userId, patternIds);
+            Set<Long> likedSet = new HashSet<>(likedPatternIds);
+
+            // 预热到Redis
+            for (Long patternId : patternIds) {
+                String likeKey = LIKE_KEY_PREFIX + patternId;
+                boolean isLiked = likedSet.contains(patternId);
+                redisTemplate.opsForHash().put(likeKey, userId.toString(), isLiked);
+            }
+
+            log.debug("预热用户 {} 的点赞状态，涉及图案数: {}", userId, patternIds.size());
+
+        } catch (Exception e) {
+            log.error("预热用户点赞数据失败, userId: {}", userId, e);
+        }
     }
 }
 

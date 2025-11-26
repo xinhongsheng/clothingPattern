@@ -2,6 +2,10 @@ package com.xhs.clothingpatternbackend.mapper;
 
 import com.xhs.clothingpatternbackend.model.entity.UserLike;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 /**
 * @author 小辛
@@ -10,7 +14,32 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity com.xhs.clothingpatternbackend.model.entity.UserLike
 */
 public interface LikeMapper extends BaseMapper<UserLike> {
+    /**
+     * 批量查询用户点赞状态
+     */
+    @Select({
+            "<script>",
+            "SELECT patternId FROM user_like",
+            "WHERE userId = #{userId} AND patternId IN",
+            "<foreach collection='patternIds' item='patternId' open='(' separator=',' close=')'>",
+            "#{patternId}",
+            "</foreach>",
+            "AND isDelete = 0",
+            "</script>"
+    })
+    List<Long> selectLikedPatternIds(@Param("userId") Long userId, @Param("patternIds") List<Long> patternIds);
 
+    /**
+     * 获取图案的所有点赞用户ID
+     */
+    @Select("SELECT userId FROM user_like WHERE patternId = #{patternId} AND isDelete = 0")
+    List<Long> selectLikedUserIds(@Param("patternId") Long patternId);
+
+    /**
+     * 查询用户是否对图案点赞（返回有效记录数）
+     */
+    @Select("SELECT COUNT(*) FROM user_like WHERE userId = #{userId} AND patternId = #{patternId} AND isDelete = 0")
+    Long countValidLike(@Param("userId") Long userId, @Param("patternId") Long patternId);
 }
 
 

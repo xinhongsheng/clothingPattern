@@ -36,10 +36,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -473,7 +470,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
             // 获取当前用户是否点赞
             if (loginUserId != null && loginUserId > 0) {
-                boolean isLiked = likeService.isLiked(patternId, loginUserId);
+                boolean isLiked = likeService.getLikeStatus(loginUserId,patternId );
                 patternVO.setIsLiked(isLiked);
             } else {
                 patternVO.setIsLiked(false);
@@ -502,17 +499,17 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 .collect(Collectors.toSet());
 
         // 获取每个图案的点赞数
-        Map<Long, Long> likeCountMap = new java.util.HashMap<>();
+        Map<Long, Long> likeCountMap = new HashMap<>();
         for (Long patternId : patternIdSet) {
             long count = likeService.getLikeCount(patternId);
             likeCountMap.put(patternId, count);
         }
 
         // 获取当前用户的点赞状态
-        Map<Long, Boolean> userLikeMap = new java.util.HashMap<>();
+        Map<Long, Boolean> userLikeMap = new HashMap<>();
         if (loginUserId != null && loginUserId > 0) {
             for (Long patternId : patternIdSet) {
-                boolean isLiked = likeService.isLiked(patternId, loginUserId);
+                boolean isLiked = likeService.getLikeStatus(loginUserId,patternId);
                 userLikeMap.put(patternId, isLiked);
             }
         }

@@ -93,6 +93,10 @@ public class Pattern implements Serializable {
      */
     private String rejectReason;
     /**
+     * 点赞数
+     */
+    private Integer likeCount;
+    /**
      * 创建时间
      */
     private Date createTime;

@@ -35,6 +35,7 @@ CREATE TABLE `pattern`  (
                             `auditTime` datetime NULL DEFAULT NULL COMMENT '审核时间',
                             `auditorId` bigint NULL DEFAULT NULL COMMENT '审核员ID（关联管理员表）',
                             `rejectReason` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '拒绝原因（审核拒绝时填写）',
+                            `likeCount` int NOT NULL DEFAULT 0 COMMENT '点赞数',
                             `createTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                             `updateTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                             `isDelete` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-未删除，1-已删除',
@@ -74,3 +75,10 @@ CREATE TABLE `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图案评论表';
 
 ALTER TABLE `userLike` RENAME TO `user_like`;
+
+-- 建议在 user_like 表添加 updateTime
+ALTER TABLE `user_like`
+    ADD COLUMN `updateTime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间';
+
+-- 添加复合索引
+ALTER TABLE `user_like` ADD INDEX `idx_user_pattern_status` (`userId`, `patternId`, `isDelete`);

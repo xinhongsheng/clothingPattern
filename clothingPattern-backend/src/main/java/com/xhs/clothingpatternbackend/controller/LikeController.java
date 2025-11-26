@@ -8,10 +8,14 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.service.LikeService;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.task.LikeSyncTask;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 点赞接口
@@ -27,6 +31,9 @@ public class LikeController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private LikeSyncTask likeSyncTask;
+
     /**
      * 点赞/取消点赞
      * 
@@ -41,33 +48,26 @@ public class LikeController {
         // 必须登录
         User loginUser = userService.getLoginUser(request);
         
-        // 执行点赞/取消点赞
-        boolean isLiked = likeService.toggleLike(patternId, loginUser.getId());
-        
-        // 获取最新点赞数
-        long likeCount = likeService.getLikeCount(patternId);
-        
-        // 构建返回结果
-        LikeResultVO result = new LikeResultVO();
-        result.setIsLiked(isLiked);
-        result.setLikeCount(likeCount);
+        LikeResultVO result = likeService.handleLike(loginUser.getId(), patternId);
         
         return ResultUtils.success(result);
     }
 
     /**
-     * 获取图案点赞数
-     * 
-     * @param patternId 图案ID
-     * @return 点赞数
+     * 批量获取用户点赞状态
+     *
+     * @param patternIds 图案ID列表
+     * @param request
+     * @return 点赞状态Map，键为图案ID，值为点赞状态（true-已点赞，false-未点赞）
      */
-    @GetMapping("/count")
-    public BaseResponse<Long> getLikeCount(@RequestParam Long patternId) {
-        ThrowUtils.throwIf(patternId == null || patternId <= 0, ErrorCode.PARAMS_ERROR, "图案ID不能为空");
+    @GetMapping("/batch-status")
+    public BaseResponse<Map<Long, Boolean>> getBatchLikeStatus(@RequestBody List<Long> patternIds,HttpServletRequest request) {
+        ThrowUtils.throwIf(patternIds == null || patternIds.isEmpty(), ErrorCode.PARAMS_ERROR, "图案ID不能为空");
+
+        User loginUser = userService.getLoginUser(request);
+        Map<Long,Boolean> statusMap= likeService.getBatchLikeStatus(loginUser.getId(), patternIds);
         
-        long count = likeService.getLikeCount(patternId);
-        
-        return ResultUtils.success(count);
+        return ResultUtils.success(statusMap);
     }
 
     /**
@@ -77,8 +77,8 @@ public class LikeController {
      * @param request
      * @return true-已点赞，false-未点赞
      */
-    @GetMapping("/check")
-    public BaseResponse<Boolean> checkLiked(@RequestParam Long patternId, HttpServletRequest request) {
+    @GetMapping("/status")
+    public BaseResponse<Boolean> getLikeStatus(@RequestParam Long patternId, HttpServletRequest request) {
         ThrowUtils.throwIf(patternId == null || patternId <= 0, ErrorCode.PARAMS_ERROR, "图案ID不能为空");
         
         // 未登录用户返回false
@@ -93,8 +93,18 @@ public class LikeController {
             return ResultUtils.success(false);
         }
         
-        boolean isLiked = likeService.isLiked(patternId, loginUser.getId());
+        boolean isLiked = likeService.getLikeStatus( loginUser.getId(),patternId);
         
         return ResultUtils.success(isLiked);
+    }
+
+    /**
+     * 修复Redis中点赞计数的数据类型（仅管理员可用）
+     * 将字符串类型转换为Long类型
+     */
+    @PostMapping("/fix-data-type")
+    public BaseResponse<String> fixLikeCountDataType() {
+        likeSyncTask.fixLikeCountDataType();
+        return ResultUtils.success("数据类型修复完成");
     }
 }
