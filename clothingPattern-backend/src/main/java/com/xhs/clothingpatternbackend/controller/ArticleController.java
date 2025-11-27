@@ -369,5 +369,17 @@ public class ArticleController {
             }
         }
     }
+
+    /**
+     * 获取我的收藏文章列表
+     */
+    @GetMapping("/my/collect")
+    public BaseResponse<List<ArticleVO>> getMyCollectArticles(HttpServletRequest httpRequest) {
+        User loginUser = userService.getLoginUser(httpRequest);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        List<ArticleVO> articles = articleService.getMyCollectArticles(loginUser.getId());
+        return ResultUtils.success(articles);
+    }
 }
 

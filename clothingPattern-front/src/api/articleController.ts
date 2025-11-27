@@ -34,7 +34,7 @@ export async function collectArticle(
   params: API.collectArticleParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseBoolean>('/article/collect', {
+  return request<API.BaseResponseCollectResult>('/article/collect', {
     method: 'POST',
     params: {
       ...params,
@@ -163,6 +163,14 @@ export async function listedArticle(
   })
 }
 
+/** 此处后端没有提供注释 GET /article/my/collect */
+export async function getMyCollectArticles(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListArticleVO>('/article/my/collect', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /article/offline/${param0} */
 export async function offlineArticle(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -240,9 +248,12 @@ export async function updateArticle(body: API.Article, options?: { [key: string]
 }
 
 /** 此处后端没有提供注释 POST /article/upload/cover */
-export async function uploadCoverImage(body: any, options?: { [key: string]: any }) {
+export async function uploadCoverImage(body: {}, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/article/upload/cover', {
     method: 'POST',
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
     data: body,
     ...(options || {}),
   })

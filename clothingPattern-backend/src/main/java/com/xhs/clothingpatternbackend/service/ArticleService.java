@@ -99,4 +99,9 @@ public interface ArticleService extends IService<Article> {
      * 获取推荐文章
      */
     List<ArticleVO> getRecommendArticles(int limit, Long currentUserId);
+
+    /**
+     * 获取我的收藏文章列表
+     */
+    List<ArticleVO> getMyCollectArticles(Long userId);
 }

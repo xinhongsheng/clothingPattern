@@ -600,4 +600,45 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         BeanUtils.copyProperties(article, vo);
         return vo;
     }
+
+    @Override
+    public List<ArticleVO> getMyCollectArticles(Long userId) {
+        // 1. 查询用户收藏的文章ID列表
+        QueryWrapper<ArticleCollect> collectWrapper = new QueryWrapper<>();
+        collectWrapper.eq("userId", userId)
+                .eq("isDelete", 0)
+                .orderByDesc("createTime");
+        List<ArticleCollect> collectList = articleCollectMapper.selectList(collectWrapper);
+
+        if (collectList == null || collectList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 2. 获取文章ID列表
+        List<Long> articleIds = collectList.stream()
+                .map(ArticleCollect::getArticleId)
+                .collect(Collectors.toList());
+
+        // 3. 查询文章详情
+        QueryWrapper<Article> articleWrapper = new QueryWrapper<>();
+        articleWrapper.in("id", articleIds)
+                .eq("isDelete", 0)
+                .orderByDesc("createTime");
+        List<Article> articles = this.list(articleWrapper);
+
+        // 4. 转换为VO并设置分类名称
+        List<ArticleVO> articleVOS = articles.stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+
+        // 5. 设置用户交互状态（都是已收藏）
+        for (ArticleVO vo : articleVOS) {
+            vo.setCollected(true);
+            // 查询点赞状态
+            boolean liked = getLikeStatusFromRedis(vo.getId(), userId);
+            vo.setLiked(liked);
+        }
+
+        return articleVOS;
+    }
 }

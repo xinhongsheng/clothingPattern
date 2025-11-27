@@ -13,6 +13,8 @@ import ArticlePage from '@/pages/ArticlePage.vue'
 import ArticleDetailPage from '@/pages/ArticleDetailPage.vue'
 import ArticleManagePage from '@/pages/admin/ArticleManagePage.vue'
 import ArticleEditPage from '@/pages/admin/ArticleEditPage.vue'
+import UserProfilePage from '@/pages/user/UserProfilePage.vue'
+
 
 
 const router = createRouter({
@@ -97,6 +99,11 @@ const router = createRouter({
     name: '编辑文章',
     component: ArticleEditPage,
     props: true,
+  },
+  {
+    path: '/user/profile',
+    name: '个人中心',
+    component: UserProfilePage,
   },
 ],
 
