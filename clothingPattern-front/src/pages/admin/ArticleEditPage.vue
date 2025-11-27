@@ -311,8 +311,14 @@ const handlePublish = async () => {
       // 新建并发布
       const addRes = await addArticle(data as any)
       if (addRes.data.code === 0) {
-        message.success('发布成功')
-        router.push('/admin/article/manage')
+        // 新建成功后调用发布接口
+        const publishRes = await publishArticle({ id: addRes.data.data })
+        if (publishRes.data.code === 0) {
+          message.success('发布成功')
+          router.push('/admin/article/manage')
+        } else {
+          message.error('发布失败：' + publishRes.data.message)
+        }
       } else {
         message.error('发布失败：' + addRes.data.message)
       }
@@ -396,7 +402,7 @@ onMounted(() => {
   const id = route.params.id
   if (id) {
     isEdit.value = true
-    articleId.value = Number(id)
+    articleId.value = id as string
     loadArticleDetail(articleId.value)
   }
 })

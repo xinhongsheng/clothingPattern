@@ -155,14 +155,14 @@ import {
   MessageOutlined,
   StarOutlined,
   StarFilled,
-  ShareAltOutlined
+  ShareAltOutlined,
 } from '@ant-design/icons-vue'
 import {
   getArticleDetail,
   likeArticle,
   collectArticle,
   cancelCollectArticle,
-  getRecommendArticles
+  getRecommendArticles,
 } from '@/api/articleController'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import dayjs from 'dayjs'
@@ -185,7 +185,7 @@ const loading = ref(false)
 const loadArticleDetail = async () => {
   loading.value = true
   try {
-    const articleId = Number(route.params.id)
+    const articleId = route.params.id as string
     if (!articleId) {
       message.error('文章ID无效')
       return
@@ -210,9 +210,7 @@ const loadRecommendArticles = async () => {
   try {
     const res = await getRecommendArticles({ limit: 3 })
     if (res.data.code === 0 && res.data.data) {
-      recommendArticles.value = res.data.data.filter(
-        (item) => item.id !== article.value?.id
-      )
+      recommendArticles.value = res.data.data.filter((item) => item.id !== article.value?.id)
     }
   } catch (error: any) {
     console.error('加载推荐文章失败:', error)
@@ -616,4 +614,3 @@ onMounted(() => {
   }
 }
 </style>
-

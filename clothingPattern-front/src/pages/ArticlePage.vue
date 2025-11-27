@@ -132,18 +132,15 @@ import {
   EyeOutlined,
   LikeOutlined,
   MessageOutlined,
-  StarOutlined
+  StarOutlined,
 } from '@ant-design/icons-vue'
-import {
-
-  getArticleList
-} from '@/api/articleController'
+import { getArticleList } from '@/api/articleController'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 
 import { formatTime } from '@/utils/time'
-import { getCategories  } from '@/api/articleCategoryController'
+import { getCategories } from '@/api/articleCategoryController'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
@@ -152,7 +149,7 @@ const router = useRouter()
 // 响应式数据
 const categories = ref<API.ArticleCategory[]>([])
 const articleList = ref<API.ArticleVO[]>([])
-const selectedCategory = ref<number | null>(null)
+const selectedCategory = ref<string | null>(null)
 const searchKeyword = ref('')
 const sortField = ref('publishTime')
 const sortOrder = ref('desc')
@@ -188,7 +185,7 @@ const loadArticles = async () => {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       status: 'PUBLISHED',
-      auditStatus: 'APPROVED'
+      auditStatus: 'APPROVED',
     }
 
     const res = await getArticleList(query)
@@ -207,7 +204,7 @@ const loadArticles = async () => {
 }
 
 // 分类切换
-const handleCategoryChange = (categoryId: number | null) => {
+const handleCategoryChange = (categoryId: string | null) => {
   selectedCategory.value = categoryId
   currentPage.value = 1
   loadArticles()
@@ -234,7 +231,7 @@ const handlePageChange = (page: number) => {
 }
 
 // 跳转到详情页
-const goToDetail = (articleId: number | undefined) => {
+const goToDetail = (articleId: string | undefined) => {
   if (articleId) {
     router.push(`/article/${articleId}`)
   }

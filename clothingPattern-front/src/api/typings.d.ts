@@ -16,8 +16,8 @@ declare namespace API {
   }
 
   type Article = {
-    id?: number
-    categoryId?: number
+    id?: string
+    categoryId?: string
     title?: string
     coverImage?: string
     summary?: string
@@ -45,7 +45,7 @@ declare namespace API {
   }
 
   type ArticleAddRequest = {
-    categoryId: number
+    categoryId: string
     title: string
     coverImage?: string
     summary: string
@@ -58,7 +58,7 @@ declare namespace API {
   }
 
   type ArticleCategory = {
-    id?: number
+    id?: string
     categoryName?: string
     categoryDesc?: string
     icon?: string
@@ -70,7 +70,7 @@ declare namespace API {
   }
 
   type ArticleCategoryVO = {
-    id?: number
+    id?: string
     categoryName?: string
     categoryDesc?: string
     icon?: string
@@ -81,7 +81,7 @@ declare namespace API {
   }
 
   type ArticleQueryRequest = {
-    categoryId?: number
+    categoryId?: string
     keyword?: string
     tag?: string[]
     status?: string
@@ -96,8 +96,8 @@ declare namespace API {
   }
 
   type ArticleVO = {
-    id?: number
-    categoryId?: number
+    id?: string
+    categoryId?: string
     categoryName?: string
     title?: string
     coverImage?: string
@@ -280,7 +280,7 @@ declare namespace API {
   }
 
   type cancelCollectArticleParams = {
-    articleId: number
+    articleId: string
   }
 
   type CategoryAddRequest = {
@@ -292,7 +292,7 @@ declare namespace API {
   }
 
   type CategoryUpdateRequest = {
-    id: number
+    id: string
     categoryName: string
     categoryDesc?: string
     icon?: string
@@ -301,17 +301,17 @@ declare namespace API {
   }
 
   type clearCacheParams = {
-    patternId?: number
+    patternId?: string
   }
 
   type collectArticleParams = {
-    articleId: number
+    articleId: string
   }
 
   type CommentAddRequest = {
-    patternId: number
+    patternId: string
     content: string
-    parentId?: number
+    parentId?: string
   }
 
   type CommentQueryRequest = {
@@ -319,8 +319,8 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    patternId: number
-    parentId?: number
+    patternId: string
+    parentId?: string
   }
 
   type CommentStatisticsVO = {
@@ -330,13 +330,13 @@ declare namespace API {
   }
 
   type CommentVO = {
-    id?: number
-    userId?: number
-    patternId?: number
+    id?: string
+    userId?: string
+    patternId?: string
     content?: string
-    parentId?: number
-    rootId?: number
-    replyToUserId?: number
+    parentId?: string
+    rootId?: string
+    replyToUserId?: string
     likeCount?: number
     replyCount?: number
     topStatus?: number
@@ -355,43 +355,43 @@ declare namespace API {
   }
 
   type deleteArticleParams = {
-    id: number
+    id: string
   }
 
   type deleteCategoryParams = {
-    id: number
+    id: string
   }
 
   type deleteCommentParams = {
-    commentId: number
+    commentId: string
   }
 
   type DeleteRequest = {
-    id?: number
+    id?: string
   }
 
   type getArticleDetailParams = {
-    id: number
+    id: string
   }
 
   type getBatchLikeStatusParams = {
-    patternIds: number[]
+    patternIds: string[]
   }
 
   type getCollectStatusParams = {
-    articleId: number
+    articleId: string
   }
 
   type getCommentDetailParams = {
-    commentId: number
+    commentId: string
   }
 
   type getCommentRepliesParams = {
-    commentId: number
+    commentId: string
   }
 
   type getCommentStatisticsParams = {
-    patternId: number
+    patternId: string
   }
 
   type getHotArticlesParams = {
@@ -399,19 +399,19 @@ declare namespace API {
   }
 
   type getLikeStatus1Params = {
-    articleId: number
+    articleId: string
   }
 
   type getLikeStatusParams = {
-    patternId: number
+    patternId: string
   }
 
   type getPatternByIdParams = {
-    id: number
+    id: string
   }
 
   type getPatternVOByIdParams = {
-    id: number
+    id: string
   }
 
   type getRecommendArticlesParams = {
@@ -419,11 +419,11 @@ declare namespace API {
   }
 
   type getUserByIdParams = {
-    id: number
+    id: string
   }
 
   type getUserVOByIdParams = {
-    id: number
+    id: string
   }
 
   type HomeStatisticsVO = {
@@ -435,7 +435,7 @@ declare namespace API {
   }
 
   type likeArticleParams = {
-    articleId: number
+    articleId: string
   }
 
   type LikeResult = {
@@ -449,11 +449,11 @@ declare namespace API {
   }
 
   type listedArticleParams = {
-    id: number
+    id: string
   }
 
   type LoginUserVO = {
-    id?: number
+    id?: string
     userAccount?: string
     userName?: string
     userAvatar?: string
@@ -465,7 +465,7 @@ declare namespace API {
   }
 
   type offlineArticleParams = {
-    id: number
+    id: string
   }
 
   type OrderItem = {
@@ -526,8 +526,8 @@ declare namespace API {
   }
 
   type Pattern = {
-    id?: number
-    userId?: number
+    id?: string
+    userId?: string
     patternName?: string
     description?: string
     generationType?: string
@@ -542,7 +542,7 @@ declare namespace API {
     generationParams?: Record<string, any>
     auditStatus?: string
     auditTime?: string
-    auditorId?: number
+    auditorId?: string
     rejectReason?: string
     likeCount?: number
     createTime?: string
@@ -551,13 +551,13 @@ declare namespace API {
   }
 
   type PatternAuditRequest = {
-    id?: number
+    id?: string
     auditStatus?: string
     rejectReason?: string
   }
 
   type PatternEditRequest = {
-    id?: number
+    id?: string
     patternName?: string
     description?: string
     style?: string
@@ -587,8 +587,8 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    id?: number
-    userId?: number
+    id?: string
+    userId?: string
     patternName?: string
     generationType?: string
     style?: string
@@ -598,7 +598,7 @@ declare namespace API {
   }
 
   type PatternUpdateRequest = {
-    id?: number
+    id?: string
     patternName?: string
     description?: string
     style?: string
@@ -607,8 +607,8 @@ declare namespace API {
   }
 
   type PatternVO = {
-    id?: number
-    userId?: number
+    id?: string
+    userId?: string
     patternName?: string
     description?: string
     generationType?: string
@@ -631,7 +631,7 @@ declare namespace API {
   }
 
   type publishArticleParams = {
-    id: number
+    id: string
   }
 
   type searchArticlesParams = {
@@ -645,11 +645,11 @@ declare namespace API {
   }
 
   type toggleCommentLikeParams = {
-    commentId: number
+    commentId: string
   }
 
   type toggleLikeParams = {
-    patternId: number
+    patternId: string
   }
 
   type TrendDataVO = {
@@ -658,7 +658,7 @@ declare namespace API {
   }
 
   type User = {
-    id?: number
+    id?: string
     userAccount?: string
     userPassword?: string
     userName?: string
@@ -689,7 +689,7 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    id?: number
+    id?: string
     userName?: string
     userAccount?: string
     userProfile?: string
@@ -703,7 +703,7 @@ declare namespace API {
   }
 
   type UserUpdateRequest = {
-    id?: number
+    id?: string
     userName?: string
     userAvatar?: string
     userProfile?: string
@@ -711,7 +711,7 @@ declare namespace API {
   }
 
   type UserVO = {
-    id?: number
+    id?: string
     userAccount?: string
     userName?: string
     userAvatar?: string
