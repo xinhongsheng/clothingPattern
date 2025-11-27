@@ -158,6 +158,14 @@
               >
                 下架
               </a-button>
+              <a-button
+                v-if="record?.status === 'OFFLINE'"
+                type="link"
+                size="small"
+                @click="handleListed(record?.id)"
+              >
+                上架
+              </a-button>
               <a-popconfirm
                 title="确定要删除这篇文章吗？"
                 ok-text="确定"
@@ -368,7 +376,8 @@ import {
   getArticleList,
   deleteArticle,
   publishArticle,
-  offlineArticle
+  offlineArticle,
+  listedArticle
 } from '@/api/articleController'
 import {
   getCategories,
@@ -382,7 +391,7 @@ const router = useRouter()
 
 // 数据
 const articleList = ref<API.ArticleVO[]>([])
-const categories = ref<API.ArticleCategory[]>([])
+const categories = ref<API.ArticleCategoryVO[]>([])
 const loading = ref(false)
 
 // 分类管理相关
@@ -396,7 +405,7 @@ const newCategory = reactive({
   sortOrder: 0
 })
 const editingCategory = reactive({
-  id: undefined as number | undefined,
+  id: undefined as string | undefined,
   categoryName: '',
   categoryDesc: '',
   icon: '',
@@ -411,7 +420,7 @@ const editCategoryFileList = ref<any[]>([])
 // 搜索参数
 const searchParams = reactive({
   keyword: '',
-  categoryId: undefined as number | undefined,
+  categoryId: undefined as string | undefined,
   status: '',
   pageNum: 1,
   pageSize: 10
@@ -589,17 +598,17 @@ const handleAdd = () => {
 }
 
 // 查看文章
-const handleView = (id: number) => {
+const handleView = (id: string ) => {
   router.push(`/article/${id}`)
 }
 
 // 编辑文章
-const handleEdit = (id: number) => {
+const handleEdit = (id: string) => {
   router.push(`/admin/article/edit/${id}`)
 }
 
 // 发布文章
-const handlePublish = async (id: number) => {
+const handlePublish = async (id: string) => {
   try {
     const res = await publishArticle({ id })
     if (res.data.code === 0) {
@@ -615,7 +624,7 @@ const handlePublish = async (id: number) => {
 }
 
 // 下架文章
-const handleOffline = async (id: number) => {
+const handleOffline = async (id: string) => {
   try {
     const res = await offlineArticle({ id })
     if (res.data.code === 0) {
@@ -629,9 +638,26 @@ const handleOffline = async (id: number) => {
     message.error('下架失败：' + error.message)
   }
 }
+// 上架文章
+const handleListed = async (id: string) => {
+  try {
+    const res = await listedArticle({ id })
+    if (res.data.code === 0) {
+      message.success('上架成功')
+      loadArticles()
+    } else {
+      message.error('上架失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    console.error('上架失败:', error)
+    message.error('上架失败：' + error.message)
+  }
+}
+
+
 
 // 删除文章
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   try {
     const res = await deleteArticle({ id })
     if (res.data.code === 0) {
@@ -818,7 +844,7 @@ const handleUpdateCategory = async () => {
 }
 
 // 删除分类
-const handleDeleteCategory = async (id: number) => {
+const handleDeleteCategory = async (id: string) => {
   try {
     const res = await deleteCategory({ id })
     if (res.data.code === 0) {

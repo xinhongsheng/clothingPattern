@@ -69,6 +69,17 @@ declare namespace API {
     isDelete?: number
   }
 
+  type ArticleCategoryVO = {
+    id?: number
+    categoryName?: string
+    categoryDesc?: string
+    icon?: string
+    sortOrder?: number
+    status?: number
+    createTime?: string
+    updateTime?: string
+  }
+
   type ArticleQueryRequest = {
     categoryId?: number
     keyword?: string
@@ -163,6 +174,12 @@ declare namespace API {
   type BaseResponseListArticleCategory = {
     code?: number
     data?: ArticleCategory[]
+    message?: string
+  }
+
+  type BaseResponseListArticleCategoryVO = {
+    code?: number
+    data?: ArticleCategoryVO[]
     message?: string
   }
 
@@ -429,6 +446,10 @@ declare namespace API {
   type LikeResultVO = {
     isLiked?: boolean
     likeCount?: number
+  }
+
+  type listedArticleParams = {
+    id: number
   }
 
   type LoginUserVO = {

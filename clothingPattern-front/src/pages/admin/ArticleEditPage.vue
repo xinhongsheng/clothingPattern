@@ -133,7 +133,7 @@ import {
   addArticle,
   updateArticle,
   publishArticle,
-  uploadArticleCover,
+  uploadCoverImage,
 } from '@/api/articleController'
 import { getCategories } from '@/api/articleCategoryController'
 import type { UploadProps } from 'ant-design-vue'
@@ -343,10 +343,14 @@ const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
     return false
   }
 
+  // 创建FormData对象
+  const uploadFormData = new FormData()
+  uploadFormData.append('file', file)
+
   // 调用后端上传接口
   uploading.value = true
   try {
-    const res = await uploadArticleCover(file as any)
+    const res = await uploadCoverImage(uploadFormData)
     if (res.data.code === 0 && res.data.data) {
       const cosUrl = res.data.data
       formData.coverImage = cosUrl

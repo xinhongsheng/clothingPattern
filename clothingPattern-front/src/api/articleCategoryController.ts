@@ -38,7 +38,7 @@ export async function deleteCategory(
 
 /** 此处后端没有提供注释 GET /article/category/list */
 export async function getCategories(options?: { [key: string]: any }) {
-  return request<API.BaseResponseListArticleCategory>('/article/category/list', {
+  return request<API.BaseResponseListArticleCategoryVO>('/article/category/list', {
     method: 'GET',
     ...(options || {}),
   })

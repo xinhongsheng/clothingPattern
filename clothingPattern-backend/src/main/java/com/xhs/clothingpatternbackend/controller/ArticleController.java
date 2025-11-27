@@ -230,6 +230,19 @@ public class ArticleController {
         boolean result = articleService.offlineArticle(id, loginUser.getId());
         return ResultUtils.success(result);
     }
+    /**
+     * 上架文章
+     */
+    @PostMapping("/listed/{id}")
+    public BaseResponse<Boolean> listedArticle(@PathVariable Long id,
+                                                HttpServletRequest httpRequest) {
+        User loginUser = userService.getLoginUser(httpRequest);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
+
+        boolean result = articleService.listedArticle(id, loginUser.getId());
+        return ResultUtils.success(result);
+    }
 
     /**
      * 点赞文章

@@ -58,6 +58,9 @@ public interface ArticleService extends IService<Article> {
     @Transactional(rollbackFor = Exception.class)
     boolean offlineArticle(Long id, Long userId);
 
+    @Transactional(rollbackFor = Exception.class)
+    boolean listedArticle(Long id, Long userId);
+
     /**
      * 点赞文章
      */

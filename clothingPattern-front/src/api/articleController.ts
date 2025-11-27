@@ -149,6 +149,20 @@ export async function getArticleList(
   })
 }
 
+/** 此处后端没有提供注释 POST /article/listed/${param0} */
+export async function listedArticle(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.listedArticleParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params
+  return request<API.BaseResponseBoolean>(`/article/listed/${param0}`, {
+    method: 'POST',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /article/offline/${param0} */
 export async function offlineArticle(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -225,14 +239,11 @@ export async function updateArticle(body: API.Article, options?: { [key: string]
   })
 }
 
-/** 上传文章封面图片 POST /article/upload/cover */
-export async function uploadArticleCover(file: File, options?: { [key: string]: any }) {
-  const formData = new FormData()
-  formData.append('file', file)
-  
+/** 此处后端没有提供注释 POST /article/upload/cover */
+export async function uploadCoverImage(body: any, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/article/upload/cover', {
     method: 'POST',
-    data: formData,
+    data: body,
     ...(options || {}),
   })
 }

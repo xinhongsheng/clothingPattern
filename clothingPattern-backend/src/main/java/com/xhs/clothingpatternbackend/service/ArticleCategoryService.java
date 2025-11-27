@@ -2,6 +2,7 @@ package com.xhs.clothingpatternbackend.service;
 
 import com.xhs.clothingpatternbackend.model.entity.ArticleCategory;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xhs.clothingpatternbackend.model.vo.ArticleCategoryVO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 */
 public interface ArticleCategoryService extends IService<ArticleCategory> {
 
-    List<ArticleCategory> getEnabledCategories();
+    List<ArticleCategoryVO> getEnabledCategories();
 
     List<ArticleCategory> getAllCategories();
 

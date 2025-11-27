@@ -5,6 +5,7 @@ import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.model.dto.article.CategoryAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.article.CategoryUpdateRequest;
 import com.xhs.clothingpatternbackend.model.entity.ArticleCategory;
+import com.xhs.clothingpatternbackend.model.vo.ArticleCategoryVO;
 import com.xhs.clothingpatternbackend.service.ArticleCategoryService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +30,8 @@ public class ArticleCategoryController {
      * 获取所有可用分类
      */
     @GetMapping("/list")
-    public BaseResponse<List<ArticleCategory>> getCategories() {
-        List<ArticleCategory> categories = categoryService.getEnabledCategories();
+    public BaseResponse<List<ArticleCategoryVO>> getCategories() {
+        List<ArticleCategoryVO> categories = categoryService.getEnabledCategories();
         return ResultUtils.success(categories);
     }
 

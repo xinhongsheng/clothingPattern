@@ -153,11 +153,36 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
         }
 
+        // 记录更新前的状态
+        log.info("发布文章前 - ID: {}, 状态: {}, 审核状态: {}", 
+                article.getId(), article.getStatus(), article.getAuditStatus());
+
+        // 更新文章状态
         article.setStatus("PUBLISHED");
         article.setAuditStatus("APPROVED");  // 发布时自动审核通过
         article.setPublishTime(new Date());
         article.setUpdateTime(new Date());
-        return this.updateById(article);
+
+        // 使用updateById更新
+        boolean result = this.updateById(article);
+        log.info("发布文章后 - ID: {}, 更新结果: {}, 状态: {}, 审核状态: {}", 
+                article.getId(), result, article.getStatus(), article.getAuditStatus());
+
+        // 如果updateById失败，尝试使用QueryWrapper更新
+        if (!result) {
+            log.warn("updateById失败，尝试使用QueryWrapper更新");
+            QueryWrapper<Article> updateWrapper = new QueryWrapper<>();
+            updateWrapper.eq("id", id);
+            Article updateArticle = new Article();
+            updateArticle.setStatus("PUBLISHED");
+            updateArticle.setAuditStatus("APPROVED");
+            updateArticle.setPublishTime(article.getPublishTime());
+            updateArticle.setUpdateTime(article.getUpdateTime());
+            result = this.update(updateArticle, updateWrapper);
+            log.info("使用QueryWrapper更新结果: {}", result);
+        }
+
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -169,6 +194,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         }
 
         article.setStatus("OFFLINE");
+        article.setUpdateTime(new Date());
+        return this.updateById(article);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public boolean listedArticle(Long id, Long userId) {
+        Article article = this.getById(id);
+        if (article == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
+        }
+
+        article.setStatus("PUBLISHED");
         article.setUpdateTime(new Date());
         return this.updateById(article);
     }

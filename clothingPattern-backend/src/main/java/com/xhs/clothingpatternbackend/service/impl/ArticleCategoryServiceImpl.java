@@ -1,20 +1,24 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.mapper.ArticleCategoryMapper;
 import com.xhs.clothingpatternbackend.model.entity.ArticleCategory;
+import com.xhs.clothingpatternbackend.model.vo.ArticleCategoryVO;
 import com.xhs.clothingpatternbackend.service.ArticleCategoryService;
 import com.xhs.clothingpatternbackend.utils.CategoryIconUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 文章分类服务实现
@@ -30,9 +34,25 @@ public class ArticleCategoryServiceImpl extends ServiceImpl<ArticleCategoryMappe
     @Autowired
     private CategoryIconUtils categoryIconUtils;
 
+
+    /**
+     * 获取所有启用的分类
+     */
     @Override
-    public List<ArticleCategory> getEnabledCategories() {
-        return categoryMapper.selectEnabledCategories();
+    public List<ArticleCategoryVO> getEnabledCategories() {
+        LambdaQueryWrapper<ArticleCategory> queryWrapper = new LambdaQueryWrapper<ArticleCategory>()
+                .eq(ArticleCategory::getStatus, 1)
+                .eq(ArticleCategory::getIsDelete, 0)
+                .orderByDesc(ArticleCategory::getSortOrder, ArticleCategory::getCreateTime);
+        List<ArticleCategory> articleCategories = categoryMapper.selectList(queryWrapper);
+        return articleCategories.stream()
+                .map(entity -> {
+                    ArticleCategoryVO vo = new ArticleCategoryVO();
+                    BeanUtils.copyProperties(entity, vo);
+                    return vo;
+                })
+                .collect(Collectors.toList());
+//        return categoryMapper.selectEnabledCategories();
     }
 
     @Override
