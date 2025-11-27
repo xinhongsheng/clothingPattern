@@ -29,10 +29,16 @@ public interface ArticleMapper extends BaseMapper<Article> {
     ArticleVO selectArticleDetail(@Param("id") Long id);
 
     /**
-     * 增加阅读量
+     * 增加阅读量（+1）
      */
     @Update("UPDATE article SET viewCount = viewCount + 1 WHERE id = #{id}")
     int incrementViewCount(@Param("id") Long id);
+
+    /**
+     * 批量增加阅读量
+     */
+    @Update("UPDATE article SET viewCount = viewCount + #{increment} WHERE id = #{id}")
+    int incrementViewCountBatch(@Param("id") Long id, @Param("increment") int increment);
 
     /**
      * 更新点赞数（增加或减少）

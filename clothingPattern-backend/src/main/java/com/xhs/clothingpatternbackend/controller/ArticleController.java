@@ -12,6 +12,7 @@ import com.xhs.clothingpatternbackend.model.dto.article.ArticleQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Article;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
+import com.xhs.clothingpatternbackend.model.vo.CollectResult;
 import com.xhs.clothingpatternbackend.model.vo.LikeResult;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.ArticleService;
@@ -259,16 +260,16 @@ public class ArticleController {
     }
 
     /**
-     * 收藏文章
+     * 收藏文章（切换收藏状态）
      */
     @PostMapping("/collect")
-    public BaseResponse<Boolean> collectArticle(@RequestParam Long articleId,
-                                                 HttpServletRequest httpRequest) {
+    public BaseResponse<CollectResult> collectArticle(@RequestParam Long articleId,
+                                                       HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
 
-        boolean result = articleService.collectArticle(articleId, loginUser.getId());
+        CollectResult result = articleService.collectArticle(articleId, loginUser.getId());
         return ResultUtils.success(result);
     }
 

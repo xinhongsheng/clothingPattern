@@ -1,13 +1,16 @@
 package com.xhs.clothingpatternbackend.task;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xhs.clothingpatternbackend.mapper.ArticleMapper;
 import com.xhs.clothingpatternbackend.mapper.LikeMapper;
 import com.xhs.clothingpatternbackend.mapper.PatternMapper;
+import com.xhs.clothingpatternbackend.model.entity.Article;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.UserLike;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +24,7 @@ import static com.xhs.clothingpatternbackend.constant.LikeConstant.LIKE_KEY_PREF
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-26
- * @Description: 定时任务 将Redis中的点赞数据同步到数据库中
+ * @Description: 定时任务 将Redis中的点赞数据和浏览量同步到数据库中
  * @Version: 1.0
  */
 @Component
@@ -31,10 +34,20 @@ public class LikeSyncTask {
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
     private PatternMapper patternMapper;
 
     @Autowired
     private LikeMapper likeMapper;
+
+    @Autowired
+    private ArticleMapper articleMapper;
+
+    private static final String ARTICLE_VIEW_KEY_PREFIX = "article:view:";
+    private static final String ARTICLE_LIKE_KEY_PREFIX = "article:like:";
+    private static final String ARTICLE_LIKE_COUNT_KEY_PREFIX = "article:like:count:";
 
     /**
      * 每5分钟同步一次到MySQL
@@ -45,13 +58,70 @@ public class LikeSyncTask {
     public void syncLikeDataToMySQL() {
         log.info("开始同步点赞数据到MySQL...");
 
-        // 1. 同步点赞计数
+        // 1. 同步图案点赞计数
         syncLikeCounts();
 
-        // 2. 同步用户点赞关系
+        // 2. 同步图案用户点赞关系
         syncUserLikeRelations();
 
+        // 3. 同步文章浏览量
+        syncArticleViewCounts();
+
+        // 4. 同步文章点赞数据
+        syncArticleLikeCounts();
+
         log.info("点赞数据同步完成");
+    }
+
+    /**
+     * 同步文章浏览量到数据库
+     */
+    private void syncArticleViewCounts() {
+        try {
+            Set<String> viewKeys = stringRedisTemplate.keys(ARTICLE_VIEW_KEY_PREFIX + "*");
+            if (viewKeys == null || viewKeys.isEmpty()) {
+                log.debug("没有需要同步的文章浏览量数据");
+                return;
+            }
+
+            int syncCount = 0;
+            int totalViews = 0;
+            for (String viewKey : viewKeys) {
+                try {
+                    // 从key中提取文章ID
+                    String articleIdStr = viewKey.substring(ARTICLE_VIEW_KEY_PREFIX.length());
+                    Long articleId = Long.parseLong(articleIdStr);
+
+                    // 获取Redis中的浏览量增量
+                    String viewCountStr = stringRedisTemplate.opsForValue().get(viewKey);
+                    if (viewCountStr != null && !viewCountStr.isEmpty()) {
+                        int incrementCount = Integer.parseInt(viewCountStr);
+                        
+                        if (incrementCount > 0) {
+                            // 批量增加浏览量（一次性增加Redis中累计的次数）
+                            articleMapper.incrementViewCountBatch(articleId, incrementCount);
+                            
+                            // 同步成功后删除Redis中的key
+                            stringRedisTemplate.delete(viewKey);
+                            
+                            syncCount++;
+                            totalViews += incrementCount;
+                            log.debug("同步文章 {} 浏览量: +{}", articleId, incrementCount);
+                        }
+                    }
+                } catch (NumberFormatException e) {
+                    log.error("解析文章浏览量失败, key: {}", viewKey, e);
+                } catch (Exception e) {
+                    log.error("同步文章浏览量失败, key: {}", viewKey, e);
+                }
+            }
+
+            if (syncCount > 0) {
+                log.info("成功同步 {} 篇文章的浏览量，共 {} 次浏览", syncCount, totalViews);
+            }
+        } catch (Exception e) {
+            log.error("同步文章浏览量时发生异常", e);
+        }
     }
 
     private void syncLikeCounts() {
@@ -220,5 +290,53 @@ public class LikeSyncTask {
         }
 
         log.info("Redis点赞计数数据类型修复完成，共修复 {} 条记录", fixedCount);
+    }
+
+    /**
+     * 同步文章点赞数据到数据库
+     */
+    private void syncArticleLikeCounts() {
+        try {
+            Set<String> countKeys = stringRedisTemplate.keys(ARTICLE_LIKE_COUNT_KEY_PREFIX + "*");
+            if (countKeys == null || countKeys.isEmpty()) {
+                log.debug("没有需要同步的文章点赞数据");
+                return;
+            }
+
+            int syncCount = 0;
+            for (String countKey : countKeys) {
+                try {
+                    // 从key中提取文章ID
+                    String articleIdStr = countKey.substring(ARTICLE_LIKE_COUNT_KEY_PREFIX.length());
+                    Long articleId = Long.parseLong(articleIdStr);
+
+                    // 获取Redis中的点赞数
+                    String countStr = stringRedisTemplate.opsForValue().get(countKey);
+                    if (countStr != null && !countStr.isEmpty()) {
+                        int likeCount = Integer.parseInt(countStr);
+                        
+                        // 直接设置数据库中的点赞数（覆盖式更新）
+                        // 因为Redis中的值是最新的准确值
+                        articleMapper.updateById(new com.xhs.clothingpatternbackend.model.entity.Article() {{
+                            setId(articleId);
+                            setLikeCount(likeCount);
+                        }});
+                        
+                        syncCount++;
+                        log.debug("同步文章 {} 点赞数: {}", articleId, likeCount);
+                    }
+                } catch (NumberFormatException e) {
+                    log.error("解析文章点赞数失败, key: {}", countKey, e);
+                } catch (Exception e) {
+                    log.error("同步文章点赞数失败, key: {}", countKey, e);
+                }
+            }
+
+            if (syncCount > 0) {
+                log.info("成功同步 {} 篇文章的点赞数", syncCount);
+            }
+        } catch (Exception e) {
+            log.error("同步文章点赞数时发生异常", e);
+        }
     }
 }
