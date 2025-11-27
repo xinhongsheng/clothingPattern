@@ -62,9 +62,9 @@
                  OR a.summary LIKE CONCAT('%', #{query.keyword}, '%')
                  OR a.content LIKE CONCAT('%', #{query.keyword}, '%'))
         </if>
-        <if test="query.tag != null and query.tag.size() > 0">
+        <if test="query.tags != null and query.tags.size() > 0">
             AND (
-            <foreach collection="query.tag" item="tagItem" separator="OR">
+            <foreach collection="query.tags" item="tagItem" separator="OR">
                 a.tags LIKE CONCAT('%', #{tagItem}, '%')
             </foreach>
             )

@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 
 /**
  * 文章服务实现
-*/
+ */
 @Service
 @Slf4j
 public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
@@ -108,7 +109,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     @Override
     public boolean addArticle(ArticleAddRequest request, Long userId) {
         Article article = new Article();
+        // 复制除tags外的其他属性
         BeanUtils.copyProperties(request, article);
+        // 处理tags，将List<String>转换为JSON字符串
+        if (request.getTags() != null && !request.getTags().isEmpty()) {
+            String tagsJson = JSONUtil.toJsonStr(request.getTags());
+            article.setTags(tagsJson);
+        } else {
+            article.setTags(null);
+        }
         article.setStatus("DRAFT");
         article.setAuditStatus("PENDING");
         article.setViewCount(0);
@@ -154,18 +163,18 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         }
 
         // 记录更新前的状态
-        log.info("发布文章前 - ID: {}, 状态: {}, 审核状态: {}", 
+        log.info("发布文章前 - ID: {}, 状态: {}, 审核状态: {}",
                 article.getId(), article.getStatus(), article.getAuditStatus());
 
         // 更新文章状态
         article.setStatus("PUBLISHED");
-        article.setAuditStatus("APPROVED");  // 发布时自动审核通过
+        article.setAuditStatus("APPROVED"); // 发布时自动审核通过
         article.setPublishTime(new Date());
         article.setUpdateTime(new Date());
 
         // 使用updateById更新
         boolean result = this.updateById(article);
-        log.info("发布文章后 - ID: {}, 更新结果: {}, 状态: {}, 审核状态: {}", 
+        log.info("发布文章后 - ID: {}, 更新结果: {}, 状态: {}, 审核状态: {}",
                 article.getId(), result, article.getStatus(), article.getAuditStatus());
 
         // 如果updateById失败，尝试使用QueryWrapper更新

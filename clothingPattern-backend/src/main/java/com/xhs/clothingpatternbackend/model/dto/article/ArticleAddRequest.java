@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-26
@@ -31,7 +33,7 @@ public class ArticleAddRequest {
 
     private String author;
     private String source;
-    private String tags;
+    private List<String> tags;
 
     private Integer isTop = 0;
     private Integer isRecommend = 0;

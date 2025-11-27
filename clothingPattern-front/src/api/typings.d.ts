@@ -24,7 +24,7 @@ declare namespace API {
     content?: string
     author?: string
     source?: string
-    tags?: string
+    tags?: string[]
     viewCount?: number
     likeCount?: number
     commentCount?: number
@@ -52,7 +52,7 @@ declare namespace API {
     content: string
     author?: string
     source?: string
-    tags?: string
+    tags?: string[]
     isTop?: number
     isRecommend?: number
   }
@@ -105,7 +105,7 @@ declare namespace API {
     content?: string
     author?: string
     source?: string
-    tags?: string
+    tags?: string[]
     viewCount?: number
     likeCount?: number
     commentCount?: number

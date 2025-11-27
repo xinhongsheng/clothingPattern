@@ -99,11 +99,22 @@
 
         <!-- 标签 -->
         <a-form-item label="标签">
-          <a-input
+          <a-select
             v-model:value="formData.tags"
-            placeholder="多个标签用逗号分隔，如：春夏趋势,色彩搭配"
+            mode="multiple"
+            placeholder="请选择标签（可多选）"
             style="width: 500px"
+            :options="presetTags.map((tag) => ({ label: tag, value: tag }))"
+            allow-create
+            :filter-option="filterOption"
+            :get-popup-container="(triggerNode) => triggerNode.parentNode"
+            @search="handleSearch"
+            @blur="handleSelectBlur"
+            @change="handleTagsChange"
           />
+          <div style="margin-top: 8px; color: #999; font-size: 12px">
+            提示：可从预设标签中选择，也可直接输入新标签
+          </div>
         </a-form-item>
 
         <!-- 文章属性 -->
@@ -143,21 +154,67 @@ const route = useRoute()
 
 // 是否编辑模式
 const isEdit = ref(false)
-const articleId = ref<number>()
+const articleId = ref<string>()
+
+// 预设标签列表
+const presetTags = ref<string[]>([
+  '时尚趋势',
+  '色彩搭配',
+  '图案设计',
+  '面料选择',
+  '服装设计',
+  '春夏趋势',
+  '秋冬趋势',
+  '复古风格',
+  '现代简约',
+  '民族风',
+  '街头潮流',
+  '高端定制',
+])
 
 // 表单数据
 const formData = reactive({
   title: '',
-  categoryId: undefined as number | undefined,
+  categoryId: undefined as string | undefined,
   coverImage: '',
   summary: '',
   content: '',
   author: '',
   source: '',
-  tags: '',
+  tags: [] as string[],
   isTop: false,
   isRecommend: false,
 })
+
+// 过滤选项函数，允许创建新标签
+const filterOption = (input: string, option: any) => {
+  return option?.label.toLowerCase().includes(input.toLowerCase())
+}
+
+// 当前输入的标签文本
+const currentTagInput = ref('')
+
+// 处理搜索事件，保存当前输入的标签文本
+const handleSearch = (value: string) => {
+  currentTagInput.value = value
+}
+
+// 处理标签变化事件，清空当前输入的标签文本
+const handleTagsChange = (value: string[]) => {
+  currentTagInput.value = ''
+}
+
+// 处理失去焦点事件，添加当前输入的标签
+const handleSelectBlur = () => {
+  if (currentTagInput.value.trim()) {
+    const tag = currentTagInput.value.trim()
+    // 检查标签是否已存在
+    if (!formData.tags.includes(tag)) {
+      formData.tags.push(tag)
+    }
+    currentTagInput.value = ''
+  }
+}
 
 // 分类列表
 const categories = ref<API.ArticleCategory[]>([])
@@ -185,7 +242,7 @@ const loadCategories = async () => {
 }
 
 // 加载文章详情（编辑模式）
-const loadArticleDetail = async (id: number) => {
+const loadArticleDetail = async (id: string) => {
   try {
     const res = await getArticleDetail({ id })
     if (res.data.code === 0 && res.data.data) {
@@ -197,7 +254,7 @@ const loadArticleDetail = async (id: number) => {
       formData.content = article.content || ''
       formData.author = article.author || ''
       formData.source = article.source || ''
-      formData.tags = article.tags || ''
+      formData.tags = Array.isArray(article.tags) ? article.tags : []
       formData.isTop = article.isTop === 1
       formData.isRecommend = article.isRecommend === 1
 
@@ -255,15 +312,19 @@ const handleSaveDraft = async () => {
     }
 
     if (isEdit.value && articleId.value) {
-      // 更新
-      const res = await updateArticle({ id: articleId.value, ...data } as any)
+      // 更新 - 将tags数组转换为JSON字符串
+      const updateData = { ...data }
+      if (Array.isArray(updateData.tags)) {
+        updateData.tags = JSON.stringify(updateData.tags)
+      }
+      const res = await updateArticle({ id: articleId.value, ...updateData } as any)
       if (res.data.code === 0) {
         message.success('保存成功')
       } else {
         message.error('保存失败：' + res.data.message)
       }
     } else {
-      // 新建
+      // 新建 - 保持tags数组不变，因为ArticleAddRequest期望List<String>
       const res = await addArticle(data as any)
       if (res.data.code === 0) {
         message.success('保存成功')
@@ -293,8 +354,12 @@ const handlePublish = async () => {
     }
 
     if (isEdit.value && articleId.value) {
-      // 更新并发布
-      const updateRes = await updateArticle({ id: articleId.value, ...data } as any)
+      // 更新并发布 - 将tags数组转换为JSON字符串
+      const updateData = { ...data }
+      if (Array.isArray(updateData.tags)) {
+        updateData.tags = JSON.stringify(updateData.tags)
+      }
+      const updateRes = await updateArticle({ id: articleId.value, ...updateData } as any)
       if (updateRes.data.code === 0) {
         // 发布
         const publishRes = await publishArticle({ id: articleId.value })
@@ -308,17 +373,11 @@ const handlePublish = async () => {
         message.error('更新失败：' + updateRes.data.message)
       }
     } else {
-      // 新建并发布
+      // 新建并发布 - 保持tags数组不变，因为ArticleAddRequest期望List<String>
       const addRes = await addArticle(data as any)
       if (addRes.data.code === 0) {
-        // 新建成功后调用发布接口
-        const publishRes = await publishArticle({ id: addRes.data.data })
-        if (publishRes.data.code === 0) {
-          message.success('发布成功')
-          router.push('/admin/article/manage')
-        } else {
-          message.error('发布失败：' + publishRes.data.message)
-        }
+        message.success('发布成功')
+        router.push('/admin/article/manage')
       } else {
         message.error('发布失败：' + addRes.data.message)
       }

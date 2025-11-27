@@ -296,7 +296,7 @@ const goBack = () => {
 }
 
 // 跳转到文章
-const goToArticle = (articleId: number | undefined) => {
+const goToArticle = (articleId: string | undefined) => {
   if (articleId) {
     router.push(`/article/${articleId}`)
     // 重新加载文章
@@ -308,8 +308,11 @@ const goToArticle = (articleId: number | undefined) => {
 }
 
 // 解析标签
-const parseTags = (tags: string) => {
+const parseTags = (tags: string[] | string) => {
   if (!tags) return []
+  if (Array.isArray(tags)) {
+    return tags
+  }
   return tags.split(',').filter((tag) => tag.trim())
 }
 
