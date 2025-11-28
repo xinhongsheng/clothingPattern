@@ -15,6 +15,7 @@ import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
 import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
 import com.xhs.clothingpatternbackend.service.PatternService;
+import com.xhs.clothingpatternbackend.service.PromptTranslateService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,9 @@ public class MJController {
     @Resource
     private UserService userService;
     
+    @Resource
+    private PromptTranslateService promptTranslateService;
+    
     /**
      * 生成图片（Imagine）- 仅返回MJ响应，不保存到数据库
      *
@@ -58,10 +62,18 @@ public class MJController {
     public BaseResponse<MJImagineResponse> imagine(@RequestBody MJImagineRequest request) {
         // 参数校验
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
-        String prompt = request.getPrompt();
-        ThrowUtils.throwIf(StringUtils.isBlank(prompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        String originalPrompt = request.getPrompt();
+        ThrowUtils.throwIf(StringUtils.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
         
         try {
+            // 翻译并优化 prompt（添加服装专业前缀）
+            log.info("原始提示词：{}", originalPrompt);
+            String optimizedPrompt = promptTranslateService.translateAndOptimize(originalPrompt);
+            log.info("优化后提示词：{}", optimizedPrompt);
+            
+            // 使用优化后的 prompt
+            request.setPrompt(optimizedPrompt);
+            
             // 调用Midjourney API
             MJImagineResponse response = mjGenImage.imagine(request);
             
@@ -91,13 +103,21 @@ public class MJController {
                                                HttpServletRequest httpRequest) throws IOException {
         // 参数校验
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
-        String prompt = request.getPrompt();
-        ThrowUtils.throwIf(StringUtils.isBlank(prompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        String originalPrompt = request.getPrompt();
+        ThrowUtils.throwIf(StringUtils.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
         
         // 获取登录用户
         User loginUser = userService.getLoginUser(httpRequest);
         
         try {
+            // 翻译并优化 prompt（添加服装专业前缀）
+            log.info("原始提示词：{}", originalPrompt);
+            String optimizedPrompt = promptTranslateService.translateAndOptimize(originalPrompt);
+            log.info("优化后提示词：{}", optimizedPrompt);
+            
+            // 使用优化后的 prompt
+            request.setPrompt(optimizedPrompt);
+            
             // 调用Midjourney API生成图片
             MJImagineResponse mjResponse = mjGenImage.imagine(request);
             
@@ -128,8 +148,8 @@ public class MJController {
             // 保存到数据库
             Pattern pattern = new Pattern();
             pattern.setUserId(loginUser.getId());
-            pattern.setPatternName("MJ-" + prompt.substring(0, Math.min(prompt.length(), 30))); // 截取前30个字符作为名称
-            pattern.setDescription(prompt);
+            pattern.setPatternName("MJ-" + originalPrompt.substring(0, Math.min(originalPrompt.length(), 30))); // 使用原始提示词作为名称
+            pattern.setDescription(originalPrompt); // 保存原始提示词（用户输入的）
             pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
             pattern.setPatternUrl(rawImageUrl); // 使用原始图片URL
             pattern.setThumbUrl(StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl); // 使用缩略图URL，如果为空则使用原始URL
