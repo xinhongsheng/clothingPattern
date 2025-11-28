@@ -66,9 +66,14 @@ public class MJController {
         ThrowUtils.throwIf(StringUtils.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
         
         try {
-            // 翻译并优化 prompt（添加服装专业前缀）
+            // 翻译并优化 prompt（添加服装专业前缀，包含风格、季节、受众信息）
             log.info("原始提示词：{}", originalPrompt);
-            String optimizedPrompt = promptTranslateService.translateAndOptimize(originalPrompt);
+            String optimizedPrompt = promptTranslateService.translateAndOptimize(
+                    originalPrompt, 
+                    request.getStyle(), 
+                    request.getSeason(), 
+                    request.getTargetAudience()
+            );
             log.info("优化后提示词：{}", optimizedPrompt);
             
             // 使用优化后的 prompt
@@ -109,10 +114,21 @@ public class MJController {
         // 获取登录用户
         User loginUser = userService.getLoginUser(httpRequest);
         
+        // 获取额外字段
+        String style = request.getStyle();
+        String season = request.getSeason();
+        String targetAudience = request.getTargetAudience();
+        
         try {
-            // 翻译并优化 prompt（添加服装专业前缀）
-            log.info("原始提示词：{}", originalPrompt);
-            String optimizedPrompt = promptTranslateService.translateAndOptimize(originalPrompt);
+            // 翻译并优化 prompt（添加服装专业前缀，包含风格、季节、受众信息）
+            log.info("原始提示词：{}, 风格：{}, 季节：{}, 受众：{}", 
+                    originalPrompt, style, season, targetAudience);
+            String optimizedPrompt = promptTranslateService.translateAndOptimize(
+                    originalPrompt, 
+                    style, 
+                    season, 
+                    targetAudience
+            );
             log.info("优化后提示词：{}", optimizedPrompt);
             
             // 使用优化后的 prompt
@@ -153,13 +169,18 @@ public class MJController {
             pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
             pattern.setPatternUrl(rawImageUrl); // 使用原始图片URL
             pattern.setThumbUrl(StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl); // 使用缩略图URL，如果为空则使用原始URL
+            
+            // 保存额外字段到数据库
+            pattern.setStyle(style);
+            pattern.setSeason(season);
+            pattern.setTargetAudience(targetAudience);
+            
             //如果是管理员则自动通过
             if (userService.isAdmin(loginUser)) {
                 pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
             }else{
                 pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
             }
-//            pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue()); // 待审核
             
             // 将MJ响应信息保存到generationParams字段
             pattern.setGenerationParams(JSON.toJSONString(mjResponse));
@@ -168,7 +189,8 @@ public class MJController {
             boolean saved = patternService.save(pattern);
             ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
             
-            log.info("MJ图片生成并保存成功，图案ID：{}，用户ID：{}", pattern.getId(), loginUser.getId());
+            log.info("MJ图片生成并保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}", 
+                    pattern.getId(), loginUser.getId(), style, season, targetAudience);
             
             return ResultUtils.success(pattern.getId());
         } catch (IOException e) {
@@ -210,6 +232,86 @@ public class MJController {
         } catch (IOException e) {
             log.error("调用Midjourney API异常", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "动作执行失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 保存 MJ 生成的图片到数据库
+     *
+     * @param request MJ 响应数据
+     * @param httpRequest HTTP请求
+     * @return 保存的图案ID
+     */
+    @PostMapping("/save")
+    @Operation(summary = "保存图片到数据库")
+    public BaseResponse<Long> savePattern(@RequestBody MJImagineResponse request,
+                                           HttpServletRequest httpRequest) {
+        // 参数校验
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        
+        // 获取登录用户
+        User loginUser = userService.getLoginUser(httpRequest);
+        
+        try {
+            // 检查必要的字段
+            String rawImageUrl = request.getRawImageUrl();
+            String imageUrl = request.getImageUrl();
+            
+            // 如果原始图片URL为空，使用缩略图URL
+            if (StringUtils.isBlank(rawImageUrl)) {
+                rawImageUrl = imageUrl;
+            }
+            
+            // 如果两个URL都为空，抛出异常
+            ThrowUtils.throwIf(StringUtils.isBlank(rawImageUrl), ErrorCode.PARAMS_ERROR, 
+                "图片URL为空，无法保存");
+            
+            // 从请求参数中获取图案名称（前端传入）
+            String patternName = request.getPatternName();
+            if (StringUtils.isBlank(patternName)) {
+                patternName = "MJ-图案-" + System.currentTimeMillis();
+            }
+            
+            // 获取额外字段
+            String style = request.getStyle();
+            String season = request.getSeason();
+            String targetAudience = request.getTargetAudience();
+            
+            // 保存到数据库
+            Pattern pattern = new Pattern();
+            pattern.setUserId(loginUser.getId());
+            pattern.setPatternName(patternName);
+            pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "Midjourney生成的图案");
+            pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
+            pattern.setPatternUrl(rawImageUrl);
+            pattern.setThumbUrl(StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl);
+            
+            // 保存额外字段到数据库
+            pattern.setStyle(style);
+            pattern.setSeason(season);
+            pattern.setTargetAudience(targetAudience);
+            
+            // 如果是管理员则自动通过
+            if (userService.isAdmin(loginUser)) {
+                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+            } else {
+                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+            }
+            
+            // 将MJ响应信息保存到generationParams字段
+            pattern.setGenerationParams(JSON.toJSONString(request));
+            
+            // 保存到数据库
+            boolean saved = patternService.save(pattern);
+            ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
+            
+            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}", 
+                    pattern.getId(), loginUser.getId(), style, season, targetAudience);
+            
+            return ResultUtils.success(pattern.getId());
+        } catch (Exception e) {
+            log.error("保存MJ图片失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存失败：" + e.getMessage());
         }
     }
     

@@ -18,7 +18,7 @@ export async function addBanner(body: API.Banner, options?: { [key: string]: any
 export async function deleteBanner(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.deleteBannerParams,
-  options?: { [key: string]: any },
+  options?: { [key: string]: any }
 ) {
   const { id: param0, ...queryParams } = params
   return request<API.BaseResponseBoolean>(`/banner/delete/${param0}`, {

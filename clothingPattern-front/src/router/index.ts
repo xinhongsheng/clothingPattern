@@ -4,6 +4,7 @@ import UserLoginPage from '../pages/user/UserLoginPage.vue'
 import UserRegisterPage from '../pages/user/UserRegisterPage.vue'
 import UserManagePage from '../pages/admin/UserManagePage.vue'
 import PatternGenerationPage from '@/pages/PatternGenerationPage.vue'
+import MJPatternGenerationPage from '@/pages/MJPatternGenerationPage.vue'
 import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
 import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 import AiPage from '@/pages/AiPage.vue'
@@ -47,6 +48,11 @@ const router = createRouter({
     path: '/patternGeneration',
     name: '智能创作',
     component: PatternGenerationPage,
+  },
+  {
+    path: '/mj/generation',
+    name: 'MJ图案创作',
+    component: MJPatternGenerationPage,
   },
   {
     path: '/admin/patternManage',

@@ -237,6 +237,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseMJImagineResponse = {
+    code?: number
+    data?: MJImagineResponse
+    message?: string
+  }
+
   type BaseResponsePagePattern = {
     code?: number
     data?: PagePattern
@@ -495,6 +501,41 @@ declare namespace API {
     editTime?: string
     createTime?: string
     updateTime?: string
+  }
+
+  type MJActionRequest = {
+    taskId?: string
+    imageId?: string
+    action?: string
+  }
+
+  type MJImagineRequest = {
+    prompt?: string
+    action?: string
+    style?: string
+    season?: string
+    targetAudience?: string
+  }
+
+  type MJImagineResponse = {
+    imageUrl?: string
+    imageWidth?: number
+    imageHeight?: number
+    actions?: string[]
+    rawImageUrl?: string
+    rawImageWidth?: number
+    rawImageHeight?: number
+    subImageUrls?: string[]
+    progress?: number
+    imageId?: string
+    taskId?: string
+    success?: boolean
+    traceId?: string
+    patternName?: string
+    prompt?: string
+    style?: string
+    season?: string
+    targetAudience?: string
   }
 
   type offlineArticleParams = {

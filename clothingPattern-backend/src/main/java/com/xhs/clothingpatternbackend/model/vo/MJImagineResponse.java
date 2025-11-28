@@ -94,5 +94,30 @@ public class MJImagineResponse implements Serializable {
      */
     @JSONField(name = "trace_id")
     private String traceId;
+    
+    /**
+     * 图案名称（前端传入，用于保存）
+     */
+    private String patternName;
+    
+    /**
+     * 提示词（前端传入，用于保存）
+     */
+    private String prompt;
+    
+    /**
+     * 图案风格（前端传入，用于保存）
+     */
+    private String style;
+    
+    /**
+     * 适用季节（前端传入，用于保存）
+     */
+    private String season;
+    
+    /**
+     * 目标受众（前端传入，用于保存）
+     */
+    private String targetAudience;
 }
 

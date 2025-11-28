@@ -89,6 +89,11 @@ const originItems = [
     title: '智能创作',
   },
   {
+    key: '/mj/generation',
+    label: 'VIP智能创作',
+    title: 'VIP智能创作',
+  },
+  {
     key: '/admin/patternManage',
     label: '图案管理',
     title: '图案管理',

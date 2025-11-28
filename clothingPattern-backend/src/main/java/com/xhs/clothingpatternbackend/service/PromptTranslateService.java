@@ -64,17 +64,46 @@ public class PromptTranslateService {
      * @return 优化后的英文提示词
      */
     public String translateAndOptimize(String userPrompt) {
+        return translateAndOptimize(userPrompt, null, null, null);
+    }
+    
+    /**
+     * 将用户输入的 prompt 翻译成英文并添加服装专业前缀（包含风格、季节、受众信息）
+     *
+     * @param userPrompt 用户输入的提示词（中文或英文）
+     * @param style 图案风格（如：简约、可爱、复古等）
+     * @param season 适用季节（如：春季、夏季等）
+     * @param targetAudience 目标受众（如：儿童、成人等）
+     * @return 优化后的英文提示词
+     */
+    public String translateAndOptimize(String userPrompt, String style, String season, String targetAudience) {
         if (StringUtils.isBlank(userPrompt)) {
             return CLOTHING_PATTERN_PREFIX + "beautiful clothing pattern design";
         }
         
         try {
-            // 判断是否需要翻译（简单判断：如果包含中文字符则需要翻译）
-            boolean needsTranslation = containsChinese(userPrompt);
+            // 1. 组合额外字段到 prompt
+            StringBuilder combinedPromptBuilder = new StringBuilder(userPrompt);
+            
+            if (StringUtils.isNotBlank(style)) {
+                combinedPromptBuilder.append(", ").append(style).append(" style");
+            }
+            if (StringUtils.isNotBlank(season)) {
+                combinedPromptBuilder.append(", for ").append(season);
+            }
+            if (StringUtils.isNotBlank(targetAudience)) {
+                combinedPromptBuilder.append(", target audience: ").append(targetAudience);
+            }
+            
+            String combinedPrompt = combinedPromptBuilder.toString();
+            log.info("组合额外字段后的提示词：{}", combinedPrompt);
+            
+            // 2. 判断是否需要翻译（简单判断：如果包含中文字符则需要翻译）
+            boolean needsTranslation = containsChinese(combinedPrompt);
             
             if (needsTranslation) {
-                log.info("检测到中文提示词，开始翻译：{}", userPrompt);
-                String translatedPrompt = translateToEnglish(userPrompt);
+                log.info("检测到中文提示词，开始翻译：{}", combinedPrompt);
+                String translatedPrompt = translateToEnglish(combinedPrompt);
                 log.info("翻译结果：{}", translatedPrompt);
                 
                 // 添加服装专业前缀
@@ -83,9 +112,9 @@ public class PromptTranslateService {
                 
                 return finalPrompt;
             } else {
-                log.info("检测到英文提示词，直接添加专业前缀：{}", userPrompt);
+                log.info("检测到英文提示词，直接添加专业前缀：{}", combinedPrompt);
                 // 如果已经是英文，直接添加前缀
-                String finalPrompt = CLOTHING_PATTERN_PREFIX + userPrompt;
+                String finalPrompt = CLOTHING_PATTERN_PREFIX + combinedPrompt;
                 log.info("最终提示词：{}", finalPrompt);
                 
                 return finalPrompt;
