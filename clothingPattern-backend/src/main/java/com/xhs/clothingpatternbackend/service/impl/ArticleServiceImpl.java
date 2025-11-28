@@ -1,8 +1,12 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
@@ -12,12 +16,14 @@ import com.xhs.clothingpatternbackend.mapper.ArticleMapper;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Article;
+import com.xhs.clothingpatternbackend.model.entity.ArticleCategory;
 import com.xhs.clothingpatternbackend.model.entity.ArticleCollect;
 import com.xhs.clothingpatternbackend.model.entity.ArticleLike;
 import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
 import com.xhs.clothingpatternbackend.model.vo.CollectResult;
 import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
+import com.xhs.clothingpatternbackend.service.ArticleCategoryService;
 import com.xhs.clothingpatternbackend.service.ArticleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -52,6 +58,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
+    private ArticleCategoryService articleCategoryService;
+
+    @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     private static final String ARTICLE_VIEW_KEY_PREFIX = "article:view:";
@@ -63,47 +72,50 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
 
     @Override
     public PageResult<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId) {
-        // 1. 查询文章列表
-        List<ArticleVO> articleList = articleMapper.selectArticleList(query);
+        // 1. 构建分页对象
+        Page<Article> page = new Page<>(query.getPageNum(), query.getPageSize());
 
-        // 2. 批量设置用户交互状态
-        if (currentUserId != null && !articleList.isEmpty()) {
-            setUserInteractionStatus(articleList, currentUserId);
+        // 2. 使用getQueryWrapper方法构建查询条件
+        QueryWrapper<Article> queryWrapper = getQueryWrapper(query);
+
+        // 3. 执行分页查询
+        Page<Article> articlePage = this.page(page, queryWrapper);
+
+        // 4. 使用getArticleVOList方法转换为VO
+        List<ArticleVO> articleVOList = getArticleVOList(articlePage.getRecords());
+
+        // 5. 批量设置用户交互状态
+        if (currentUserId != null && !articleVOList.isEmpty()) {
+            setUserInteractionStatus(articleVOList, currentUserId);
         }
 
-        // 3. 分页处理（在内存中分页）
-        int total = articleList.size();
-        int fromIndex = (query.getPageNum() - 1) * query.getPageSize();
-        int toIndex = Math.min(fromIndex + query.getPageSize(), total);
-
-        if (fromIndex >= total) {
-            return new PageResult<>(Collections.emptyList(), total);
-        }
-
-        List<ArticleVO> pageList = articleList.subList(fromIndex, toIndex);
-        return new PageResult<>(pageList, total);
+        // 6. 构建分页结果
+        return new PageResult<>(articleVOList, articlePage.getTotal());
     }
 
     @Override
     public ArticleVO getArticleDetail(Long id, Long currentUserId) {
-        // 1. 查询文章详情
-        ArticleVO article = articleMapper.selectArticleDetail(id);
-        if (article == null) {
+        // 1. 查询文章
+        Article article = this.getById(id);
+        if (article == null || article.getIsDelete() == 1) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
         }
 
         // 2. 增加阅读量（Redis异步更新）
         incrementViewCount(id);
 
-        // 3. 设置用户交互状态
+        // 3. 使用convertToVO方法转换为VO
+        ArticleVO articleVO = convertToVO(article);
+
+        // 4. 设置用户交互状态
         if (currentUserId != null) {
             boolean liked = getLikeStatusFromRedis(id, currentUserId);
             boolean collected = getCollectStatusFromRedis(id, currentUserId);
-            article.setLiked(liked);
-            article.setCollected(collected);
+            articleVO.setLiked(liked);
+            articleVO.setCollected(collected);
         }
 
-        return article;
+        return articleVO;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -598,7 +610,20 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     private ArticleVO convertToVO(Article article) {
         ArticleVO vo = new ArticleVO();
         BeanUtils.copyProperties(article, vo);
+        // 查询分类名称
+        ArticleCategory category = articleCategoryService.getById(article.getCategoryId());
+        if (category != null) {
+            vo.setCategoryName(category.getCategoryName());
+        }
         return vo;
+    }
+
+    @Override
+    public List<ArticleVO> getArticleVOList(List<Article> articleList) {
+        if (CollUtil.isEmpty(articleList)) {
+            return new ArrayList<>();
+        }
+        return articleList.stream().map(this::convertToVO).collect(Collectors.toList());
     }
 
     @Override
@@ -626,10 +651,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
                 .orderByDesc("createTime");
         List<Article> articles = this.list(articleWrapper);
 
-        // 4. 转换为VO并设置分类名称
-        List<ArticleVO> articleVOS = articles.stream()
-                .map(this::convertToVO)
-                .collect(Collectors.toList());
+        // 4. 使用getArticleVOList方法转换为VO
+        List<ArticleVO> articleVOS = getArticleVOList(articles);
 
         // 5. 设置用户交互状态（都是已收藏）
         for (ArticleVO vo : articleVOS) {
@@ -640,5 +663,59 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         }
 
         return articleVOS;
+    }
+
+    @Override
+    public QueryWrapper<Article> getQueryWrapper(ArticleQueryRequest articleQueryRequest) {
+        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
+        if (articleQueryRequest == null) {
+            return queryWrapper;
+        }
+
+        // 从对象中取值
+        Long categoryId = articleQueryRequest.getCategoryId();
+        String keyword = articleQueryRequest.getKeyword();
+        List<String> tags = articleQueryRequest.getTags();
+        String status = articleQueryRequest.getStatus();
+        String auditStatus = articleQueryRequest.getAuditStatus();
+        Integer isTop = articleQueryRequest.getIsTop();
+        Integer isHot = articleQueryRequest.getIsHot();
+        Integer isRecommend = articleQueryRequest.getIsRecommend();
+        String sortField = articleQueryRequest.getSortField();
+        String sortOrder = articleQueryRequest.getSortOrder();
+
+        // 基础条件：未删除
+        queryWrapper.eq("isDelete", 0);
+
+        // 从多字段中搜索
+        if (StrUtil.isNotBlank(keyword)) {
+            // 需要拼接查询条件
+            queryWrapper.and(qw -> qw.like("title", keyword)
+                    .or()
+                    .like("summary", keyword)
+                    .or()
+                    .like("content", keyword));
+        }
+
+        // 构建查询条件
+        queryWrapper.eq(ObjUtil.isNotEmpty(categoryId), "categoryId", categoryId);
+        queryWrapper.eq(StrUtil.isNotBlank(status), "status", status);
+        queryWrapper.eq(StrUtil.isNotBlank(auditStatus), "auditStatus", auditStatus);
+        queryWrapper.eq(ObjUtil.isNotEmpty(isTop), "isTop", isTop);
+        queryWrapper.eq(ObjUtil.isNotEmpty(isHot), "isHot", isHot);
+        queryWrapper.eq(ObjUtil.isNotEmpty(isRecommend), "isRecommend", isRecommend);
+
+        // 标签查询
+        if (CollUtil.isNotEmpty(tags)) {
+            for (String tag : tags) {
+                queryWrapper.like("tags", tag);
+            }
+        }
+
+        // 排序
+        queryWrapper.orderByDesc("isTop"); // 始终优先按置顶排序
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "asc".equals(sortOrder), sortField);
+
+        return queryWrapper;
     }
 }

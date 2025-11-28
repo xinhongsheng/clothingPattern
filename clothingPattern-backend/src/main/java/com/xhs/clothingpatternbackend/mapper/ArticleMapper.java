@@ -19,16 +19,6 @@ import java.util.List;
 public interface ArticleMapper extends BaseMapper<Article> {
 
     /**
-     * 查询文章列表（使用XML实现，支持复杂查询）
-     */
-    List<ArticleVO> selectArticleList(@Param("query") ArticleQueryRequest query);
-
-    /**
-     * 查询文章详情（使用XML实现）
-     */
-    ArticleVO selectArticleDetail(@Param("id") Long id);
-
-    /**
      * 增加阅读量（+1）
      */
     @Update("UPDATE article SET viewCount = viewCount + 1 WHERE id = #{id}")

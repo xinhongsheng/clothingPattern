@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Article;
@@ -13,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
-* @author 小辛
-* @description 针对表【article(文章资讯表)】的数据库操作Service
-* @createDate 2025-11-26 16:42:01
-*/
+ * @author 小辛
+ * @description 针对表【article(文章资讯表)】的数据库操作Service
+ * @createDate 2025-11-26 16:42:01
+ */
 public interface ArticleService extends IService<Article> {
 
     /**
@@ -104,4 +105,14 @@ public interface ArticleService extends IService<Article> {
      * 获取我的收藏文章列表
      */
     List<ArticleVO> getMyCollectArticles(Long userId);
+
+    /**
+     * 获取查询条件
+     */
+    QueryWrapper<Article> getQueryWrapper(ArticleQueryRequest articleQueryRequest);
+
+    /**
+     * 将Article列表转换为ArticleVO列表
+     */
+    List<ArticleVO> getArticleVOList(List<Article> articleList);
 }

@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.model.dto.article;
 
+import com.xhs.clothingpatternbackend.common.PageRequest;
 import lombok.Data;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
  * @Version: 1.0
  */
 @Data
-public class ArticleQueryRequest {
+public class ArticleQueryRequest extends PageRequest {
     private Long categoryId;
     private String keyword;
     private List<String>  tags; //使用列表存储，后面使用JSONUtil.toJsonStr转换为JSON字符串存储到mysql
