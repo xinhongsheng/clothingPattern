@@ -127,7 +127,7 @@ import {
   StarOutlined,
   FileImageOutlined,
 } from '@ant-design/icons-vue'
-import { getLoginUser, updateMyUser } from '@/api/userController'
+import { getLoginUser, updateMyUser, uploadAvatar } from '@/api/userController'
 import { getMyCollectArticles } from '@/api/articleController'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 
@@ -215,7 +215,7 @@ const handleUpdateProfile = async () => {
 }
 
 // 上传头像
-const handleAvatarUpload = (file: File) => {
+const handleAvatarUpload = async (file: File) => {
   const isImage = file.type.startsWith('image/')
   if (!isImage) {
     message.error('只能上传图片文件!')
@@ -227,12 +227,23 @@ const handleAvatarUpload = (file: File) => {
     return false
   }
 
-  // 使用 FileReader 预览
-  const reader = new FileReader()
-  reader.readAsDataURL(file)
-  reader.onload = () => {
-    userForm.userAvatar = reader.result as string
-    message.success('头像已更新，请点击保存修改')
+  // 创建FormData对象
+  const uploadFormData = new FormData()
+  uploadFormData.append('file', file)
+
+  try {
+    // 调用后端上传接口
+    const res = await uploadAvatar(uploadFormData)
+    if (res.data.code === 0 && res.data.data) {
+      const cosUrl = res.data.data
+      userForm.userAvatar = cosUrl
+      message.success('头像已更新，请点击保存修改')
+    } else {
+      message.error('上传失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    message.error('上传失败：' + error.message)
   }
 
   return false // 阻止自动上传
@@ -320,4 +331,3 @@ onMounted(() => {
   }
 }
 </style>
-

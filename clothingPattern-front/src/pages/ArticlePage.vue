@@ -1,9 +1,14 @@
 <template>
   <div class="article-page">
-    <!-- 顶部banner -->
-    <div class="banner">
-      <h1>资讯中心</h1>
-      <p>最新的时尚资讯和穿搭指南</p>
+    <!-- 顶部轮播图 -->
+    <div class="banner-carousel">
+      <a-carousel autoplay effect="fade" :dots="true" :autoplay-speed="3000">
+        <div v-for="banner in bannerList" :key="banner.id" class="carousel-item">
+          <a href="#" target="_blank" rel="noopener noreferrer">
+            <img :src="banner.imageUrl" :alt="banner.title" class="carousel-image" />
+          </a>
+        </div>
+      </a-carousel>
     </div>
 
     <!-- 分类导航 -->
@@ -135,11 +140,11 @@ import {
   StarOutlined,
 } from '@ant-design/icons-vue'
 import { getArticleList } from '@/api/articleController'
+import { getBannerList } from '@/api/bannerController'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
 
-import { formatTime } from '@/utils/time'
 import { getCategories } from '@/api/articleCategoryController'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -149,6 +154,7 @@ const router = useRouter()
 // 响应式数据
 const categories = ref<API.ArticleCategory[]>([])
 const articleList = ref<API.ArticleVO[]>([])
+const bannerList = ref<any[]>([])
 const selectedCategory = ref<string | null>(null)
 const searchKeyword = ref('')
 const sortField = ref('publishTime')
@@ -243,10 +249,26 @@ const formatTime = (time: any) => {
   return dayjs(time).fromNow()
 }
 
+// 加载轮播图
+const loadBanners = async () => {
+  try {
+    const res = await getBannerList()
+    if (res.data.code === 0 && res.data.data) {
+      bannerList.value = res.data.data
+    } else {
+      message.error('加载轮播图失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    console.error('加载轮播图失败:', error)
+    message.error('加载轮播图失败：' + error.message)
+  }
+}
+
 // 生命周期
 onMounted(() => {
   loadCategories()
   loadArticles()
+  loadBanners()
 })
 </script>
 
@@ -255,24 +277,61 @@ onMounted(() => {
   min-height: 100vh;
   background: #f5f5f5;
 
-  .banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-align: center;
-    padding: 60px 20px;
+  .banner-carousel {
+    width: 100%;
     margin-bottom: 30px;
+    overflow: hidden;
+    border-radius: 0;
 
-    h1 {
-      font-size: 36px;
-      font-weight: bold;
-      margin: 0 0 10px 0;
-      color: white;
+    :deep(.ant-carousel) {
+      width: 100%;
     }
 
-    p {
-      font-size: 16px;
-      margin: 0;
-      opacity: 0.9;
+    .carousel-item {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      overflow: hidden;
+
+      a {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .carousel-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+
+      &:hover .carousel-image {
+        transform: scale(1.05);
+      }
+    }
+
+    :deep(.slick-dots) {
+      bottom: 20px;
+
+      li {
+        margin: 0 5px;
+
+        button {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.5);
+          border: none;
+          transition: all 0.3s ease;
+        }
+
+        &.slick-active button {
+          width: 30px;
+          border-radius: 5px;
+          background: white;
+        }
+      }
     }
   }
 

@@ -140,3 +140,15 @@ export async function updateMyUser(
     ...(options || {}),
   })
 }
+
+/** 此处后端没有提供注释 POST /user/upload/avatar */
+export async function uploadAvatar(body: {}, options?: { [key: string]: any }) {
+  return request<API.BaseResponseString>('/user/upload/avatar', {
+    method: 'POST',
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
+    data: body,
+    ...(options || {}),
+  })
+}

@@ -7,6 +7,7 @@ import * as patternController from './patternController'
 import * as likeController from './likeController'
 import * as homeController from './homeController'
 import * as commentController from './commentController'
+import * as bannerController from './bannerController'
 import * as articleController from './articleController'
 import * as articleCategoryController from './articleCategoryController'
 import * as aiController from './aiController'
@@ -17,6 +18,7 @@ export default {
   likeController,
   homeController,
   commentController,
+  bannerController,
   articleController,
   articleCategoryController,
   aiController,

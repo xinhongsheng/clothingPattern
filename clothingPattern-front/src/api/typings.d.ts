@@ -123,6 +123,18 @@ declare namespace API {
     collected?: boolean
   }
 
+  type Banner = {
+    id?: number
+    title?: string
+    imageUrl?: string
+    linkUrl?: string
+    sortOrder?: number
+    status?: number
+    createTime?: string
+    updateTime?: string
+    isDelete?: number
+  }
+
   type BaseResponseAiAnswerVO = {
     code?: number
     data?: AiAnswerVO
@@ -192,6 +204,12 @@ declare namespace API {
   type BaseResponseListArticleVO = {
     code?: number
     data?: ArticleVO[]
+    message?: string
+  }
+
+  type BaseResponseListBanner = {
+    code?: number
+    data?: Banner[]
     message?: string
   }
 
@@ -366,6 +384,10 @@ declare namespace API {
   }
 
   type deleteArticleParams = {
+    id: number
+  }
+
+  type deleteBannerParams = {
     id: number
   }
 

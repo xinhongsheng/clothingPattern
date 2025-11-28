@@ -8,6 +8,10 @@
             <AppstoreOutlined />
             分类管理
           </a-button>
+          <a-button @click="handleBannerManage">
+            <PictureOutlined />
+            轮播图管理
+          </a-button>
           <a-button type="primary" @click="handleAdd">
             <PlusOutlined />
             新建文章
@@ -136,12 +140,8 @@
           <!-- 操作 -->
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" size="small" @click="handleView(record?.id)">
-                查看
-              </a-button>
-              <a-button type="link" size="small" @click="handleEdit(record?.id)">
-                编辑
-              </a-button>
+              <a-button type="link" size="small" @click="handleView(record?.id)"> 查看 </a-button>
+              <a-button type="link" size="small" @click="handleEdit(record?.id)"> 编辑 </a-button>
               <a-button
                 v-if="record?.status === 'DRAFT'"
                 type="link"
@@ -172,9 +172,7 @@
                 cancel-text="取消"
                 @confirm="handleDelete(record?.id)"
               >
-                <a-button type="link" size="small" danger>
-                  删除
-                </a-button>
+                <a-button type="link" size="small" danger> 删除 </a-button>
               </a-popconfirm>
             </a-space>
           </template>
@@ -197,18 +195,12 @@
             <a-row :gutter="16">
               <a-col :span="6">
                 <a-form-item label="分类名称">
-                  <a-input
-                    v-model:value="newCategory.categoryName"
-                    placeholder="请输入分类名称"
-                  />
+                  <a-input v-model:value="newCategory.categoryName" placeholder="请输入分类名称" />
                 </a-form-item>
               </a-col>
               <a-col :span="8">
                 <a-form-item label="描述">
-                  <a-input
-                    v-model:value="newCategory.categoryDesc"
-                    placeholder="请输入描述"
-                  />
+                  <a-input v-model:value="newCategory.categoryDesc" placeholder="请输入描述" />
                 </a-form-item>
               </a-col>
               <a-col :span="4">
@@ -285,11 +277,7 @@
             <!-- 操作 -->
             <template v-else-if="column.key === 'action'">
               <a-space>
-                <a-button
-                  type="link"
-                  size="small"
-                  @click="handleEditCategory(record)"
-                >
+                <a-button type="link" size="small" @click="handleEditCategory(record)">
                   编辑
                 </a-button>
                 <a-popconfirm
@@ -298,9 +286,7 @@
                   cancel-text="取消"
                   @confirm="handleDeleteCategory(record.id)"
                 >
-                  <a-button type="link" size="small" danger>
-                    删除
-                  </a-button>
+                  <a-button type="link" size="small" danger> 删除 </a-button>
                 </a-popconfirm>
               </a-space>
             </template>
@@ -342,11 +328,7 @@
           <div class="upload-tip">建议尺寸：200x200，支持jpg、png格式，大小不超过1MB</div>
         </a-form-item>
         <a-form-item label="排序">
-          <a-input-number
-            v-model:value="editingCategory.sortOrder"
-            :min="0"
-            style="width: 100%"
-          />
+          <a-input-number v-model:value="editingCategory.sortOrder" :min="0" style="width: 100%" />
         </a-form-item>
         <a-form-item label="状态">
           <a-select v-model:value="editingCategory.status" style="width: 100%">
@@ -370,20 +352,21 @@ import {
   EyeOutlined,
   LikeOutlined,
   StarOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
+  PictureOutlined,
 } from '@ant-design/icons-vue'
 import {
   getArticleList,
   deleteArticle,
   publishArticle,
   offlineArticle,
-  listedArticle
+  listedArticle,
 } from '@/api/articleController'
 import {
   getCategories,
   addCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
 } from '@/api/articleCategoryController'
 import dayjs from 'dayjs'
 
@@ -402,7 +385,7 @@ const newCategory = reactive({
   categoryName: '',
   categoryDesc: '',
   icon: '',
-  sortOrder: 0
+  sortOrder: 0,
 })
 const editingCategory = reactive({
   id: undefined as string | undefined,
@@ -410,7 +393,7 @@ const editingCategory = reactive({
   categoryDesc: '',
   icon: '',
   sortOrder: 0,
-  status: 1
+  status: 1,
 })
 
 // 图片上传相关
@@ -423,7 +406,7 @@ const searchParams = reactive({
   categoryId: undefined as string | undefined,
   status: '',
   pageNum: 1,
-  pageSize: 10
+  pageSize: 10,
 })
 
 // 分页配置
@@ -432,7 +415,7 @@ const pagination = reactive({
   pageSize: 10,
   total: 0,
   showSizeChanger: true,
-  showTotal: (total: number) => `共 ${total} 条记录`
+  showTotal: (total: number) => `共 ${total} 条记录`,
 })
 
 // 分类表格列定义
@@ -441,41 +424,41 @@ const categoryColumns = [
     title: 'ID',
     dataIndex: 'id',
     key: 'id',
-    width: 80
+    width: 80,
   },
   {
     title: '分类名称',
     dataIndex: 'categoryName',
-    key: 'categoryName'
+    key: 'categoryName',
   },
   {
     title: '描述',
     dataIndex: 'categoryDesc',
-    key: 'categoryDesc'
+    key: 'categoryDesc',
   },
   {
     title: '图标',
     dataIndex: 'icon',
     key: 'icon',
-    width: 100
+    width: 100,
   },
   {
     title: '排序',
     dataIndex: 'sortOrder',
     key: 'sortOrder',
-    width: 80
+    width: 80,
   },
   {
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: 80
+    width: 80,
   },
   {
     title: '操作',
     key: 'action',
-    width: 150
-  }
+    width: 150,
+  },
 ]
 
 // 表格列定义
@@ -484,55 +467,55 @@ const columns = [
     title: '封面',
     dataIndex: 'coverImage',
     key: 'coverImage',
-    width: 100
+    width: 100,
   },
   {
     title: '标题',
     dataIndex: 'title',
     key: 'title',
-    width: 300
+    width: 300,
   },
   {
     title: '分类',
     dataIndex: 'categoryName',
     key: 'category',
-    width: 100
+    width: 100,
   },
   {
     title: '作者',
     dataIndex: 'author',
     key: 'author',
-    width: 100
+    width: 100,
   },
   {
     title: '状态',
     dataIndex: 'status',
     key: 'status',
-    width: 80
+    width: 80,
   },
   {
     title: '审核',
     dataIndex: 'auditStatus',
     key: 'auditStatus',
-    width: 80
+    width: 80,
   },
   {
     title: '统计',
     key: 'stats',
-    width: 80
+    width: 80,
   },
   {
     title: '发布时间',
     dataIndex: 'publishTime',
     key: 'publishTime',
-    width: 150
+    width: 150,
   },
   {
     title: '操作',
     key: 'action',
     width: 220,
-    fixed: 'right' as const
-  }
+    fixed: 'right' as const,
+  },
 ]
 
 // 加载分类
@@ -554,7 +537,7 @@ const loadArticles = async () => {
     const res = await getArticleList({
       ...searchParams,
       pageNum: pagination.current,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     })
     if (res.data.code === 0 && res.data.data) {
       articleList.value = res.data.data.list || []
@@ -597,8 +580,13 @@ const handleAdd = () => {
   router.push('/admin/article/edit')
 }
 
+// 轮播图管理
+const handleBannerManage = () => {
+  router.push('/admin/banner')
+}
+
 // 查看文章
-const handleView = (id: string ) => {
+const handleView = (id: string) => {
   router.push(`/article/${id}`)
 }
 
@@ -654,8 +642,6 @@ const handleListed = async (id: string) => {
   }
 }
 
-
-
 // 删除文章
 const handleDelete = async (id: string) => {
   try {
@@ -701,8 +687,8 @@ const handleNewCategoryUpload = (file: File) => {
         uid: Date.now().toString(),
         name: file.name,
         status: 'done',
-        url: reader.result
-      }
+        url: reader.result,
+      },
     ]
   }
 
@@ -738,8 +724,8 @@ const handleEditCategoryUpload = (file: File) => {
         uid: Date.now().toString(),
         name: file.name,
         status: 'done',
-        url: reader.result
-      }
+        url: reader.result,
+      },
     ]
   }
 
@@ -765,7 +751,7 @@ const handleAddCategory = async () => {
       categoryDesc: newCategory.categoryDesc,
       icon: newCategory.icon,
       sortOrder: newCategory.sortOrder || 0,
-      status: 1
+      status: 1,
     } as API.ArticleCategory)
 
     if (res.data.code === 0) {
@@ -803,8 +789,8 @@ const handleEditCategory = (category: API.ArticleCategory) => {
         uid: '-1',
         name: 'icon.jpg',
         status: 'done',
-        url: category.icon
-      }
+        url: category.icon,
+      },
     ]
   } else {
     editCategoryFileList.value = []
@@ -827,7 +813,7 @@ const handleUpdateCategory = async () => {
       categoryDesc: editingCategory.categoryDesc,
       icon: editingCategory.icon,
       sortOrder: editingCategory.sortOrder,
-      status: editingCategory.status
+      status: editingCategory.status,
     } as API.ArticleCategory)
 
     if (res.data.code === 0) {
@@ -914,4 +900,3 @@ onMounted(() => {
   }
 }
 </style>
-

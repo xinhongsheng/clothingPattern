@@ -234,3 +234,18 @@ CREATE TABLE `articleCollect` (
                                   INDEX `idxArticleId` (`articleId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章收藏表';
 
+-- 轮播图
+CREATE TABLE `banner` (
+                          `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+                          `title` varchar(255) DEFAULT NULL COMMENT '标题',
+                          `imageUrl` varchar(512) DEFAULT NULL COMMENT '图片URL',
+                          `linkUrl` varchar(512) DEFAULT NULL COMMENT '链接URL',
+                          `sortOrder` int DEFAULT '0' COMMENT '排序',
+                          `status` tinyint DEFAULT '1' COMMENT '状态：0-禁用，1-启用',
+                          `createTime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                          `updateTime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                          `isDelete` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+                          PRIMARY KEY (`id`),
+                          KEY `idx_sort_order` (`sortOrder`),
+                          KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='轮播图表';

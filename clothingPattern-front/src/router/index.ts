@@ -13,6 +13,7 @@ import ArticlePage from '@/pages/ArticlePage.vue'
 import ArticleDetailPage from '@/pages/ArticleDetailPage.vue'
 import ArticleManagePage from '@/pages/admin/ArticleManagePage.vue'
 import ArticleEditPage from '@/pages/admin/ArticleEditPage.vue'
+import BannerManagePage from '@/pages/admin/BannerManagePage.vue'
 import UserProfilePage from '@/pages/user/UserProfilePage.vue'
 
 
@@ -99,6 +100,11 @@ const router = createRouter({
     name: '编辑文章',
     component: ArticleEditPage,
     props: true,
+  },
+  {
+    path: '/admin/banner',
+    name: '轮播图管理',
+    component: BannerManagePage,
   },
   {
     path: '/user/profile',

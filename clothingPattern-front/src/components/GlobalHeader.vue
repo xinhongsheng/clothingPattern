@@ -33,6 +33,12 @@
                       我的创意
                     </router-link>
                   </a-menu-item>
+                  <a-menu-item>
+                    <router-link to="/user/profile">
+                      <UserOutlined />
+                      个人中心
+                    </router-link>
+                  </a-menu-item>
                   <!-- 退出登录：直接放在同一个 a-menu 内，去掉多余的 a-menu 嵌套 -->
                   <a-menu-item @click="doLogout">
                     <LogoutOutlined />
@@ -57,7 +63,7 @@
 import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
-import { ref, h ,computed} from 'vue' // 注意：h 函数需要导入（用于渲染图标）
+import { ref, h, computed } from 'vue' // 注意：h 函数需要导入（用于渲染图标）
 import { userLoginOut } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router' // 补充：导入 useRouter
