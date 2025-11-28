@@ -16,7 +16,7 @@ import com.xhs.clothingpatternbackend.model.entity.ArticleCollect;
 import com.xhs.clothingpatternbackend.model.entity.ArticleLike;
 import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
 import com.xhs.clothingpatternbackend.model.vo.CollectResult;
-import com.xhs.clothingpatternbackend.model.vo.LikeResult;
+import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.ArticleService;
 import lombok.extern.slf4j.Slf4j;
@@ -223,7 +223,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public LikeResult likeArticle(Long articleId, Long userId) {
+    public LikeResultVO likeArticle(Long articleId, Long userId) {
         // 1. 检查文章是否存在
         Article article = this.getById(articleId);
         if (article == null) {
@@ -269,10 +269,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         // 3. 更新Redis缓存（点赞状态和计数）
         String likeKey = ARTICLE_LIKE_KEY_PREFIX + articleId;
         String countKey = ARTICLE_LIKE_COUNT_KEY_PREFIX + articleId;
-        
+
         // 更新用户点赞状态
         redisTemplate.opsForHash().put(likeKey, userId.toString(), newLikeStatus);
-        
+
         // 更新点赞计数（使用Redis increment，确保不会变成负数）
         Long currentCount = null;
         try {
@@ -309,7 +309,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         clearHotArticlesCache();
 
         // 6. 返回结果
-        return new LikeResult(newLikeStatus, currentCount);
+        return new LikeResultVO(newLikeStatus, currentCount);
     }
 
     @Transactional(rollbackFor = Exception.class)

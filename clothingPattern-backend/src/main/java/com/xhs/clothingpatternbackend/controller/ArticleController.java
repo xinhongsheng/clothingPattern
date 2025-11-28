@@ -13,7 +13,7 @@ import com.xhs.clothingpatternbackend.model.entity.Article;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
 import com.xhs.clothingpatternbackend.model.vo.CollectResult;
-import com.xhs.clothingpatternbackend.model.vo.LikeResult;
+import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.ArticleService;
 import com.xhs.clothingpatternbackend.service.UserService;
@@ -55,7 +55,7 @@ public class ArticleController {
      */
     @PostMapping("/list")
     public BaseResponse<PageResult<ArticleVO>> getArticleList(@Valid @RequestBody ArticleQueryRequest query,
-                                                               HttpServletRequest request) {
+            HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -76,7 +76,7 @@ public class ArticleController {
      */
     @GetMapping("/{id}")
     public BaseResponse<ArticleVO> getArticleDetail(@PathVariable Long id,
-                                                     HttpServletRequest request) {
+            HttpServletRequest request) {
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
 
         // 获取当前用户ID（未登录用户为null）
@@ -99,9 +99,9 @@ public class ArticleController {
      */
     @GetMapping("/search")
     public BaseResponse<PageResult<ArticleVO>> searchArticles(@RequestParam String keyword,
-                                                               @RequestParam(defaultValue = "1") Integer pageNum,
-                                                               @RequestParam(defaultValue = "10") Integer pageSize,
-                                                               HttpServletRequest request) {
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -127,7 +127,7 @@ public class ArticleController {
      */
     @GetMapping("/hot")
     public BaseResponse<List<ArticleVO>> getHotArticles(@RequestParam(defaultValue = "10") Integer limit,
-                                                         HttpServletRequest request) {
+            HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -148,7 +148,7 @@ public class ArticleController {
      */
     @GetMapping("/recommend")
     public BaseResponse<List<ArticleVO>> getRecommendArticles(@RequestParam(defaultValue = "10") Integer limit,
-                                                               HttpServletRequest request) {
+            HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -169,7 +169,7 @@ public class ArticleController {
      */
     @PostMapping("/add")
     public BaseResponse<Boolean> addArticle(@Valid @RequestBody ArticleAddRequest request,
-                                             HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
 
@@ -182,7 +182,7 @@ public class ArticleController {
      */
     @PostMapping("/update")
     public BaseResponse<Boolean> updateArticle(@Valid @RequestBody Article article,
-                                                HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
 
@@ -195,7 +195,7 @@ public class ArticleController {
      */
     @PostMapping("/delete/{id}")
     public BaseResponse<Boolean> deleteArticle(@PathVariable Long id,
-                                                HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
@@ -209,7 +209,7 @@ public class ArticleController {
      */
     @PostMapping("/publish/{id}")
     public BaseResponse<Boolean> publishArticle(@PathVariable Long id,
-                                                 HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
@@ -223,7 +223,7 @@ public class ArticleController {
      */
     @PostMapping("/offline/{id}")
     public BaseResponse<Boolean> offlineArticle(@PathVariable Long id,
-                                                 HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
@@ -231,12 +231,13 @@ public class ArticleController {
         boolean result = articleService.offlineArticle(id, loginUser.getId());
         return ResultUtils.success(result);
     }
+
     /**
      * 上架文章
      */
     @PostMapping("/listed/{id}")
     public BaseResponse<Boolean> listedArticle(@PathVariable Long id,
-                                                HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(id == null || id <= 0, ErrorCode.PARAMS_ERROR);
@@ -249,13 +250,13 @@ public class ArticleController {
      * 点赞文章
      */
     @PostMapping("/like")
-    public BaseResponse<LikeResult> likeArticle(@RequestParam Long articleId,
-                                                 HttpServletRequest httpRequest) {
+    public BaseResponse<LikeResultVO> likeArticle(@RequestParam Long articleId,
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
 
-        LikeResult result = articleService.likeArticle(articleId, loginUser.getId());
+        LikeResultVO result = articleService.likeArticle(articleId, loginUser.getId());
         return ResultUtils.success(result);
     }
 
@@ -264,7 +265,7 @@ public class ArticleController {
      */
     @PostMapping("/collect")
     public BaseResponse<CollectResult> collectArticle(@RequestParam Long articleId,
-                                                       HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
@@ -278,7 +279,7 @@ public class ArticleController {
      */
     @PostMapping("/collect/cancel")
     public BaseResponse<Boolean> cancelCollectArticle(@RequestParam Long articleId,
-                                                       HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
@@ -292,7 +293,7 @@ public class ArticleController {
      */
     @GetMapping("/like/status")
     public BaseResponse<Boolean> getLikeStatus(@RequestParam Long articleId,
-                                                HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
@@ -306,7 +307,7 @@ public class ArticleController {
      */
     @GetMapping("/collect/status")
     public BaseResponse<Boolean> getCollectStatus(@RequestParam Long articleId,
-                                                   HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(articleId == null || articleId <= 0, ErrorCode.PARAMS_ERROR);
@@ -320,7 +321,7 @@ public class ArticleController {
      */
     @PostMapping("/upload/cover")
     public BaseResponse<String> uploadCoverImage(@RequestParam("file") MultipartFile file,
-                                                  HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(file == null || file.isEmpty(), ErrorCode.PARAMS_ERROR, "文件不能为空");
@@ -340,22 +341,22 @@ public class ArticleController {
         try {
             // 创建临时文件
             String originalFilename = file.getOriginalFilename();
-            String suffix = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-                : ".png";
+            String suffix = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".png";
             tempFile = File.createTempFile("article_cover_", suffix);
             file.transferTo(tempFile);
 
             // 上传到COS
             String key = "article/cover/" + loginUser.getId() + "/" + System.currentTimeMillis() + suffix;
             cosUtils.putPictureObject(key, tempFile);
-            
+
             // 构建COS URL
             String cosUrl = cosClientConfig.getHost() + "/" + key;
-            
+
             log.info("文章封面上传成功，用户ID: {}, URL: {}", loginUser.getId(), cosUrl);
             return ResultUtils.success(cosUrl);
-            
+
         } catch (IOException e) {
             log.error("上传文章封面失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "文件上传失败");
@@ -382,4 +383,3 @@ public class ArticleController {
         return ResultUtils.success(articles);
     }
 }
-

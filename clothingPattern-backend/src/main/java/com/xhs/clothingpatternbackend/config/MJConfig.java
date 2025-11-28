@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 @Data
-@ConfigurationProperties(prefix = "midjourney.config")
+@ConfigurationProperties(prefix = "mj.api")
 public class MJConfig {
     
     /**
@@ -23,7 +23,7 @@ public class MJConfig {
     /**
      * API基础URL
      */
-    private String baseUrl = "https://api.zhishuyun.com/midjourney";
+    private String url;
     
     /**
      * 请求超时时间（秒）

@@ -6,7 +6,7 @@ import com.xhs.clothingpatternbackend.model.entity.Article;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xhs.clothingpatternbackend.model.vo.ArticleVO;
 import com.xhs.clothingpatternbackend.model.vo.CollectResult;
-import com.xhs.clothingpatternbackend.model.vo.LikeResult;
+import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,7 +66,7 @@ public interface ArticleService extends IService<Article> {
      * 点赞文章
      */
     @Transactional(rollbackFor = Exception.class)
-    LikeResult likeArticle(Long articleId, Long userId);
+    LikeResultVO likeArticle(Long articleId, Long userId);
 
     /**
      * 收藏文章（切换收藏状态）

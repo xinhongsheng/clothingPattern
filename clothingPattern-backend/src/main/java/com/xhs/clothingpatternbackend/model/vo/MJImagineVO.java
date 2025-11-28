@@ -13,7 +13,7 @@ import java.util.List;
  * @Version: 1.0
  */
 @Data
-public class MJImagineResponse implements Serializable {
+public class MJImagineVO implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
@@ -96,27 +96,27 @@ public class MJImagineResponse implements Serializable {
     private String traceId;
     
     /**
-     * 图案名称（前端传入，用于保存）
+     * 图案名称
      */
     private String patternName;
     
     /**
-     * 提示词（前端传入，用于保存）
+     * 提示词
      */
     private String prompt;
     
     /**
-     * 图案风格（前端传入，用于保存）
+     * 图案风格
      */
     private String style;
     
     /**
-     * 适用季节（前端传入，用于保存）
+     * 适用季节
      */
     private String season;
     
     /**
-     * 目标受众（前端传入，用于保存）
+     * 目标受众
      */
     private String targetAudience;
 }

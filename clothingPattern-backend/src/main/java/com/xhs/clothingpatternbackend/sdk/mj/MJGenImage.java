@@ -2,12 +2,14 @@ package com.xhs.clothingpatternbackend.sdk.mj;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.xhs.clothingpatternbackend.config.MJConfig;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJBlendRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJImagineRequest;
-import com.xhs.clothingpatternbackend.model.vo.MJImagineResponse;
+import com.xhs.clothingpatternbackend.model.vo.MJImagineVO;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -24,11 +26,14 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class MJGenImage {
     
-    @Value("${mj.api.token:e93b4e9976d344a897ea34e0d99f87c1}")
-    private String apiToken;
-    
-    @Value("${mj.api.url:https://api.zhishuyun.com/midjourney/imagine}")
-    private String apiUrl;
+//    @Value("${mj.api.token:e93b4e9976d344a897ea34e0d99f87c1}")
+//    private String apiToken;
+//
+//    @Value("${mj.api.url:https://api.zhishuyun.com/midjourney/imagine}")
+//    private String apiUrl;
+
+    @Resource
+    private MJConfig mjConfig;
     
     private final OkHttpClient client;
     
@@ -50,7 +55,7 @@ public class MJGenImage {
      * @return 生成结果
      * @throws IOException 网络请求异常
      */
-    public MJImagineResponse imagine(MJImagineRequest request) throws IOException {
+    public MJImagineVO imagine(MJImagineRequest request) throws IOException {
         // 构建请求JSON
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("action", request.getAction());
@@ -61,7 +66,7 @@ public class MJGenImage {
         RequestBody body = RequestBody.create(jsonObject.toString(), mediaType);
         
         // 构建请求URL（带token）
-        String urlWithToken = apiUrl + "?token=" + apiToken;
+        String urlWithToken = mjConfig.getUrl() + "?token=" + mjConfig.getToken();
         
         // 构建HTTP请求
         Request httpRequest = new Request.Builder()
@@ -86,7 +91,7 @@ public class MJGenImage {
             log.info("Midjourney API响应：{}", responseBody);
             
             // 将JSON响应转换为对象
-            MJImagineResponse mjResponse = JSON.parseObject(responseBody, MJImagineResponse.class);
+            MJImagineVO mjResponse = JSON.parseObject(responseBody, MJImagineVO.class);
             
             return mjResponse;
         } catch (SocketTimeoutException e) {
@@ -104,7 +109,7 @@ public class MJGenImage {
      * @return 执行结果
      * @throws IOException 网络请求异常
      */
-    public MJImagineResponse executeAction(String taskId, String imageId, String action) throws IOException {
+    public MJImagineVO executeAction(String taskId, String imageId, String action) throws IOException {
         // 构建请求JSON
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("task_id", taskId);
@@ -116,7 +121,7 @@ public class MJGenImage {
         RequestBody body = RequestBody.create(jsonObject.toString(), mediaType);
         
         // 构建请求URL（带token）
-        String urlWithToken = apiUrl + "?token=" + apiToken;
+        String urlWithToken = mjConfig.getUrl() + "?token=" + mjConfig.getToken();
         
         // 构建HTTP请求
         Request httpRequest = new Request.Builder()
@@ -141,7 +146,7 @@ public class MJGenImage {
             log.info("Midjourney动作执行响应：{}", responseBody);
             
             // 将JSON响应转换为对象
-            MJImagineResponse mjResponse = JSON.parseObject(responseBody, MJImagineResponse.class);
+            MJImagineVO mjResponse = JSON.parseObject(responseBody, MJImagineVO.class);
             
             return mjResponse;
         } catch (SocketTimeoutException e) {
@@ -157,7 +162,7 @@ public class MJGenImage {
      * @return 执行结果
      * @throws IOException 网络请求异常
      */
-    public MJImagineResponse blend(MJBlendRequest request) throws IOException {
+    public MJImagineVO blend(MJBlendRequest request) throws IOException {
         // 构建请求JSON
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("action", "blend");
@@ -168,7 +173,7 @@ public class MJGenImage {
         RequestBody body = RequestBody.create(jsonObject.toString(), mediaType);
         
         // 构建请求URL（带token）
-        String urlWithToken = apiUrl + "?token=" + apiToken;
+        String urlWithToken = mjConfig.getUrl() + "?token=" + mjConfig.getToken();
         
         // 构建HTTP请求
         Request httpRequest = new Request.Builder()
@@ -193,7 +198,7 @@ public class MJGenImage {
             log.info("Midjourney Blend响应：{}", responseBody);
             
             // 将JSON响应转换为对象
-            MJImagineResponse mjResponse = JSON.parseObject(responseBody, MJImagineResponse.class);
+            MJImagineVO mjResponse = JSON.parseObject(responseBody, MJImagineVO.class);
             
             return mjResponse;
         } catch (SocketTimeoutException e) {
