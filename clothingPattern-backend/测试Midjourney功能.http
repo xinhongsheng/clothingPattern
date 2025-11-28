@@ -1,0 +1,61 @@
+### 测试Midjourney服务是否正常
+GET http://localhost:8123/api/mj/test
+Accept: application/json
+
+### 生成图片（Imagine）- 仅返回结果，不保存
+POST http://localhost:8123/api/mj/imagine
+Content-Type: application/json
+
+{
+  "prompt": "The clothing pattern of the capybara Lulu",
+  "action": "generate"
+}
+
+### 生成图片并保存到图案库（需要登录）
+POST http://localhost:8123/api/mj/generate
+Content-Type: application/json
+
+{
+  "prompt": "The clothing pattern of the capybara Lulu",
+  "action": "generate"
+}
+
+### 生成图片示例2 - 中文提示词
+POST http://localhost:8123/api/mj/imagine
+Content-Type: application/json
+
+{
+  "prompt": "可爱的水豚图案，适合印在T恤上，卡通风格，简洁明快",
+  "action": "generate"
+}
+
+### 执行动作 - Upsample（放大）第1张图
+POST http://localhost:8123/api/mj/action
+Content-Type: application/json
+
+{
+  "taskId": "b1efab91-dda2-4dd7-b2fc-8694799beabf",
+  "imageId": "1443792963657269248",
+  "action": "upsample1"
+}
+
+### 执行动作 - Variation（变体）第2张图
+POST http://localhost:8123/api/mj/action
+Content-Type: application/json
+
+{
+  "taskId": "your-task-id",
+  "imageId": "your-image-id",
+  "action": "variation2"
+}
+
+### 执行动作 - Reroll（重新生成）
+POST http://localhost:8123/api/mj/action
+Content-Type: application/json
+
+{
+  "taskId": "your-task-id",
+  "imageId": "your-image-id",
+  "action": "reroll"
+}
+

@@ -9,7 +9,8 @@ import lombok.Getter;
 @Getter
 public enum GenerationTypeEnum {
     TEXT_GENERATED("文字生成", "TEXT_GENERATED"),
-    IMAGE_REFERENCED("图片参考生成", "IMAGE_REFERENCED");
+    IMAGE_REFERENCED("图片参考生成", "IMAGE_REFERENCED"),
+    MJ_GENERATED("Midjourney生成", "MJ_GENERATED");
 
     private final String text;
     private final String value;

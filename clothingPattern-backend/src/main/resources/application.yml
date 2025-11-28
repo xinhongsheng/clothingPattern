@@ -45,7 +45,6 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false
@@ -67,10 +66,11 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.xhs.clothingptternbackend.controller
+# 阿里百炼apiKey
 tong-yi:
   config:
     dashscope-api-key: sk-237daf27898245a5abc6b575a56e2e23
-
+# 腾讯云 COS 配置
 cos:
   client:
     host: https://clothingpattern-1317715434.cos.ap-guangzhou.myqcloud.com
@@ -78,6 +78,7 @@ cos:
     secretKey: 0mXSCj3A5oJbidLrAIFzOuFNJ3czA7sS
     region: ap-guangzhou
     bucket: clothingpattern-1317715434
+# 豆包
 dou-bao:
   config:
     api-key: 03befb04-b894-4755-9454-0e4737d0f0f3
@@ -91,3 +92,11 @@ like:
 #  sync:
 #    enabled: true
 #    interval: 300000  # 同步间隔，单位毫秒（5分钟）
+
+# Midjourney API 配置
+mj:
+  api:
+    token: e93b4e9976d344a897ea34e0d99f87c1
+    url: https://api.zhishuyun.com/midjourney/imagine
+    # 注意：Midjourney生成图片通常需要30-120秒
+    # 当前超时设置：连接60秒，读取180秒（3分钟），写入60秒
