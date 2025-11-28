@@ -509,6 +509,14 @@ declare namespace API {
     action?: string
   }
 
+  type MJBlendRequest = {
+    imageUrls?: string[]
+    action?: string
+    style?: string
+    season?: string
+    targetAudience?: string
+  }
+
   type MJImagineRequest = {
     prompt?: string
     action?: string

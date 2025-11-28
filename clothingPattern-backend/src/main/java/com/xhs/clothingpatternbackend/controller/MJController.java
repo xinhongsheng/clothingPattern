@@ -7,6 +7,7 @@ import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJActionRequest;
+import com.xhs.clothingpatternbackend.model.dto.mj.MJBlendRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJImagineRequest;
 import com.xhs.clothingpatternbackend.model.vo.MJImagineResponse;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
@@ -312,6 +313,39 @@ public class MJController {
         } catch (Exception e) {
             log.error("保存MJ图片失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * Blend（垫图/混合）接口
+     *
+     * @param request Blend请求参数
+     * @return 生成结果
+     */
+    @PostMapping("/blend")
+    @Operation(summary = "Blend垫图/混合")
+    public BaseResponse<MJImagineResponse> blend(@RequestBody MJBlendRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(request.getImageUrls() == null || request.getImageUrls().isEmpty(), 
+                ErrorCode.PARAMS_ERROR, "图片URL列表不能为空");
+        ThrowUtils.throwIf(request.getImageUrls().size() < 2 || request.getImageUrls().size() > 5, 
+                ErrorCode.PARAMS_ERROR, "图片数量必须在2-5张之间");
+        
+        try {
+            // 调用Midjourney Blend API
+            MJImagineResponse response = mjGenImage.blend(request);
+            
+            // 检查是否成功
+            if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
+                log.error("Midjourney Blend失败，响应：{}", response);
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Blend失败");
+            }
+            
+            return ResultUtils.success(response);
+        } catch (IOException e) {
+            log.error("调用Midjourney Blend API异常", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Blend失败：" + e.getMessage());
         }
     }
     

@@ -14,6 +14,18 @@ export async function executeAction(body: API.MJActionRequest, options?: { [key:
   })
 }
 
+/** Blend垫图/混合 POST /mj/blend */
+export async function blend(body: API.MJBlendRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseMJImagineResponse>('/mj/blend', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** 生成图片并保存 POST /mj/generate */
 export async function generateAndSave(
   body: API.MJImagineRequest,

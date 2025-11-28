@@ -11,7 +11,7 @@
       <!-- 步骤1：输入提示词并生成 -->
       <div v-if="currentStep === 1" class="step-content">
         <h2 class="section-title"><EditOutlined /> 步骤 1：描述你的图案创意</h2>
-        
+
         <a-form :model="formState" layout="vertical" @finish="handleGenerate">
           <!-- 提示词输入 -->
           <a-form-item
@@ -27,9 +27,7 @@
               :maxlength="200"
               show-count
             />
-            <div class="tip-text">
-              💡 提示：支持中文输入，AI 会自动翻译并添加服装专业术语
-            </div>
+            <div class="tip-text">💡 提示：支持中文输入，AI 会自动翻译并添加服装专业术语</div>
           </a-form-item>
 
           <!-- 风格选择 -->
@@ -114,7 +112,7 @@
       <!-- 步骤2：选择图片并执行操作 -->
       <div v-if="currentStep === 2" class="step-content">
         <h2 class="section-title"><PictureOutlined /> 步骤 2：选择喜欢的图案</h2>
-        
+
         <!-- 显示生成的 2x2 网格图片 -->
         <div class="grid-preview">
           <a-image
@@ -128,7 +126,9 @@
             <p><strong>图案描述：</strong>{{ originalPrompt }}</p>
             <p v-if="formState.style"><strong>风格：</strong>{{ formState.style }}</p>
             <p v-if="formState.season"><strong>季节：</strong>{{ formState.season }}</p>
-            <p v-if="formState.targetAudience"><strong>受众：</strong>{{ formState.targetAudience }}</p>
+            <p v-if="formState.targetAudience">
+              <strong>受众：</strong>{{ formState.targetAudience }}
+            </p>
             <p><strong>任务ID：</strong>{{ mjResponse.taskId }}</p>
             <p><strong>图片ID：</strong>{{ mjResponse.imageId }}</p>
           </div>
@@ -188,9 +188,7 @@
 
           <!-- 执行按钮 -->
           <div class="action-buttons">
-            <a-button size="large" @click="backToStep1">
-              <LeftOutlined /> 返回重新生成
-            </a-button>
+            <a-button size="large" @click="backToStep1"> <LeftOutlined /> 返回重新生成 </a-button>
             <a-button
               type="primary"
               size="large"
@@ -210,7 +208,7 @@
       <!-- 步骤3：确认并保存 -->
       <div v-if="currentStep === 3" class="step-content">
         <h2 class="section-title"><CheckOutlined /> 步骤 3：确认并保存</h2>
-        
+
         <!-- 显示最终结果 -->
         <div class="final-preview">
           <a-image
@@ -225,7 +223,9 @@
             <p><strong>图案描述：</strong>{{ originalPrompt }}</p>
             <p v-if="formState.style"><strong>风格：</strong>{{ formState.style }}</p>
             <p v-if="formState.season"><strong>季节：</strong>{{ formState.season }}</p>
-            <p v-if="formState.targetAudience"><strong>受众：</strong>{{ formState.targetAudience }}</p>
+            <p v-if="formState.targetAudience">
+              <strong>受众：</strong>{{ formState.targetAudience }}
+            </p>
           </div>
         </div>
 
@@ -247,14 +247,8 @@
 
           <!-- 操作按钮 -->
           <div class="action-buttons">
-            <a-button size="large" @click="backToStep2">
-              <LeftOutlined /> 返回重新选择
-            </a-button>
-            <a-button
-              type="default"
-              size="large"
-              @click="continueWithoutSaving"
-            >
+            <a-button size="large" @click="backToStep2"> <LeftOutlined /> 返回重新选择 </a-button>
+            <a-button type="default" size="large" @click="continueWithoutSaving">
               继续操作（不保存）
             </a-button>
             <a-button
@@ -325,25 +319,7 @@ const selectedAction = ref<string | null>(null)
 const handleGenerate = async () => {
   try {
     generating.value = true
-    
-    // 构建完整的 prompt（包含风格、季节、受众等信息）
-    let fullPrompt = formState.prompt
-    
-    // 添加风格
-    if (formState.style) {
-      fullPrompt += `, ${formState.style} style`
-    }
-    
-    // 添加季节
-    if (formState.season) {
-      fullPrompt += `, for ${formState.season}`
-    }
-    
-    // 添加目标受众
-    if (formState.targetAudience) {
-      fullPrompt += `, target audience: ${formState.targetAudience}`
-    }
-    
+
     // 保存原始提示词（用于显示）
     originalPrompt.value = formState.prompt
 
@@ -353,9 +329,13 @@ const handleGenerate = async () => {
       duration: 0,
     })
 
+    // 直接传递所有字段给后端，后端会处理组合和翻译
     const res = await imagine({
-      prompt: fullPrompt,
+      prompt: formState.prompt,
       action: 'generate',
+      style: formState.style,
+      season: formState.season,
+      targetAudience: formState.targetAudience,
     })
 
     if (res.data.code === 0 && res.data.data) {
@@ -381,7 +361,12 @@ const handleGenerate = async () => {
 
 // 选择操作
 const selectAction = (action: string) => {
-  selectedAction.value = action
+  // 如果点击的是已选中的操作，则取消选择
+  if (selectedAction.value === action) {
+    selectedAction.value = null
+  } else {
+    selectedAction.value = action
+  }
 }
 
 // 执行操作
@@ -408,10 +393,10 @@ const executeAction = async () => {
 
     if (res.data.code === 0 && res.data.data) {
       finalResult.value = res.data.data
-      
+
       // 自动填充图案名称
       saveForm.patternName = `MJ-${originalPrompt.value.substring(0, 20)}-${selectedAction.value}`
-      
+
       currentStep.value = 3
       message.success({
         content: '操作执行成功！请确认并保存',
@@ -456,11 +441,14 @@ const saveToDatabase = async () => {
       duration: 0,
     })
 
-    // 准备保存数据
+    // 准备保存数据，包含所有字段
     const saveData = {
       ...finalResult.value,
       patternName: saveForm.patternName,
       prompt: originalPrompt.value,
+      style: formState.style,
+      season: formState.season,
+      targetAudience: formState.targetAudience,
     }
 
     // 调用后端保存接口
@@ -705,4 +693,3 @@ const getActionName = (action: string) => {
   }
 }
 </style>
-

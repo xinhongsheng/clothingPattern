@@ -1,0 +1,122 @@
+### 测试 Midjourney 完整功能流程
+
+### 1. 测试 Imagine 接口（生成初始 2x2 网格图片）
+POST http://localhost:8101/api/mj/imagine
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "prompt": "可爱的小猫图案",
+  "action": "generate",
+  "style": "卡通",
+  "season": "四季",
+  "targetAudience": "儿童"
+}
+
+### 2. 测试 Action 接口 - Upsample（放大第1张图片）
+### 需要先执行步骤1获取 taskId 和 imageId
+POST http://localhost:8101/api/mj/action
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "taskId": "从步骤1的响应中获取",
+  "imageId": "从步骤1的响应中获取",
+  "action": "upsample1"
+}
+
+### 3. 测试 Action 接口 - Variation（生成第2张图片的变体）
+POST http://localhost:8101/api/mj/action
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "taskId": "从步骤1的响应中获取",
+  "imageId": "从步骤1的响应中获取",
+  "action": "variation2"
+}
+
+### 4. 测试 Action 接口 - Reroll（重新生成）
+POST http://localhost:8101/api/mj/action
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "taskId": "从步骤1的响应中获取",
+  "imageId": "从步骤1的响应中获取",
+  "action": "reroll"
+}
+
+### 5. 测试 Blend 接口（垫图/混合）
+### 需要提供 2-5 张图片的 URL
+POST http://localhost:8101/api/mj/blend
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "imageUrls": [
+    "https://example.com/image1.png",
+    "https://example.com/image2.png"
+  ],
+  "action": "blend",
+  "style": "简约",
+  "season": "春季",
+  "targetAudience": "成人"
+}
+
+### 6. 测试保存图案到数据库
+POST http://localhost:8101/api/mj/save
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "patternName": "我的可爱小猫图案",
+  "prompt": "可爱的小猫图案",
+  "rawImageUrl": "从MJ响应中获取的原始图片URL",
+  "imageUrl": "从MJ响应中获取的缩略图URL",
+  "taskId": "从MJ响应中获取",
+  "imageId": "从MJ响应中获取",
+  "style": "卡通",
+  "season": "四季",
+  "targetAudience": "儿童"
+}
+
+### 7. 测试 Generate 并保存（一步到位）
+POST http://localhost:8101/api/mj/generate
+Content-Type: application/json
+Cookie: JSESSIONID=你的session
+
+{
+  "prompt": "复古花卉图案",
+  "action": "generate",
+  "style": "复古",
+  "season": "春季",
+  "targetAudience": "成人"
+}
+
+### 8. 测试接口
+GET http://localhost:8101/api/mj/test
+
+###############################################
+# 完整工作流示例
+###############################################
+
+### 工作流步骤说明：
+# 1. 用户输入提示词和风格信息 -> 调用 /imagine 接口生成 2x2 网格
+# 2. 用户选择喜欢的图片位置 -> 调用 /action 接口执行操作（upsample/variation/reroll）
+# 3. 用户满意后 -> 调用 /save 接口保存到数据库
+# 4. 可选：用户可以继续对结果执行操作（重复步骤2-3）
+# 5. 高级功能：用户可以使用 /blend 接口混合多张图片
+
+### 支持的 Action 类型：
+# - upsample1, upsample2, upsample3, upsample4: 放大对应位置的图片
+# - variation1, variation2, variation3, variation4: 生成对应位置图片的变体
+# - reroll: 重新生成全新的 4 张图片
+
+### 图片位置说明（2x2 网格）：
+# +-------+-------+
+# |   1   |   2   |
+# +-------+-------+
+# |   3   |   4   |
+# +-------+-------+
+
