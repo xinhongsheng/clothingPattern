@@ -139,7 +139,7 @@ export async function getArticleList(
   body: API.ArticleQueryRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageResultArticleVO>('/article/list', {
+  return request<API.BaseResponsePageArticleVO>('/article/list', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -222,7 +222,7 @@ export async function searchArticles(
   params: API.searchArticlesParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePageResultArticleVO>('/article/search', {
+  return request<API.BaseResponsePageArticleVO>('/article/search', {
     method: 'GET',
     params: {
       // pageNum has a default value: 1

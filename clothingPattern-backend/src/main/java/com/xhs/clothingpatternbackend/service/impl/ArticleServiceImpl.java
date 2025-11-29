@@ -71,26 +71,25 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     private static final String RECOMMEND_ARTICLES_KEY = "article:recommend:list";
 
     @Override
-    public PageResult<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId) {
+    public Page<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId) {
         // 1. 构建分页对象
-        Page<Article> page = new Page<>(query.getPageNum(), query.getPageSize());
-
+        long current = query.getCurrent();
+        long size = query.getPageSize();
+        Page<Article> page = new Page<>(current, size);
         // 2. 使用getQueryWrapper方法构建查询条件
         QueryWrapper<Article> queryWrapper = getQueryWrapper(query);
-
         // 3. 执行分页查询
         Page<Article> articlePage = this.page(page, queryWrapper);
-
         // 4. 使用getArticleVOList方法转换为VO
         List<ArticleVO> articleVOList = getArticleVOList(articlePage.getRecords());
-
         // 5. 批量设置用户交互状态
         if (currentUserId != null && !articleVOList.isEmpty()) {
             setUserInteractionStatus(articleVOList, currentUserId);
         }
-
         // 6. 构建分页结果
-        return new PageResult<>(articleVOList, articlePage.getTotal());
+        Page<ArticleVO> articleVOPage = new Page<>(current, size, articlePage.getTotal());
+        articleVOPage.setRecords(articleVOList);
+        return articleVOPage;
     }
 
     @Override
@@ -713,9 +712,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         }
 
         // 排序
-        queryWrapper.orderByDesc("isTop"); // 始终优先按置顶排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "asc".equals(sortOrder), sortField);
-
+//        queryWrapper.orderByDesc("isTop"); // 始终优先按置顶排序
+//        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "asc".equals(sortOrder), sortField);
+        queryWrapper.orderBy(StrUtil.isNotBlank(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
     }
 }

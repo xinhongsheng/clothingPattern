@@ -58,7 +58,7 @@
           </a-form-item>
           <a-form-item>
             <a-space>
-              <a-button type="primary" @click="handleSearch">
+              <a-button type="primary" @click="doSearch">
                 <SearchOutlined />
                 搜索
               </a-button>
@@ -77,7 +77,7 @@
         :data-source="articleList"
         :loading="loading"
         :pagination="pagination"
-        @change="handleTableChange"
+        @change="doTableChange"
         row-key="id"
       >
         <!-- 使用新的 bodyCell 插槽 -->
@@ -342,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted,computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -405,17 +405,20 @@ const searchParams = reactive({
   keyword: '',
   categoryId: undefined as string | undefined,
   status: '',
-  pageNum: 1,
+  current: 1,
   pageSize: 10,
 })
 
-// 分页配置
-const pagination = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showSizeChanger: true,
-  showTotal: (total: number) => `共 ${total} 条记录`,
+// 分页参数
+const total = ref(0)
+const pagination = computed(() => {
+  return {
+    current: searchParams.current ?? 1,
+    pageSize: searchParams.pageSize ?? 10,
+    total: total.value,
+    showSizeChanger: true,
+    showTotal: (total) => `共 ${total} 条`,
+  }
 })
 
 // 分类表格列定义
@@ -536,12 +539,12 @@ const loadArticles = async () => {
   try {
     const res = await getArticleList({
       ...searchParams,
-      pageNum: pagination.current,
-      pageSize: pagination.pageSize,
+      pageNum: searchParams.current,
+      pageSize: searchParams.pageSize,
     })
     if (res.data.code === 0 && res.data.data) {
-      articleList.value = res.data.data.list || []
-      pagination.total = res.data.data.total || 0
+      articleList.value = res.data.data.records || []
+      total.value = res.data.data.total || 0
     } else {
       message.error('加载文章失败：' + res.data.message)
     }
@@ -553,9 +556,10 @@ const loadArticles = async () => {
   }
 }
 
-// 搜索
-const handleSearch = () => {
-  pagination.current = 1
+// 搜索处理
+const doSearch = () => {
+  // 重置页码
+  searchParams.current = 1
   loadArticles()
 }
 
@@ -564,14 +568,14 @@ const handleReset = () => {
   searchParams.keyword = ''
   searchParams.categoryId = undefined
   searchParams.status = ''
-  pagination.current = 1
+  searchParams.current = 1
   loadArticles()
 }
 
-// 表格变化
-const handleTableChange = (pag: any) => {
-  pagination.current = pag.current
-  pagination.pageSize = pag.pageSize
+// 表格变化处理
+const doTableChange = (page: any) => {
+  searchParams.current = page.current
+  searchParams.pageSize = page.pageSize
   loadArticles()
 }
 

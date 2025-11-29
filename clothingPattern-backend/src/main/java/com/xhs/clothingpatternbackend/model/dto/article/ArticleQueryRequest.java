@@ -21,12 +21,4 @@ public class ArticleQueryRequest extends PageRequest {
     private Integer isTop;
     private Integer isHot;
     private Integer isRecommend;
-
-    private Integer pageNum = 1;
-    private Integer pageSize = 10;
-
-    // 排序字段：publishTime, viewCount, likeCount, createTime
-    private String sortField = "publishTime";
-    // 排序方式：asc, desc
-    private String sortOrder = "desc";
 }

@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.qcloud.cos.model.PutObjectResult;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
@@ -54,8 +55,8 @@ public class ArticleController {
      * 获取文章列表
      */
     @PostMapping("/list")
-    public BaseResponse<PageResult<ArticleVO>> getArticleList(@Valid @RequestBody ArticleQueryRequest query,
-            HttpServletRequest request) {
+    public BaseResponse<Page<ArticleVO>> getArticleList(@Valid @RequestBody ArticleQueryRequest query,
+                                                        HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -67,7 +68,7 @@ public class ArticleController {
             // 未登录，保持currentUserId为null
         }
 
-        PageResult<ArticleVO> result = articleService.getArticleList(query, currentUserId);
+        Page<ArticleVO> result = articleService.getArticleList(query, currentUserId);
         return ResultUtils.success(result);
     }
 
@@ -98,7 +99,7 @@ public class ArticleController {
      * 搜索文章
      */
     @GetMapping("/search")
-    public BaseResponse<PageResult<ArticleVO>> searchArticles(@RequestParam String keyword,
+    public BaseResponse<Page<ArticleVO>> searchArticles(@RequestParam String keyword,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             HttpServletRequest request) {
@@ -115,10 +116,10 @@ public class ArticleController {
 
         ArticleQueryRequest query = new ArticleQueryRequest();
         query.setKeyword(keyword);
-        query.setPageNum(pageNum);
+        query.setCurrent(pageNum);
         query.setPageSize(pageSize);
 
-        PageResult<ArticleVO> result = articleService.getArticleList(query, currentUserId);
+        Page<ArticleVO> result = articleService.getArticleList(query, currentUserId);
         return ResultUtils.success(result);
     }
 

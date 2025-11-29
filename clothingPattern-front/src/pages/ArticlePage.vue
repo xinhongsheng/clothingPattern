@@ -196,11 +196,11 @@ const loadArticles = async () => {
 
     const res = await getArticleList(query)
     if (res.data.code === 0 && res.data.data) {
-      articleList.value = res.data.data.list || []
-      total.value = res.data.data.total || 0
-    } else {
-      message.error('加载文章失败：' + res.data.message)
-    }
+        articleList.value = res.data.data.records || []
+        total.value = res.data.data.total || 0
+      } else {
+        message.error('加载文章失败：' + res.data.message)
+      }
   } catch (error: any) {
     console.error('加载文章失败:', error)
     message.error('加载文章失败：' + error.message)

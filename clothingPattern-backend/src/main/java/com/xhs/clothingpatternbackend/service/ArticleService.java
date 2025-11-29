@@ -1,6 +1,7 @@
 package com.xhs.clothingpatternbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.article.ArticleQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Article;
@@ -23,7 +24,7 @@ public interface ArticleService extends IService<Article> {
     /**
      * 获取文章列表（分页）
      */
-    PageResult<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId);
+    Page<ArticleVO> getArticleList(ArticleQueryRequest query, Long currentUserId);
 
     /**
      * 获取文章详情

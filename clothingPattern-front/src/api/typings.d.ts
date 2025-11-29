@@ -261,6 +261,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponsePageArticleVO = {
+    code?: number
+    data?: PageArticleVO
+    message?: string
+  }
+
   type BaseResponsePageResultCommentVO = {
     code?: number
     data?: PageResultCommentVO
@@ -591,6 +597,20 @@ declare namespace API {
   type PageResultCommentVO = {
     list?: CommentVO[]
     total?: number
+  }
+
+  type PageArticleVO = {
+    records?: ArticleVO[]
+    total?: number
+    size?: number
+    current?: number
+    orders?: OrderItem[]
+    optimizeCountSql?: PageArticleVO
+    searchCount?: PageArticleVO
+    optimizeJoinOfCountSql?: boolean
+    maxLimit?: number
+    countId?: string
+    pages?: number
   }
 
   type PageUserVO = {
