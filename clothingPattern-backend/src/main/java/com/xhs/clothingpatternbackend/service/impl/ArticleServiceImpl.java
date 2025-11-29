@@ -24,6 +24,8 @@ import com.xhs.clothingpatternbackend.model.vo.CollectResult;
 import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.ArticleCategoryService;
+import com.xhs.clothingpatternbackend.service.ArticleCollectService;
+import com.xhs.clothingpatternbackend.service.ArticleLikeService;
 import com.xhs.clothingpatternbackend.service.ArticleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -49,10 +51,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     private ArticleMapper articleMapper;
 
     @Autowired
-    private ArticleLikeMapper articleLikeMapper;
+    private ArticleLikeService articleLikeService;
 
     @Autowired
     private ArticleCollectMapper articleCollectMapper;
+
+    @Autowired
+    private ArticleCollectService articleCollectService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -245,7 +250,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         QueryWrapper<ArticleLike> wrapper = new QueryWrapper<>();
         wrapper.eq("articleId", articleId)
                 .eq("userId", userId);
-        ArticleLike existLike = articleLikeMapper.selectOne(wrapper);
+        ArticleLike existLike = articleLikeService.getOne(wrapper);
 
         boolean newLikeStatus;
         int likeChange;
@@ -253,14 +258,14 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         if (existLike != null && existLike.getIsDelete() == 0) {
             // 已点赞 -> 取消点赞
             existLike.setIsDelete(1);
-            articleLikeMapper.updateById(existLike);
+            articleLikeService.updateById(existLike);
             newLikeStatus = false;
             likeChange = -1;
             log.info("用户 {} 取消点赞文章 {}", userId, articleId);
         } else if (existLike != null && existLike.getIsDelete() == 1) {
             // 之前取消过 -> 重新点赞
             existLike.setIsDelete(0);
-            articleLikeMapper.updateById(existLike);
+            articleLikeService.updateById(existLike);
             newLikeStatus = true;
             likeChange = 1;
             log.info("用户 {} 重新点赞文章 {}", userId, articleId);
@@ -271,7 +276,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
             like.setUserId(userId);
             like.setCreateTime(new Date());
             like.setIsDelete(0);
-            articleLikeMapper.insert(like);
+            articleLikeService.save(like);
             newLikeStatus = true;
             likeChange = 1;
             log.info("用户 {} 首次点赞文章 {}", userId, articleId);
@@ -521,11 +526,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
                 .collect(Collectors.toList());
 
         // 批量查询点赞状态
-        List<Long> likedArticleIds = articleLikeMapper.selectLikedArticleIds(userId, articleIds);
+        List<Long> likedArticleIds = articleLikeService.selectLikedArticleIds(userId, articleIds);
         Set<Long> likedSet = new HashSet<>(likedArticleIds);
 
         // 批量查询收藏状态
-        List<Long> collectedArticleIds = articleCollectMapper.selectCollectedArticleIds(userId, articleIds);
+        List<Long> collectedArticleIds = articleCollectService.selectCollectedArticleIds(userId, articleIds);
         Set<Long> collectedSet = new HashSet<>(collectedArticleIds);
 
         // 设置状态
@@ -550,7 +555,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         wrapper.eq("articleId", articleId)
                 .eq("userId", userId)
                 .eq("isDelete", 0);
-        boolean liked = articleLikeMapper.selectCount(wrapper) > 0;
+        boolean liked = articleLikeService.count(wrapper) > 0;
 
         // 写入Redis
         redisTemplate.opsForHash().put(likeKey, userId.toString(), liked);
@@ -712,8 +717,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         }
 
         // 排序
-//        queryWrapper.orderByDesc("isTop"); // 始终优先按置顶排序
-//        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "asc".equals(sortOrder), sortField);
+        // queryWrapper.orderByDesc("isTop"); // 始终优先按置顶排序
+        // queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), "asc".equals(sortOrder),
+        // sortField);
         queryWrapper.orderBy(StrUtil.isNotBlank(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
     }

@@ -14,11 +14,7 @@ import java.util.List;
 */
 public interface ArticleCategoryMapper extends BaseMapper<ArticleCategory> {
 
-    /**
-     * 查询所有启用的分类（按排序字段和创建时间排序）
-     */
-//    @Select("SELECT * FROM article_category WHERE status = 1 AND isDelete = 0 ORDER BY sortOrder DESC, createTime DESC")
-//    List<ArticleCategory> selectEnabledCategories();
+
 }
 
 
