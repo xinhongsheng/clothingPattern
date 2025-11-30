@@ -237,7 +237,7 @@ const expandedComments = ref<Set<number>>(new Set()) // 记录已展开的评论
         pageSize: pageSize.value
       })
       if (res.data.code === 0 && res.data.data) {
-        comments.value = res.data.data.records || []
+        comments.value = res.data.data.list || []
         total.value = res.data.data.total || 0
       } else {
         message.error('加载评论失败：' + res.data.message)

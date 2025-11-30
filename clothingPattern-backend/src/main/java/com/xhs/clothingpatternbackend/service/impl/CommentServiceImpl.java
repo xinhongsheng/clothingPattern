@@ -29,14 +29,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
-* @author 小辛
-* @description 针对表【comment(图案评论表)】的数据库操作Service实现
-* @createDate 2025-11-26 15:12:15
-*/
+ * @author 小辛
+ * @description 针对表【comment(图案评论表)】的数据库操作Service实现
+ * @createDate 2025-11-26 15:12:15
+ */
 @Service
 @Slf4j
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
-    implements CommentService{
+        implements CommentService {
 
     @Autowired
     private CommentMapper commentMapper;
@@ -62,7 +62,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         // 2. 如果是回复评论，验证父评论并设置 rootId
         Long rootId = null;
         Long replyToUserId = null;
-        
+
         if (request.getParentId() != null) {
             Comment parentComment = commentMapper.selectById(request.getParentId());
             if (parentComment == null) {
@@ -74,7 +74,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 
             // 设置 rootId：如果父评论是主评论，rootId = 父评论ID；否则 rootId = 父评论的rootId
             rootId = parentComment.getRootId() != null ? parentComment.getRootId() : parentComment.getId();
-            
+
             // 设置被回复的用户ID
             replyToUserId = parentComment.getUserId();
 
@@ -206,7 +206,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         // 查询是否已点赞
         QueryWrapper<CommentLike> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userId", userId)
-                   .eq("commentId", commentId);
+                .eq("commentId", commentId);
         CommentLike existingLike = commentLikeMapper.selectOne(queryWrapper);
 
         if (existingLike != null && existingLike.getIsDelete() == 0) {
@@ -240,19 +240,19 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
     private CommentVO convertToVO(Comment comment) {
         CommentVO vo = new CommentVO();
         BeanUtils.copyProperties(comment, vo);
-        
+
         // 转换时间格式
         if (comment.getCreateTime() != null) {
             vo.setCreateTime(comment.getCreateTime().toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime());
         }
-        
+
         // 设置用户信息（已经在 SQL 查询中通过 JOIN 获取）
         vo.setUserName(comment.getUserName());
         vo.setUserAvatar(comment.getUserAvatar());
         vo.setReplyToUserName(comment.getReplyToUserName());
-        
+
         return vo;
     }
 
@@ -279,8 +279,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         for (CommentVO vo : commentVOList) {
             vo.setLiked(likedSet.contains(vo.getId()));
             if (vo.getChildren() != null) {
-                vo.getChildren().forEach(child -> 
-                    child.setLiked(likedSet.contains(child.getId())));
+                vo.getChildren().forEach(child -> child.setLiked(likedSet.contains(child.getId())));
             }
         }
     }
@@ -295,7 +294,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
 
         // 2. 查询所有回复（根据 rootId）
         List<Comment> replies = commentMapper.selectRepliesByRootId(commentId);
-        
+
         // 3. 转换为VO
         List<CommentVO> replyVOList = replies.stream()
                 .map(this::convertToVO)
@@ -314,7 +313,3 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         return replyVOList;
     }
 }
-
-
-
-

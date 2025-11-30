@@ -99,7 +99,7 @@
                 <a-button size="large" v-if="isMyPattern" @click="showEditModal">
                   <EditOutlined /> 编辑
                 </a-button>
-                <a-button size="large" v-if="isMyPattern" danger @click="handleDelete">
+                <a-button size="large" v-if="isMyPattern || isAdmin" danger @click="handleDelete">
                   <DeleteOutlined /> 删除
                 </a-button>
               </a-space>
@@ -220,6 +220,11 @@ const editForm = ref<API.PatternUpdateRequest>({})
 // 判断是否为当前用户的图案
 const isMyPattern = computed(() => {
   return pattern.value?.userId === loginUserStore.loginUser?.id
+})
+
+// Add this
+const isAdmin = computed(() => {
+  return loginUserStore.loginUser?.userRole === 'admin'
 })
 
 // 获取图案详情
