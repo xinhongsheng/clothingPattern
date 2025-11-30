@@ -145,7 +145,7 @@
                   </div>
                   <!-- 查看更多回复 -->
                   <a-button
-                    v-if="comment.replyCount > 3 && !isExpanded(comment.id)"
+                    v-if="comment.replyCount > 3 && !isExpanded(comment.id) && comment.id"
                     type="link"
                     size="small"
                     class="view-more-replies"
@@ -387,8 +387,12 @@ const expandedComments = ref<Set<number>>(new Set()) // 记录已展开的评论
 
   // 加载所有回复
   const loadAllReplies = async (comment: API.CommentVO) => {
+    if (!comment.id) {
+      message.error('评论ID无效，无法加载回复');
+      return;
+    }
     try {
-      const res = await getCommentReplies(comment.id)
+      const res = await getCommentReplies({ commentId: comment.id })
       if (res.data.code === 0 && res.data.data) {
         // 更新评论的回复列表
         comment.children = res.data.data
