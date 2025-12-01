@@ -11,11 +11,11 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 /**
-* @author 小辛
-* @description 针对表【article(文章资讯表)】的数据库操作Mapper
-* @createDate 2025-11-26 16:42:01
-* @Entity com.xhs.clothingpatternbackend.model.entity.Article
-*/
+ * @author 小辛
+ * @description 针对表【article(文章资讯表)】的数据库操作Mapper
+ * @createDate 2025-11-26 16:42:01
+ * @Entity com.xhs.clothingpatternbackend.model.entity.Article
+ */
 public interface ArticleMapper extends BaseMapper<Article> {
 
     /**
@@ -31,15 +31,15 @@ public interface ArticleMapper extends BaseMapper<Article> {
     int incrementViewCountBatch(@Param("id") Long id, @Param("increment") int increment);
 
     /**
-     * 更新点赞数（增加或减少）
+     * 更新点赞数（增加或减少），确保点赞数不会变成负数
      */
-    @Update("UPDATE article SET likeCount = likeCount + #{increment} WHERE id = #{id}")
+    @Update("UPDATE article SET likeCount = CASE WHEN likeCount + #{increment} < 0 THEN 0 ELSE likeCount + #{increment} END WHERE id = #{id}")
     int incrementLikeCount(@Param("id") Long id, @Param("increment") int increment);
 
     /**
-     * 更新收藏数（增加或减少）
+     * 更新收藏数（增加或减少），确保收藏数不会变成负数
      */
-    @Update("UPDATE article SET collectCount = collectCount + #{increment} WHERE id = #{id}")
+    @Update("UPDATE article SET collectCount = CASE WHEN collectCount + #{increment} < 0 THEN 0 ELSE collectCount + #{increment} END WHERE id = #{id}")
     int incrementCollectCount(@Param("id") Long id, @Param("increment") int increment);
 
     /**
@@ -55,7 +55,3 @@ public interface ArticleMapper extends BaseMapper<Article> {
     @Update("UPDATE article SET isHot = #{isHot} WHERE id = #{id}")
     int updateHotStatus(@Param("id") Long id, @Param("isHot") int isHot);
 }
-
-
-
-

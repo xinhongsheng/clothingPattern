@@ -320,7 +320,7 @@ const handleSend = async (e?: Event) => {
     // 如果没有收到任何内容
     const finalMessage = messages.value[aiMessageIndex]
     if (finalMessage && !finalMessage.content) {
-      finalMessage.content = '抱歉，我暂时无法回答这个问题。'
+      finalMessage.content = '请先登录以使用 AI 服装设计顾问功能。'
     }
   } catch (error: any) {
     messages.value[aiMessageIndex] = {

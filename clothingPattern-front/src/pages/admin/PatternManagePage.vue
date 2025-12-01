@@ -4,9 +4,7 @@
     <a-card :bordered="false" class="header-card">
       <a-flex justify="space-between" align="center">
         <div>
-          <h2 class="page-title">
-            <AppstoreOutlined /> 服装图案管理
-          </h2>
+          <h2 class="page-title"><AppstoreOutlined /> 服装图案管理</h2>
           <p class="page-desc">管理用户生成的服装图案，进行审核和维护</p>
         </div>
         <a-space>
@@ -15,9 +13,7 @@
               <AuditOutlined /> 待审核图案
             </a-button>
           </a-badge>
-          <a-button @click="doSearch">
-            <ReloadOutlined /> 刷新
-          </a-button>
+          <a-button @click="doSearch"> <ReloadOutlined /> 刷新 </a-button>
         </a-space>
       </a-flex>
     </a-card>
@@ -66,14 +62,10 @@
         </a-form-item>
 
         <a-form-item>
-          <a-button type="primary" html-type="submit">
-            <SearchOutlined /> 搜索
-          </a-button>
+          <a-button type="primary" html-type="submit"> <SearchOutlined /> 搜索 </a-button>
         </a-form-item>
         <a-form-item>
-          <a-button @click="resetSearch">
-            <ClearOutlined /> 重置
-          </a-button>
+          <a-button @click="resetSearch"> <ClearOutlined /> 重置 </a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -98,7 +90,7 @@
                 :width="100"
                 :height="100"
                 :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+5Zu+54mH5aSx6LSlPC90ZXh0Pjwvc3ZnPg=='"
-                style="object-fit: cover; border-radius: 8px;"
+                style="object-fit: cover; border-radius: 8px"
               />
             </div>
           </template>
@@ -106,7 +98,9 @@
           <!-- 图案信息 -->
           <template v-if="column.dataIndex === 'patternInfo'">
             <div class="pattern-info">
-              <div><strong>{{ record.patternName }}</strong></div>
+              <div>
+                <strong>{{ record.patternName }}</strong>
+              </div>
               <div class="info-item">
                 <FileTextOutlined /> {{ record.description || '暂无描述' }}
               </div>
@@ -137,7 +131,7 @@
               {{ AUDIT_STATUS_MAP[record.auditStatus] }}
             </a-tag>
             <div v-if="record.rejectReason" class="reject-reason">
-              拒绝原因：{{ record.rejectReason }}
+              审核原因：{{ record.rejectReason }}
             </div>
           </template>
 
@@ -182,9 +176,7 @@
                 </a-button>
               </a-space>
               <a-space wrap>
-                <a-button size="small" @click="viewDetail(record)">
-                  <EyeOutlined /> 详情
-                </a-button>
+                <a-button size="small" @click="viewDetail(record)"> <EyeOutlined /> 详情 </a-button>
                 <a-button size="small" danger @click="doDelete(record.id)">
                   <DeleteOutlined /> 删除
                 </a-button>
@@ -216,12 +208,7 @@
     </a-modal>
 
     <!-- 详情弹窗 -->
-    <a-modal
-      v-model:open="detailModalVisible"
-      title="图案详情"
-      :footer="null"
-      width="800px"
-    >
+    <a-modal v-model:open="detailModalVisible" title="图案详情" :footer="null" width="800px">
       <div v-if="currentPattern" class="pattern-detail">
         <a-row :gutter="24">
           <a-col :span="12">
@@ -229,7 +216,7 @@
               <a-image
                 :src="currentPattern.patternUrl"
                 :width="'100%'"
-                style="border-radius: 8px;"
+                style="border-radius: 8px"
               />
             </div>
           </a-col>
@@ -289,13 +276,9 @@ import {
   CheckOutlined,
   CloseOutlined,
   EyeOutlined,
-  DeleteOutlined
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
-import {
-  listPatternVoByPage,
-  deletePattern,
-  auditPattern
-} from '@/api/patternController'
+import { listPatternByPage, deletePattern, auditPattern } from '@/api/patternController'
 import {
   AUDIT_STATUS_ENUM,
   AUDIT_STATUS_MAP,
@@ -304,7 +287,7 @@ import {
   GENERATION_TYPE_ENUM,
   GENERATION_TYPE_MAP,
   GENERATION_TYPE_OPTIONS,
-  GENERATION_TYPE_COLOR_MAP
+  GENERATION_TYPE_COLOR_MAP,
 } from '@/constants/pattern'
 
 // 表格列定义
@@ -313,55 +296,55 @@ const columns = [
     title: 'ID',
     dataIndex: 'id',
     width: 80,
-    fixed: 'left'
+    fixed: 'left',
   },
   {
     title: '图案预览',
     dataIndex: 'patternUrl',
-    width: 120
+    width: 120,
   },
   {
     title: '图案信息',
     dataIndex: 'patternInfo',
     width: 250,
-    ellipsis: true
+    ellipsis: true,
   },
   {
     title: '生成方式',
     dataIndex: 'generationType',
-    width: 120
+    width: 120,
   },
   {
     title: '文件信息',
     dataIndex: 'fileInfo',
-    width: 120
+    width: 120,
   },
   {
     title: '审核状态',
     dataIndex: 'auditStatus',
-    width: 120
+    width: 120,
   },
   {
     title: '用户ID',
     dataIndex: 'userId',
-    width: 100
+    width: 100,
   },
   {
     title: '创建时间',
     dataIndex: 'createTime',
-    width: 180
+    width: 180,
   },
   {
     title: '审核时间',
     dataIndex: 'auditTime',
-    width: 180
+    width: 180,
   },
   {
     title: '操作',
     key: 'action',
     width: 200,
-    fixed: 'right'
-  }
+    fixed: 'right',
+  },
 ]
 
 // 数据
@@ -375,7 +358,7 @@ const searchParams = reactive<any>({
   current: 1,
   pageSize: 10,
   sortField: 'createTime',
-  sortOrder: 'descend'
+  sortOrder: 'descend',
 })
 
 // 分页参数
@@ -386,7 +369,7 @@ const pagination = computed(() => {
     total: total.value,
     showSizeChanger: true,
     showTotal: (total: number) => `共 ${total} 条`,
-    pageSizeOptions: ['10', '20', '50', '100']
+    pageSizeOptions: ['10', '20', '50', '100'],
   }
 })
 
@@ -394,7 +377,7 @@ const pagination = computed(() => {
 const rejectModalVisible = ref(false)
 const rejectForm = reactive({
   patternId: 0,
-  rejectReason: ''
+  rejectReason: '',
 })
 
 // 详情弹窗
@@ -405,22 +388,22 @@ const currentPattern = ref<any>(null)
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await listPatternVoByPage(searchParams)
+    const res = await listPatternByPage(searchParams)
     if (res.data.code === 0 && res.data.data) {
       dataList.value = res.data.data.records ?? []
       total.value = res.data.data.total ?? 0
-      
+
       // Debug: 打印第一条数据的图片URL
       if (dataList.value.length > 0) {
         console.log('First pattern URLs:', {
           patternUrl: dataList.value[0].patternUrl,
-          thumbUrl: dataList.value[0].thumbUrl
+          thumbUrl: dataList.value[0].thumbUrl,
         })
       }
-      
+
       // 计算待审核数量
       pendingCount.value = dataList.value.filter(
-        (item: any) => item.auditStatus === AUDIT_STATUS_ENUM.PENDING
+        (item: any) => item.auditStatus === AUDIT_STATUS_ENUM.PENDING,
       ).length
     } else {
       message.error('获取数据失败，' + res.data.message)
@@ -466,7 +449,7 @@ const handleAudit = async (record: any, auditStatus: string) => {
     const res = await auditPattern({
       id: record.id,
       auditStatus,
-      rejectReason: ''
+      rejectReason: '',
     })
     if (res.data.code === 0) {
       message.success('审核操作成功')
@@ -497,7 +480,7 @@ const handleRejectConfirm = async () => {
     const res = await auditPattern({
       id: rejectForm.patternId,
       auditStatus: AUDIT_STATUS_ENUM.REJECTED,
-      rejectReason: rejectForm.rejectReason
+      rejectReason: rejectForm.rejectReason,
     })
     if (res.data.code === 0) {
       message.success('审核拒绝成功')
@@ -546,17 +529,30 @@ const formatFileSize = (bytes: number) => {
 }
 
 // 格式化日期时间
-const formatDateTime = (date: Date | string) => {
+const formatDateTime = (date: Date | string | number) => {
   if (!date) return '-'
-  const d = new Date(date)
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  try {
+    let timestamp: number | string = date
+    // 如果是字符串格式的数字，转换为数字类型
+    if (typeof timestamp === 'string' && !isNaN(Number(timestamp))) {
+      timestamp = Number(timestamp)
+    }
+    const d = new Date(timestamp)
+    // 检查日期是否有效
+    if (isNaN(d.getTime())) {
+      return '-'
+    }
+    return d.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  } catch (error) {
+    return '-'
+  }
 }
 
 // 页面加载时请求数据
@@ -565,7 +561,7 @@ onMounted(() => {
 })
 </script>
 
-<style  scoped>
+<style scoped>
 #patternManagePage {
   padding: 24px;
   background: #f0f2f5;
@@ -630,7 +626,7 @@ onMounted(() => {
     .reject-reason {
       margin-top: 4px;
       font-size: 12px;
-      color: #ff4d4f;
+      color: #3abbdb;
     }
   }
 

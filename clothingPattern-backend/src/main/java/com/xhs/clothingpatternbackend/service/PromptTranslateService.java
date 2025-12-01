@@ -63,9 +63,9 @@ public class PromptTranslateService {
      * @param userPrompt 用户输入的提示词（中文或英文）
      * @return 优化后的英文提示词
      */
-    public String translateAndOptimize(String userPrompt) {
-        return translateAndOptimize(userPrompt, null, null, null);
-    }
+//    public String translateAndOptimize(String userPrompt) {
+//        return translateAndOptimize(userPrompt, null, null, null);
+//    }
     
     /**
      * 将用户输入的 prompt 翻译成英文并添加服装专业前缀（包含风格、季节、受众信息）
@@ -100,12 +100,10 @@ public class PromptTranslateService {
             
             // 2. 判断是否需要翻译（简单判断：如果包含中文字符则需要翻译）
             boolean needsTranslation = containsChinese(combinedPrompt);
-            
             if (needsTranslation) {
                 log.info("检测到中文提示词，开始翻译：{}", combinedPrompt);
                 String translatedPrompt = translateToEnglish(combinedPrompt);
                 log.info("翻译结果：{}", translatedPrompt);
-                
                 // 添加服装专业前缀
                 String finalPrompt = CLOTHING_PATTERN_PREFIX + translatedPrompt;
                 log.info("最终提示词：{}", finalPrompt);

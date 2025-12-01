@@ -67,6 +67,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+    @Autowired
+    private ArticleLikeMapper articleLikeMapper;
 
     private static final String ARTICLE_VIEW_KEY_PREFIX = "article:view:";
     private static final String ARTICLE_LIKE_KEY_PREFIX = "article:like:";
@@ -246,26 +248,21 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
         }
 
-        // 2. 查询点赞记录（不限制isDelete，查询所有记录）
-        QueryWrapper<ArticleLike> wrapper = new QueryWrapper<>();
-        wrapper.eq("articleId", articleId)
-                .eq("userId", userId);
-        ArticleLike existLike = articleLikeService.getOne(wrapper);
+        // 2. 查询点赞记录（包括已删除的）
+        ArticleLike existLike = articleLikeMapper.selectOneIncludeDeleted(articleId, userId);
 
         boolean newLikeStatus;
         int likeChange;
 
         if (existLike != null && existLike.getIsDelete() == 0) {
             // 已点赞 -> 取消点赞
-            existLike.setIsDelete(1);
-            articleLikeService.updateById(existLike);
+            articleLikeMapper.updateLikeStatus(existLike.getId(), 1);
             newLikeStatus = false;
             likeChange = -1;
             log.info("用户 {} 取消点赞文章 {}", userId, articleId);
         } else if (existLike != null && existLike.getIsDelete() == 1) {
             // 之前取消过 -> 重新点赞
-            existLike.setIsDelete(0);
-            articleLikeService.updateById(existLike);
+            articleLikeMapper.updateLikeStatus(existLike.getId(), 0);
             newLikeStatus = true;
             likeChange = 1;
             log.info("用户 {} 重新点赞文章 {}", userId, articleId);
@@ -293,14 +290,23 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         Long currentCount = null;
         try {
             // 先获取当前Redis中的值
-            String countStr = stringRedisTemplate.opsForValue().get(countKey);
-            if (countStr != null) {
-                long count = Long.parseLong(countStr);
+            Object countObj = redisTemplate.opsForValue().get(countKey);
+            if (countObj != null) {
+                long count = 0;
+                if (countObj instanceof Long) {
+                    count = (Long) countObj;
+                } else if (countObj instanceof Integer) {
+                    count = ((Integer) countObj).longValue();
+                } else if (countObj instanceof String) {
+                    count = Long.parseLong((String) countObj);
+                    // 将字符串类型转换为Long类型，以便后续increment操作
+                    redisTemplate.opsForValue().set(countKey, count);
+                }
                 // 如果是取消点赞且当前计数>0，才减1
                 if (likeChange == -1 && count > 0) {
-                    currentCount = stringRedisTemplate.opsForValue().increment(countKey, -1);
+                    currentCount = redisTemplate.opsForValue().increment(countKey, -1);
                 } else if (likeChange == 1) {
-                    currentCount = stringRedisTemplate.opsForValue().increment(countKey, 1);
+                    currentCount = redisTemplate.opsForValue().increment(countKey, 1);
                 } else {
                     currentCount = count;
                 }
@@ -308,7 +314,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
                 // Redis中没有值，从数据库获取并设置
                 int dbCount = article.getLikeCount() != null ? article.getLikeCount() : 0;
                 int newCount = Math.max(0, dbCount + likeChange);
-                stringRedisTemplate.opsForValue().set(countKey, String.valueOf(newCount));
+                redisTemplate.opsForValue().set(countKey, (long) newCount);
                 currentCount = (long) newCount;
             }
         } catch (Exception e) {
@@ -337,26 +343,21 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文章不存在");
         }
 
-        // 2. 检查是否已收藏
-        QueryWrapper<ArticleCollect> wrapper = new QueryWrapper<>();
-        wrapper.eq("articleId", articleId)
-                .eq("userId", userId);
-        ArticleCollect existCollect = articleCollectMapper.selectOne(wrapper);
+        // 2. 检查是否已收藏（包括已删除的）
+        ArticleCollect existCollect = articleCollectMapper.selectOneIncludeDeleted(articleId, userId);
 
         boolean newCollectStatus;
         int collectChange;
 
         if (existCollect != null && existCollect.getIsDelete() == 0) {
             // 已收藏 -> 取消收藏
-            existCollect.setIsDelete(1);
-            articleCollectMapper.updateById(existCollect);
+            articleCollectMapper.updateCollectStatus(existCollect.getId(), 1);
             newCollectStatus = false;
             collectChange = -1;
             log.info("用户 {} 取消收藏文章 {}", userId, articleId);
         } else if (existCollect != null && existCollect.getIsDelete() == 1) {
             // 之前取消过，现在重新收藏
-            existCollect.setIsDelete(0);
-            articleCollectMapper.updateById(existCollect);
+            articleCollectMapper.updateCollectStatus(existCollect.getId(), 0);
             newCollectStatus = true;
             collectChange = 1;
             log.info("用户 {} 重新收藏文章 {}", userId, articleId);
@@ -391,20 +392,17 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean cancelCollectArticle(Long articleId, Long userId) {
-        // 1. 查询收藏记录
-        QueryWrapper<ArticleCollect> wrapper = new QueryWrapper<>();
-        wrapper.eq("articleId", articleId)
-                .eq("userId", userId)
-                .eq("isDelete", 0);
-        ArticleCollect collect = articleCollectMapper.selectOne(wrapper);
+        // 1. 查询有效收藏记录
+        ArticleCollect collect = articleCollectMapper.selectValidCollect(articleId, userId);
 
         if (collect == null) {
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未收藏该文章");
+            // 未收藏该文章，直接返回成功，避免前端重复调用导致错误
+            log.info("用户 {} 尝试取消收藏未收藏的文章 {}", userId, articleId);
+            return true;
         }
 
         // 2. 删除收藏
-        collect.setIsDelete(1);
-        articleCollectMapper.updateById(collect);
+        articleCollectMapper.updateCollectStatus(collect.getId(), 1);
 
         // 3. 更新文章收藏数
         articleMapper.incrementCollectCount(articleId, -1);
@@ -413,6 +411,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         String collectKey = ARTICLE_COLLECT_KEY_PREFIX + articleId;
         redisTemplate.opsForHash().put(collectKey, userId.toString(), false);
 
+        log.info("用户 {} 取消收藏文章 {}", userId, articleId);
         return true;
     }
 

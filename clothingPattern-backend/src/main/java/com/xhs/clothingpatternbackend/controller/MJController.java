@@ -54,7 +54,7 @@ public class MJController {
     private PromptTranslateService promptTranslateService;
     
     /**
-     * 生成图片（Imagine）- 仅返回MJ响应，不保存到数据库
+     * 生成图片（Imagine）
      *
      * @param request 请求参数
      * @return 生成结果
@@ -288,13 +288,13 @@ public class MJController {
             pattern.setStyle(style);
             pattern.setSeason(season);
             pattern.setTargetAudience(targetAudience);
-            
-            // 如果是管理员则自动通过
-            if (userService.isAdmin(loginUser)) {
-                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
-            } else {
-                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
-            }
+            patternService.fillReviewParams(pattern, loginUser);
+//            // 如果是管理员则自动通过
+//            if (userService.isAdmin(loginUser)) {
+//                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+//            } else {
+//                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+//            }
             
             // 将MJ响应信息保存到generationParams字段
             pattern.setGenerationParams(JSON.toJSONString(request));

@@ -18,6 +18,7 @@ import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.ArticleService;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
 import com.xhs.clothingpatternbackend.utils.CosUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -327,49 +328,16 @@ public class ArticleController {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         ThrowUtils.throwIf(file == null || file.isEmpty(), ErrorCode.PARAMS_ERROR, "文件不能为空");
 
-        // 验证文件类型
-        String contentType = file.getContentType();
-        if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "只支持JPG和PNG格式的图片");
-        }
-
-        // 验证文件大小（2MB）
-        if (file.getSize() > 2 * 1024 * 1024) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "图片大小不能超过2MB");
-        }
-
-        File tempFile = null;
-        try {
-            // 创建临时文件
-            String originalFilename = file.getOriginalFilename();
-            String suffix = originalFilename != null && originalFilename.contains(".")
-                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
-                    : ".png";
-            tempFile = File.createTempFile("article_cover_", suffix);
-            file.transferTo(tempFile);
-
-            // 上传到COS
-            String key = "article/cover/" + loginUser.getId() + "/" + System.currentTimeMillis() + suffix;
-            cosUtils.putPictureObject(key, tempFile);
-
-            // 构建COS URL
-            String cosUrl = cosClientConfig.getHost() + "/" + key;
-
-            log.info("文章封面上传成功，用户ID: {}, URL: {}", loginUser.getId(), cosUrl);
-            return ResultUtils.success(cosUrl);
-
-        } catch (IOException e) {
-            log.error("上传文章封面失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "文件上传失败");
-        } finally {
-            // 删除临时文件
-            if (tempFile != null && tempFile.exists()) {
-                boolean deleted = tempFile.delete();
-                if (!deleted) {
-                    log.warn("临时文件删除失败: {}", tempFile.getAbsolutePath());
-                }
-            }
-        }
+        String coverUrl = CosImageUploadUtils.uploadImageToCos(
+                file,
+                loginUser.getId(),
+                cosUtils,
+                cosClientConfig,
+                "article_cover_", // 临时文件前缀
+                "article/cover/", // COS存储前缀
+                true // 传入当前类的Logger对象
+        );
+        return ResultUtils.success(coverUrl);
     }
 
     /**

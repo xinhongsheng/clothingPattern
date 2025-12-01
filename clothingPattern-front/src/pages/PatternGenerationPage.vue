@@ -763,7 +763,7 @@ const downloadPattern = () => {
 
 // 查看我的作品
 const viewMyPatterns = () => {
-  router.push('/my-patterns')
+  router.push('/my_idea')
 }
 
 // 重置表单

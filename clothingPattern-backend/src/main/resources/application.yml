@@ -100,3 +100,9 @@ mj:
     url: https://api.zhishuyun.com/midjourney/imagine
     # 注意：Midjourney生成图片通常需要30-120秒
     # 当前超时设置：连接60秒，读取180秒（3分钟），写入60秒
+# AI试衣配置
+dashscope:
+  aitryon:
+    apiKey: sk-237daf27898245a5abc6b575a56e2e23
+    submitUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis/
+    taskQueryUrl: https://dashscope.aliyuncs.com/api/v1/tasks/{taskId} # 异步任务查询地址

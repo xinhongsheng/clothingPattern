@@ -63,7 +63,7 @@ public class PatternController {
      * @return
      */
     @PostMapping("/generate")
-    public BaseResponse<PatternVO> generatePattern(@RequestBody PatternGenerateRequest patternGenerateRequest,
+    public BaseResponse<Pattern> generatePattern(@RequestBody PatternGenerateRequest patternGenerateRequest,
                                                     HttpServletRequest request) {
         ThrowUtils.throwIf(patternGenerateRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
@@ -71,9 +71,9 @@ public class PatternController {
         
         // 获取生成的图案详情并返回
         Pattern pattern = patternService.getById(patternId);
-        PatternVO patternVO = patternService.getPatternVO(pattern, loginUser.getId());
+//        PatternVO patternVO = patternService.getPatternVO(pattern, loginUser.getId());
         
-        return ResultUtils.success(patternVO);
+        return ResultUtils.success(pattern);
     }
 
     /**
@@ -177,8 +177,6 @@ public class PatternController {
             Page<PatternVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
             return ResultUtils.success(cachePage);
         }
-
-
 
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));

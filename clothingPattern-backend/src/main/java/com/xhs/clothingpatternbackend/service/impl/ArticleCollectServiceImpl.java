@@ -16,7 +16,9 @@ import java.util.List;
 @Service
 public class ArticleCollectServiceImpl extends ServiceImpl<ArticleCollectMapper, ArticleCollect>
     implements ArticleCollectService{
-
+    /**
+     * 批量查询用户收藏的文章ID列表
+     */
     @Override
     public List<Long> selectCollectedArticleIds(Long userId, List<Long> articleIds) {
         com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ArticleCollect> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();

@@ -324,12 +324,13 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             pattern.setStyle(patternGenerateRequest.getStyle());
             pattern.setSeason(patternGenerateRequest.getSeason());
             pattern.setTargetAudience(patternGenerateRequest.getTargetAudience());
-            //如果是管理员则直接通过
-            if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
-                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
-            }else{
-                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
-            }
+            this.fillReviewParams(pattern, loginUser);
+//            //如果是管理员则直接通过
+//            if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
+//                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+//            }else{
+//                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+//            }
 
             pattern.setFileType("image/png");
             pattern.setFileSize(fileSize);

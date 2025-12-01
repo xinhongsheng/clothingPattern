@@ -249,3 +249,20 @@ CREATE TABLE `banner` (
                           KEY `idx_sort_order` (`sortOrder`),
                           KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='轮播图表';
+
+
+-- AI试衣
+CREATE TABLE `try_on_task` (
+                               `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                               `userId` bigint DEFAULT NULL COMMENT '关联用户ID',
+                               `personImageUrl` varchar(512) NOT NULL COMMENT '人物图片公网URL',
+                               `topGarmentUrl` varchar(512) DEFAULT NULL COMMENT '上装图片公网URL',
+                               `bottomGarmentUrl` varchar(512) DEFAULT NULL COMMENT '下装图片公网URL',
+                               `dashscopeTaskId` varchar(128) NOT NULL COMMENT '阿里云异步任务ID',
+                               `taskStatus` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '任务状态：PENDING/SUCCEEDED/FAILED',
+                               `resultImageUrl` varchar(512) DEFAULT NULL COMMENT '试衣结果图片URL',
+                               `createTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                               `updateTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                               PRIMARY KEY (`id`),
+                               KEY `idx_task_id` (`dashscopeTaskId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
