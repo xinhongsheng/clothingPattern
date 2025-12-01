@@ -178,8 +178,6 @@ public class PatternController {
             return ResultUtils.success(cachePage);
         }
 
-
-
         Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
                 patternService.getQueryWrapper(patternQueryRequest));
         Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());

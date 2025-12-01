@@ -16,7 +16,9 @@ import java.util.List;
 @Service
 public class ArticleLikeServiceImpl extends ServiceImpl<ArticleLikeMapper, ArticleLike>
     implements ArticleLikeService{
-
+    /**
+     * 批量查询用户点赞的文章ID列表
+     */
     @Override
     public List<Long> selectLikedArticleIds(Long userId, List<Long> articleIds) {
         com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ArticleLike> queryWrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();

@@ -3,7 +3,6 @@ package com.xhs.clothingpatternbackend.controller;
 import cn.hutool.core.util.StrUtil;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
-import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.ai.AiQuestionRequest;
@@ -13,11 +12,9 @@ import com.xhs.clothingpatternbackend.sdk.dashscope.QwenAI;
 import com.xhs.clothingpatternbackend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -56,15 +53,10 @@ public class AiController {
         ThrowUtils.throwIf(StrUtil.isBlank(question), ErrorCode.PARAMS_ERROR, "问题不能为空");
         ThrowUtils.throwIf(question.length() > 1000, ErrorCode.PARAMS_ERROR, "问题过长");
 
-        // 获取登录用户（可选，根据需求决定是否必须登录）
+        // 获取登录用户（必须登录）
         User loginUser = null;
-        try {
-            loginUser = userService.getLoginUser(request);
-        } catch (Exception e) {
-            // 未登录也允许使用，可以根据实际需求调整
-            log.info("未登录用户访问 AI 问答");
-        }
-
+        loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         // 调用 AI 服务
         String answer;
         if (StrUtil.isNotBlank(imageUrl)) {
@@ -101,7 +93,10 @@ public class AiController {
         // 校验问题
         ThrowUtils.throwIf(StrUtil.isBlank(question), ErrorCode.PARAMS_ERROR, "问题不能为空");
         ThrowUtils.throwIf(question.length() > 1000, ErrorCode.PARAMS_ERROR, "问题过长");
-
+        // 获取登录用户（必须登录）
+        User loginUser = null;
+        loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
         // 创建 SSE Emitter，超时时间 5 分钟
         SseEmitter emitter = new SseEmitter(300000L);
 
