@@ -1,0 +1,361 @@
+<template>
+  <div class="tryon-page">
+    <div class="page-header">
+      <h1>👗 AI 智能试衣</h1>
+      <p class="subtitle">上传人物与服装图片，AI 为你生成试穿效果</p>
+    </div>
+
+    <a-card class="tryon-card" :bordered="false">
+      <a-row :gutter="[32, 32]">
+        <!-- 左侧：上传与参数配置 -->
+        <a-col :xs="24" :lg="10">
+          <div class="config-section">
+            <h2 class="section-title">试衣配置</h2>
+
+            <a-form layout="vertical">
+              <a-form-item label="人物照片" required>
+                <a-upload
+                  :show-upload-list="false"
+                  :before-upload="(file) => handleUpload('person', file)"
+                  accept="image/*"
+                >
+                  <div class="upload-box">
+                    <a-button>
+                      <picture-outlined /> 选择人物照片
+                    </a-button>
+                    <span class="upload-tip">支持 JPG / PNG，大小 ≤ 10MB</span>
+                  </div>
+                </a-upload>
+                <div v-if="personImageUrl" class="preview-wrapper">
+                  <a-image :src="personImageUrl" :width="160" />
+                  <a-button type="link" danger @click="clearImage('person')">移除</a-button>
+                </div>
+              </a-form-item>
+
+              <a-form-item label="上衣图片">
+                <a-upload
+                  :show-upload-list="false"
+                  :before-upload="(file) => handleUpload('top', file)"
+                  accept="image/*"
+                >
+                  <div class="upload-box">
+                    <a-button>
+                      <picture-outlined /> 选择上衣图片
+                    </a-button>
+                    <span class="upload-tip">可选，如不上传则只试穿下装</span>
+                  </div>
+                </a-upload>
+                <div v-if="topGarmentUrl" class="preview-wrapper">
+                  <a-image :src="topGarmentUrl" :width="120" />
+                  <a-button type="link" danger @click="clearImage('top')">移除</a-button>
+                </div>
+              </a-form-item>
+
+              <a-form-item label="下装图片">
+                <a-upload
+                  :show-upload-list="false"
+                  :before-upload="(file) => handleUpload('bottom', file)"
+                  accept="image/*"
+                >
+                  <div class="upload-box">
+                    <a-button>
+                      <picture-outlined /> 选择下装图片
+                    </a-button>
+                    <span class="upload-tip">可选，如不上传则只试穿上衣</span>
+                  </div>
+                </a-upload>
+                <div v-if="bottomGarmentUrl" class="preview-wrapper">
+                  <a-image :src="bottomGarmentUrl" :width="120" />
+                  <a-button type="link" danger @click="clearImage('bottom')">移除</a-button>
+                </div>
+              </a-form-item>
+
+              <a-form-item>
+                <a-button
+                  type="primary"
+                  block
+                  :loading="submitting || polling"
+                  :disabled="!personImageUrl || (!topGarmentUrl && !bottomGarmentUrl)"
+                  @click="handleSubmit"
+                >
+                  <template #icon>
+                    <play-circle-outlined />
+                  </template>
+                  {{ submitting || polling ? '正在生成试衣效果...' : '开始 AI 试衣' }}
+                </a-button>
+              </a-form-item>
+
+              <a-alert
+                v-if="errorMessage"
+                type="error"
+                :message="errorMessage"
+                show-icon
+                class="mt-2"
+              />
+
+              <a-alert
+                v-if="currentTaskId && !errorMessage"
+                type="info"
+                :message="`任务 ID：${currentTaskId}`"
+                show-icon
+                class="mt-2"
+              />
+            </a-form>
+          </div>
+        </a-col>
+
+        <!-- 右侧：试衣结果展示 -->
+        <a-col :xs="24" :lg="14">
+          <div class="preview-section">
+            <h2 class="section-title">试衣效果</h2>
+
+            <a-spin :spinning="polling">
+              <div v-if="resultImageUrl" class="result-wrapper">
+                <a-image :src="resultImageUrl" :width="360" />
+                <div class="result-meta" v-if="taskDetail">
+                  <p>任务状态：{{ taskDetail.taskStatus }}</p>
+                  <p v-if="taskDetail.createTime">创建时间：{{ taskDetail.createTime }}</p>
+                  <p v-if="taskDetail.endTime">完成时间：{{ taskDetail.endTime }}</p>
+                </div>
+              </div>
+
+              <div v-else class="empty-result">
+                <a-empty description="上传图片并点击开始，即可查看试衣效果">
+                  <template #image>
+                    <img
+                      style="width: 120px"
+                      src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIgcng9IjEwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiNkOWQ5ZDkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn46oPC90ZXh0Pjwvc3ZnPg=="
+                    />
+                  </template>
+                </a-empty>
+              </div>
+            </a-spin>
+          </div>
+        </a-col>
+      </a-row>
+    </a-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onBeforeUnmount } from 'vue'
+import { message } from 'ant-design-vue'
+import { PictureOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
+import { upload, submit, getStatus } from '@/api/aiTryOnController'
+
+const personImageUrl = ref<string>('')
+const topGarmentUrl = ref<string>('')
+const bottomGarmentUrl = ref<string>('')
+
+const submitting = ref(false)
+const polling = ref(false)
+const currentTaskId = ref<string>('')
+const resultImageUrl = ref<string>('')
+const taskDetail = ref<API.TryOnTask | null>(null)
+const errorMessage = ref<string>('')
+
+let pollTimer: number | null = null
+
+const clearPollTimer = () => {
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+onBeforeUnmount(() => {
+  clearPollTimer()
+})
+
+const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
+  if (file.size > 10 * 1024 * 1024) {
+    message.error('图片大小不能超过 10MB')
+    return false
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await upload(formData as any)
+    const url = res?.data
+    if (!url) {
+      throw new Error('上传失败，未获取到图片地址')
+    }
+
+    if (type === 'person') {
+      personImageUrl.value = url
+    } else if (type === 'top') {
+      topGarmentUrl.value = url
+    } else if (type === 'bottom') {
+      bottomGarmentUrl.value = url
+    }
+
+    message.success('图片上传成功')
+  } catch (e: any) {
+    console.error('上传失败:', e)
+    message.error(e?.message || '上传失败，请稍后重试')
+  }
+
+  return false
+}
+
+const clearImage = (type: 'person' | 'top' | 'bottom') => {
+  if (type === 'person') personImageUrl.value = ''
+  if (type === 'top') topGarmentUrl.value = ''
+  if (type === 'bottom') bottomGarmentUrl.value = ''
+}
+
+const startPolling = (taskId: string) => {
+  clearPollTimer()
+  polling.value = true
+
+  pollTimer = window.setInterval(async () => {
+    try {
+      const res = await getStatus({ taskId })
+      const data = res?.data
+      taskDetail.value = data
+
+      if (!data) return
+
+      const status = data.taskStatus
+      const isSuccess = status === 'SUCCESS' || status === 'SUCCEEDED'
+
+      if (isSuccess && (data.localResultUrl || data.resultImageUrl)) {
+        resultImageUrl.value = data.localResultUrl || data.resultImageUrl || ''
+        message.success('试衣任务已完成')
+        polling.value = false
+        clearPollTimer()
+      } else if (status === 'FAILED') {
+        errorMessage.value = data.errorMessage || '试衣任务失败，请稍后重试'
+        polling.value = false
+        clearPollTimer()
+      }
+    } catch (e: any) {
+      console.error('查询任务状态失败:', e)
+      polling.value = false
+      clearPollTimer()
+      errorMessage.value = e?.message || '查询任务状态失败'
+    }
+  }, 3000)
+}
+
+const handleSubmit = async () => {
+  if (!personImageUrl.value) {
+    message.warning('请先上传人物照片')
+    return
+  }
+  if (!topGarmentUrl.value && !bottomGarmentUrl.value) {
+    message.warning('请至少上传上衣或下装图片')
+    return
+  }
+
+  submitting.value = true
+  errorMessage.value = ''
+  resultImageUrl.value = ''
+  taskDetail.value = null
+
+  try {
+    const res = await submit({
+      personImageUrl: personImageUrl.value,
+      topGarmentUrl: topGarmentUrl.value || undefined,
+      bottomGarmentUrl: bottomGarmentUrl.value || undefined,
+    } as any)
+
+    const taskId = res?.data
+    if (!taskId) {
+      throw new Error('未获取到任务 ID')
+    }
+
+    currentTaskId.value = taskId
+    message.success('任务提交成功，正在生成试衣效果...')
+    startPolling(taskId)
+  } catch (e: any) {
+    console.error('提交试衣任务失败:', e)
+    errorMessage.value = e?.message || '提交试衣任务失败，请稍后重试'
+  } finally {
+    submitting.value = false
+  }
+}
+</script>
+
+<style scoped>
+.tryon-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 32px;
+  color: #fff;
+}
+
+.page-header h1 {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.tryon-card {
+  max-width: 1400px;
+  margin: 0 auto;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.tryon-card :deep(.ant-card-body) {
+  padding: 32px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.upload-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #999;
+}
+
+.preview-wrapper {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-section {
+  min-height: 360px;
+}
+
+.result-wrapper {
+  text-align: center;
+}
+
+.result-meta {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.empty-result {
+  padding: 80px 0;
+}
+
+.mt-2 {
+  margin-top: 12px;
+}
+</style>
