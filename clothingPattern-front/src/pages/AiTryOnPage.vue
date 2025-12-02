@@ -13,6 +13,20 @@
             <h2 class="section-title">试衣配置</h2>
 
             <a-form layout="vertical">
+              <!-- 预设模特选择 -->
+              <a-form-item label="预设模特">
+                <div class="preset-models">
+                  <div
+                    v-for="model in presetModels"
+                    :key="model.key"
+                    :class="['preset-item', { active: selectedPresetKey === model.key }]"
+                    @click="handleSelectPreset(model)"
+                  >
+                    <a-image :src="model.assetUrl" :width="72" :preview="false" />
+                    <div class="preset-name">{{ model.name }}</div>
+                  </div>
+                </div>
+              </a-form-item>
               <a-form-item label="人物照片" required>
                 <a-upload
                   :show-upload-list="false"
@@ -26,8 +40,8 @@
                     <span class="upload-tip">支持 JPG / PNG，大小 ≤ 10MB</span>
                   </div>
                 </a-upload>
-                <div v-if="personImageUrl" class="preview-wrapper">
-                  <a-image :src="personImageUrl" :width="160" />
+                <div v-if="personImageUrl || selectedPresetPreviewUrl" class="preview-wrapper">
+                  <a-image :src="personImageUrl || selectedPresetPreviewUrl" :width="160" />
                   <a-button type="link" danger @click="clearImage('person')">移除</a-button>
                 </div>
               </a-form-item>
@@ -75,7 +89,7 @@
                   type="primary"
                   block
                   :loading="submitting || polling"
-                  :disabled="!personImageUrl || (!topGarmentUrl && !bottomGarmentUrl)"
+                  :disabled="(!personImageUrl && !selectedPresetKey) || (!topGarmentUrl && !bottomGarmentUrl)"
                   @click="handleSubmit"
                 >
                   <template #icon>
@@ -138,7 +152,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, onBeforeUnmount, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { PictureOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { upload, submit, getStatus } from '@/api/aiTryOnController'
@@ -146,6 +160,53 @@ import { upload, submit, getStatus } from '@/api/aiTryOnController'
 const personImageUrl = ref<string>('')
 const topGarmentUrl = ref<string>('')
 const bottomGarmentUrl = ref<string>('')
+
+// 预设模特列表
+const presetModels = [
+  {
+    key: 'Aaron',
+    name: 'Aaron',
+    assetUrl: new URL('../assets/model/Aaron.png', import.meta.url).href,
+  },
+  {
+    key: 'Asa',
+    name: 'Asa',
+    assetUrl: new URL('../assets/model/Asa.png', import.meta.url).href,
+  },
+  {
+    key: 'Cyril',
+    name: 'Cyril',
+    assetUrl: new URL('../assets/model/Cyril.png', import.meta.url).href,
+  },
+  {
+    key: 'Don',
+    name: 'Don',
+    assetUrl: new URL('../assets/model/Don.png', import.meta.url).href,
+  },
+  {
+    key: 'Eli',
+    name: 'Eli',
+    assetUrl: new URL('../assets/model/Eli.png', import.meta.url).href,
+  },
+  {
+    key: 'Eva',
+    name: 'Eva',
+    assetUrl: new URL('../assets/model/Eva.png', import.meta.url).href,
+  },
+  {
+    key: 'Simon',
+    name: 'Simon',
+    assetUrl: new URL('../assets/model/Simon.png', import.meta.url).href,
+  },
+]
+
+const selectedPresetKey = ref<string>('')
+
+// 预设模特预览地址（用于人物预览，当还未上传到 COS 时使用本地 asset）
+const selectedPresetPreviewUrl = computed(() => {
+  const model = presetModels.find((m) => m.key === selectedPresetKey.value)
+  return model ? model.assetUrl : ''
+})
 
 const submitting = ref(false)
 const polling = ref(false)
@@ -185,6 +246,8 @@ const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
 
     if (type === 'person') {
       personImageUrl.value = url
+      // 用户手动上传人物图片时，清空预设选择
+      selectedPresetKey.value = ''
     } else if (type === 'top') {
       topGarmentUrl.value = url
     } else if (type === 'bottom') {
@@ -198,6 +261,13 @@ const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
   }
 
   return false
+}
+
+// 选择预设模特：只记录选中，用于预览与后续提交时上传
+const handleSelectPreset = (model: { key: string; name: string; assetUrl: string }) => {
+  selectedPresetKey.value = model.key
+  // 选中预设时，不立刻上传；如果之前有用户上传的人物照，则仅更新选中状态
+  message.success(`已选择预设模特：${model.name}`)
 }
 
 const clearImage = (type: 'person' | 'top' | 'bottom') => {
@@ -241,8 +311,9 @@ const startPolling = (taskId: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!personImageUrl.value) {
-    message.warning('请先上传人物照片')
+  // 必须要么上传人物照片，要么选择预设模特
+  if (!personImageUrl.value && !selectedPresetKey.value) {
+    message.warning('请先选择预设模特或上传人物照片')
     return
   }
   if (!topGarmentUrl.value && !bottomGarmentUrl.value) {
@@ -256,6 +327,26 @@ const handleSubmit = async () => {
   taskDetail.value = null
 
   try {
+    // 如果还没有人物的 COS 地址，但选中了预设模特，则此时先上传预设模特
+    if (!personImageUrl.value && selectedPresetKey.value) {
+      const model = presetModels.find((m) => m.key === selectedPresetKey.value)
+      if (model) {
+        const response = await fetch(model.assetUrl)
+        const blob = await response.blob()
+        const file = new File([blob], model.name + '.png', { type: blob.type || 'image/png' })
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const uploadRes = await upload(formData as any)
+        const url = uploadRes?.data
+        if (!url) {
+          throw new Error('上传预设模特失败，未获取到图片地址')
+        }
+        personImageUrl.value = url
+      }
+    }
+
     const res = await submit({
       personImageUrl: personImageUrl.value,
       topGarmentUrl: topGarmentUrl.value || undefined,
@@ -339,6 +430,39 @@ const handleSubmit = async () => {
 
 .preview-section {
   min-height: 360px;
+}
+
+.preset-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.preset-item {
+  width: 90px;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+}
+
+.preset-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 6px rgba(102, 126, 234, 0.5);
+}
+
+.preset-item.active {
+  border-color: #667eea;
+  background: #f0f5ff;
+}
+
+.preset-name {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #555;
 }
 
 .result-wrapper {
