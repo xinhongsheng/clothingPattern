@@ -106,3 +106,10 @@ dashscope:
     apiKey: sk-237daf27898245a5abc6b575a56e2e23
     submitUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis/
     taskQueryUrl: https://dashscope.aliyuncs.com/api/v1/tasks/{taskId} # 异步任务查询地址
+  wan:
+    api-key: sk-237daf27898245a5abc6b575a56e2e23
+    default-region: BEIJING
+    beijing-submit-url: https://dashscope.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis
+    beijing-query-url: https://dashscope.aliyuncs.com/api/v1/tasks/{taskId}
+    singapore-submit-url: https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis
+    singapore-query-url: https://dashscope-intl.aliyuncs.com/api/v1/tasks/{taskId}

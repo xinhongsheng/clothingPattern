@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.clothingpatternbackend.mapper.ImageFusionTaskMapper">
+
+    <resultMap id="BaseResultMap" type="com.xhs.clothingpatternbackend.model.entity.ImageFusionTask">
+            <id property="id" column="id" />
+            <result property="userId" column="userId" />
+            <result property="dashscopeTaskId" column="dashscopeTaskId" />
+            <result property="prompt" column="prompt" />
+            <result property="negativePrompt" column="negativePrompt" />
+            <result property="imageUrls" column="imageUrls" />
+            <result property="parameters" column="parameters" />
+            <result property="taskStatus" column="taskStatus" />
+            <result property="submitTime" column="submitTime" />
+            <result property="scheduledTime" column="scheduledTime" />
+            <result property="endTime" column="endTime" />
+            <result property="errorCode" column="errorCode" />
+            <result property="errorMessage" column="errorMessage" />
+            <result property="origPrompts" column="origPrompts" />
+            <result property="tempImageUrls" column="tempImageUrls" />
+            <result property="localImageUrls" column="localImageUrls" />
+            <result property="sorts" column="sorts" />
+            <result property="createTime" column="createTime" />
+            <result property="updateTime" column="updateTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,userId,dashscopeTaskId,prompt,negativePrompt,imageUrls,
+        parameters,taskStatus,submitTime,scheduledTime,endTime,
+        errorCode,errorMessage,origPrompts,tempImageUrls,localImageUrls,
+        sorts,createTime,updateTime
+    </sql>
+</mapper>

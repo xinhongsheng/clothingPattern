@@ -274,3 +274,33 @@ ADD COLUMN `endTime` datetime DEFAULT NULL COMMENT '任务完成时间',
 ADD COLUMN `errorCode` varchar(64) DEFAULT NULL COMMENT '错误码（失败时）',
 ADD COLUMN `errorMessage` varchar(512) DEFAULT NULL COMMENT '错误详情（失败时）',
 ADD COLUMN `localResultUrl` varchar(512) DEFAULT NULL COMMENT '本地OSS保存的结果图片URL（永久有效）';
+
+
+-- 多图融合
+CREATE TABLE `image_fusion_task` (
+                                     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                     `userId` bigint NOT NULL COMMENT '用户ID',
+                                     `dashscopeTaskId` varchar(64) NOT NULL COMMENT '通义万相任务ID',
+                                     `prompt` varchar(2000) NOT NULL COMMENT '正向提示词',
+                                     `negativePrompt` varchar(500) DEFAULT NULL COMMENT '反向提示词',
+                                     `imageUrls` varchar(2048) NOT NULL COMMENT '输入图片URLs（逗号分隔）',
+                                     `parameters` varchar(1024) DEFAULT NULL COMMENT '任务参数（JSON格式，如size、n等）',
+                                     `taskStatus` varchar(32) NOT NULL COMMENT '任务状态：PENDING/RUNNING/SUCCEEDED/FAILED等',
+                                     `submitTime` datetime DEFAULT NULL COMMENT '任务提交时间',
+                                     `scheduledTime` datetime DEFAULT NULL COMMENT '任务执行时间',
+                                     `endTime` datetime DEFAULT NULL COMMENT '任务完成时间',
+                                     `errorCode` varchar(64) DEFAULT NULL COMMENT '错误码（失败时）',
+                                     `errorMessage` varchar(512) DEFAULT NULL COMMENT '错误详情（失败时）',
+
+    -- 新增：合并结果图片字段（多值用逗号分隔）
+                                     `origPrompts` varchar(4000) DEFAULT '' COMMENT '结果图片原始提示词（逗号分隔，对应多图）',
+                                     `tempImageUrls` varchar(2048) DEFAULT '' COMMENT '临时图片URL（逗号分隔，24小时有效）',
+                                     `localImageUrls` varchar(2048) DEFAULT '' COMMENT '本地OSS永久URL（逗号分隔）',
+                                     `sorts` varchar(64) DEFAULT '' COMMENT '结果图片排序（逗号分隔，如1,2,3）',
+
+                                     `createTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     `updateTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                     PRIMARY KEY (`id`),
+                                     KEY `idx_task_id` (`dashscopeTaskId`),
+                                     KEY `idx_user_id` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='多图融合任务表（含结果）';

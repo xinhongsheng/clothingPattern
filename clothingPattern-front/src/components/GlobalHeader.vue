@@ -89,6 +89,12 @@ const originItems = [
     title: '智能创作',
   },
   {
+    key: '/image-fusion',
+    label: '衣图智融',
+    title: '衣图智融',
+  },
+  
+  {
     key: '/ai/try-on',
     label: 'AI试衣',
     title: 'AI试衣',

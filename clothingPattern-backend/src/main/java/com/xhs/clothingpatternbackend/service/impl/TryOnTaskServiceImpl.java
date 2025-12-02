@@ -95,7 +95,7 @@ public class TryOnTaskServiceImpl extends ServiceImpl<TryOnTaskMapper, TryOnTask
         return task;
     }
     /**
-     * 下载网络图片到本地OSS，返回永久有效的URL
+     * 下载网络图片到COS，返回永久有效的URL
      */
     public String downloadAndSaveToCOS(String imageUrl) throws Exception {
         if (StringUtils.isEmpty(imageUrl)) {

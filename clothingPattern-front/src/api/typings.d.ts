@@ -177,6 +177,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseImageFusionTask = {
+    code?: number
+    data?: ImageFusionTask
+    message?: string
+  }
+
   type BaseResponseLikeResultVO = {
     code?: number
     data?: LikeResultVO
@@ -210,6 +216,12 @@ declare namespace API {
   type BaseResponseListCommentVO = {
     code?: number
     data?: CommentVO[]
+    message?: string
+  }
+
+  type BaseResponseListString = {
+    code?: number
+    data?: string[]
     message?: string
   }
 
@@ -451,6 +463,10 @@ declare namespace API {
     limit?: number
   }
 
+  type getResultsParams = {
+    taskId: number
+  }
+
   type getStatusParams = {
     taskId: string
   }
@@ -469,6 +485,32 @@ declare namespace API {
     trendData?: TrendDataVO[]
     totalPatterns?: number
     totalUsers?: number
+  }
+
+  type ImageFusionTask = {
+    id?: number
+    userId?: number
+    dashscopeTaskId?: string
+    prompt?: string
+    negativePrompt?: string
+    imageUrls?: string
+    parameters?: string
+    taskStatus?: string
+    submitTime?: string
+    scheduledTime?: string
+    endTime?: string
+    errorCode?: string
+    errorMessage?: string
+    origPrompts?: string
+    tempImageUrls?: string
+    localImageUrls?: string
+    sorts?: string
+    createTime?: string
+    updateTime?: string
+    localImageUrlList?: string[]
+    tempImageUrlList?: string[]
+    origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {
@@ -718,6 +760,10 @@ declare namespace API {
     id: number
   }
 
+  type queryStatusParams = {
+    taskId: number
+  }
+
   type searchArticlesParams = {
     keyword: string
     pageNum?: number
@@ -732,6 +778,12 @@ declare namespace API {
     personImageUrl: string
     topGarmentUrl?: string
     bottomGarmentUrl?: string
+  }
+
+  type submitTaskParams = {
+    userId: number
+    imageUrls: string
+    parameters?: string
   }
 
   type toggleCommentLikeParams = {
