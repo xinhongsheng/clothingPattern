@@ -3,11 +3,16 @@ import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
-import java.io.IOException;
+
+import java.io.*;
+import java.util.UUID;
+
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-12-01
@@ -116,4 +121,5 @@ public class CosImageUploadUtils {
             }
         }
     }
+
 }

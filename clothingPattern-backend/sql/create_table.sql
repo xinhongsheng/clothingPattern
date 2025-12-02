@@ -266,3 +266,11 @@ CREATE TABLE `try_on_task` (
                                PRIMARY KEY (`id`),
                                KEY `idx_task_id` (`dashscopeTaskId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `try_on_task`
+    ADD COLUMN `submitTime` datetime DEFAULT NULL COMMENT '任务提交时间',
+ADD COLUMN `scheduledTime` datetime DEFAULT NULL COMMENT '任务执行时间',
+ADD COLUMN `endTime` datetime DEFAULT NULL COMMENT '任务完成时间',
+ADD COLUMN `errorCode` varchar(64) DEFAULT NULL COMMENT '错误码（失败时）',
+ADD COLUMN `errorMessage` varchar(512) DEFAULT NULL COMMENT '错误详情（失败时）',
+ADD COLUMN `localResultUrl` varchar(512) DEFAULT NULL COMMENT '本地OSS保存的结果图片URL（永久有效）';

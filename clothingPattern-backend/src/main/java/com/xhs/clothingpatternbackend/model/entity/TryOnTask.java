@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
@@ -56,16 +57,15 @@ public class TryOnTask implements Serializable {
      * 试衣结果图片URL
      */
     private String resultImageUrl;
-
-    /**
-     * 
-     */
     private Date createTime;
-
-    /**
-     * 
-     */
     private Date updateTime;
+
+    private LocalDateTime submitTime;      // 任务提交时间
+    private LocalDateTime scheduledTime;   // 任务执行时间
+    private LocalDateTime endTime;         // 任务完成时间
+    private String errorCode;              // 错误码
+    private String errorMessage;           // 错误详情
+    private String localResultUrl;         // 本地保存的结果图片URL
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

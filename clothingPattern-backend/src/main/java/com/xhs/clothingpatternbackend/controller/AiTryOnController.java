@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.controller;
 
+import cn.hutool.core.util.StrUtil;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.model.entity.TryOnTask;
 import com.xhs.clothingpatternbackend.model.entity.User;
@@ -10,7 +11,11 @@ import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
 import com.xhs.clothingpatternbackend.utils.CosUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotBlank;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +29,7 @@ import java.io.IOException;
  */
 
 @RestController
+@Validated
 @RequestMapping("/try-on")
 
 public class AiTryOnController {
@@ -47,15 +53,29 @@ public class AiTryOnController {
 
     // 提交试衣任务
     @PostMapping("/submit")
-    public String submit(@RequestParam String personImageUrl, @RequestParam String topGarmentUrl, HttpServletRequest  request) throws  IOException {
+    public String submit(@RequestParam @NotBlank(message = "人物图片URL不能为空")String personImageUrl,
+                         @RequestParam(required = false) String topGarmentUrl,
+                         @RequestParam(required = false)String bottomGarmentUrl,
+                         HttpServletRequest  request) throws  IOException {
+        if (StringUtils.isEmpty(topGarmentUrl) && StringUtils.isEmpty(bottomGarmentUrl)) {
+            throw new IllegalArgumentException("请上传上衣或裤子(上装或者下装)");
+        }
         User loginUser = userService.getLoginUser(request);
         Long userId = loginUser.getId();
-        return tryOnTaskService.submitTask(userId, personImageUrl, topGarmentUrl);
+        return tryOnTaskService.submitTask(userId, personImageUrl, topGarmentUrl, bottomGarmentUrl);
     }
 
-    // 查询任务状态
+    /**
+     * 查询任务状态（返回完整信息）
+     */
     @GetMapping("/status/{taskId}")
-    public TryOnTask getStatus(@PathVariable String taskId) throws IOException {
-        return tryOnTaskService.queryTaskStatus(taskId);
+    public ResponseEntity<TryOnTask> getStatus(@PathVariable String taskId) {
+        try {
+            TryOnTask task = tryOnTaskService.queryTaskStatus(taskId);
+            return ResponseEntity.ok(task);
+        } catch (Exception e) {
+            // 返回错误信息（前端可展示）
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 }
