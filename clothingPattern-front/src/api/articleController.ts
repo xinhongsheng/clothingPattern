@@ -110,7 +110,7 @@ export async function likeArticle(
   params: API.likeArticleParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLikeResult>('/article/like', {
+  return request<API.BaseResponseLikeResultVO>('/article/like', {
     method: 'POST',
     params: {
       ...params,

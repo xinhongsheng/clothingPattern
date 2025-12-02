@@ -56,8 +56,34 @@ public class DashScopeApiAiTryOnClient {
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
-            JSONObject resJson = JSONObject.parseObject(response.body().string());
-            return resJson.getJSONObject("output").getString("task_id");
+            String responseBody = response.body() != null ? response.body().string() : "";
+
+            // HTTP 非 2xx 直接抛错，附带原始返回便于排查
+            if (!response.isSuccessful()) {
+                throw new IOException("提交试衣任务失败：HTTP " + response.code() + " - " + response.message()
+                        + "; body=" + responseBody);
+            }
+
+            JSONObject resJson = JSONObject.parseObject(responseBody);
+            JSONObject output = resJson.getJSONObject("output");
+
+            // 正常情况下 DashScope 会返回 output.task_id；如果没有 output，说明是错误结构
+            if (output == null) {
+                String code = resJson.getString("code");
+                String msg = resJson.getString("message");
+                String error = "调用 DashScope 试衣接口失败：" +
+                        (code != null ? ("code=" + code + ", ") : "") +
+                        (msg != null ? msg : "未知错误") +
+                        "; 原始返回=" + resJson.toJSONString();
+                throw new RuntimeException(error);
+            }
+
+            String taskId = output.getString("task_id");
+            if (StringUtils.isEmpty(taskId)) {
+                throw new RuntimeException("调用 DashScope 试衣接口失败：未返回 task_id，output=" + output.toJSONString());
+            }
+
+            return taskId;
         }
     }
 

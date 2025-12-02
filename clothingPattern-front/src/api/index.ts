@@ -3,6 +3,7 @@
 // API 更新时间：
 // API 唯一标识：
 import * as userController from './userController'
+import * as aiTryOnController from './aiTryOnController'
 import * as patternController from './patternController'
 import * as midjourneyjiekou from './midjourneyjiekou'
 import * as likeController from './likeController'
@@ -15,6 +16,7 @@ import * as aiController from './aiController'
 import * as mainController from './mainController'
 export default {
   userController,
+  aiTryOnController,
   patternController,
   midjourneyjiekou,
   likeController,

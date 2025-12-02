@@ -81,6 +81,10 @@ declare namespace API {
   }
 
   type ArticleQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
     categoryId?: number
     keyword?: string
     tags?: string[]
@@ -89,10 +93,6 @@ declare namespace API {
     isTop?: number
     isHot?: number
     isRecommend?: number
-    pageNum?: number
-    pageSize?: number
-    sortField?: string
-    sortOrder?: string
   }
 
   type ArticleVO = {
@@ -177,12 +177,6 @@ declare namespace API {
     message?: string
   }
 
-  type BaseResponseLikeResult = {
-    code?: number
-    data?: LikeResult
-    message?: string
-  }
-
   type BaseResponseLikeResultVO = {
     code?: number
     data?: LikeResultVO
@@ -237,9 +231,15 @@ declare namespace API {
     message?: string
   }
 
-  type BaseResponseMJImagineResponse = {
+  type BaseResponseMJImagineVO = {
     code?: number
-    data?: MJImagineResponse
+    data?: MJImagineVO
+    message?: string
+  }
+
+  type BaseResponsePageArticleVO = {
+    code?: number
+    data?: PageArticleVO
     message?: string
   }
 
@@ -252,18 +252,6 @@ declare namespace API {
   type BaseResponsePagePatternVO = {
     code?: number
     data?: PagePatternVO
-    message?: string
-  }
-
-  type BaseResponsePageResultArticleVO = {
-    code?: number
-    data?: PageResultArticleVO
-    message?: string
-  }
-
-  type BaseResponsePageArticleVO = {
-    code?: number
-    data?: PageArticleVO
     message?: string
   }
 
@@ -463,6 +451,10 @@ declare namespace API {
     limit?: number
   }
 
+  type getStatusParams = {
+    taskId: string
+  }
+
   type getUserByIdParams = {
     id: number
   }
@@ -481,11 +473,6 @@ declare namespace API {
 
   type likeArticleParams = {
     articleId: number
-  }
-
-  type LikeResult = {
-    liked?: boolean
-    likeCount?: number
   }
 
   type LikeResultVO = {
@@ -531,7 +518,7 @@ declare namespace API {
     targetAudience?: string
   }
 
-  type MJImagineResponse = {
+  type MJImagineVO = {
     imageUrl?: string
     imageWidth?: number
     imageHeight?: number
@@ -559,6 +546,20 @@ declare namespace API {
   type OrderItem = {
     column?: string
     asc?: boolean
+  }
+
+  type PageArticleVO = {
+    records?: ArticleVO[]
+    total?: number
+    size?: number
+    current?: number
+    orders?: OrderItem[]
+    optimizeCountSql?: PageArticleVO
+    searchCount?: PageArticleVO
+    optimizeJoinOfCountSql?: boolean
+    maxLimit?: number
+    countId?: string
+    pages?: number
   }
 
   type PagePattern = {
@@ -589,28 +590,9 @@ declare namespace API {
     pages?: number
   }
 
-  type PageResultArticleVO = {
-    list?: ArticleVO[]
-    total?: number
-  }
-
   type PageResultCommentVO = {
     list?: CommentVO[]
     total?: number
-  }
-
-  type PageArticleVO = {
-    records?: ArticleVO[]
-    total?: number
-    size?: number
-    current?: number
-    orders?: OrderItem[]
-    optimizeCountSql?: PageArticleVO
-    searchCount?: PageArticleVO
-    optimizeJoinOfCountSql?: boolean
-    maxLimit?: number
-    countId?: string
-    pages?: number
   }
 
   type PageUserVO = {
@@ -746,6 +728,12 @@ declare namespace API {
     timeout?: number
   }
 
+  type submitParams = {
+    personImageUrl: string
+    topGarmentUrl?: string
+    bottomGarmentUrl?: string
+  }
+
   type toggleCommentLikeParams = {
     commentId: number
   }
@@ -757,6 +745,25 @@ declare namespace API {
   type TrendDataVO = {
     date?: string
     count?: number
+  }
+
+  type TryOnTask = {
+    id?: number
+    userId?: number
+    personImageUrl?: string
+    topGarmentUrl?: string
+    bottomGarmentUrl?: string
+    dashscopeTaskId?: string
+    taskStatus?: string
+    resultImageUrl?: string
+    createTime?: string
+    updateTime?: string
+    submitTime?: string
+    scheduledTime?: string
+    endTime?: string
+    errorCode?: string
+    errorMessage?: string
+    localResultUrl?: string
   }
 
   type User = {

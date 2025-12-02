@@ -9,6 +9,7 @@ import PatternManagePage from '@/pages/admin/PatternManagePage.vue'
 import PatternDetailPage from '@/pages/PatternDetailPage.vue'
 import AiPage from '@/pages/AiPage.vue'
 import MyIdeaPage from '@/pages/MyIdeaPage.vue'
+import AiTryOnPage from '@/pages/AiTryOnPage.vue'
 import DataAnalysisPage from '@/pages/admin/DataAnalysisPage.vue'
 import ArticlePage from '@/pages/ArticlePage.vue'
 import ArticleDetailPage from '@/pages/ArticleDetailPage.vue'
@@ -69,6 +70,11 @@ const router = createRouter({
     path: '/ai',
     name: 'AI问答',
     component: AiPage,
+  },
+  {
+    path: '/ai/try-on',
+    name: 'AI试衣',
+    component: AiTryOnPage,
   },
   {
     path: '/my_idea',

@@ -46,7 +46,7 @@ export async function generatePattern(
   body: API.PatternGenerateRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponsePatternVO>('/pattern/generate', {
+  return request<API.BaseResponsePattern>('/pattern/generate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
