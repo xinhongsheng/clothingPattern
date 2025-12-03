@@ -32,12 +32,10 @@ export async function submit(
 }
 
 /** 此处后端没有提供注释 POST /try-on/upload */
-export async function upload(body: {}, options?: { [key: string]: any }) {
+export async function upload(body: FormData, options?: { [key: string]: any }) {
   return request<string>('/try-on/upload', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    // 交给浏览器自动设置 multipart/form-data 边界，不要强制指定 Content-Type
     data: body,
     ...(options || {}),
   })

@@ -271,7 +271,12 @@ const handleSelectPreset = (model: { key: string; name: string; assetUrl: string
 }
 
 const clearImage = (type: 'person' | 'top' | 'bottom') => {
-  if (type === 'person') personImageUrl.value = ''
+  if (type === 'person') {
+    // 清空人物图片（无论是上传的还是通过预设模特生成的 URL）
+    personImageUrl.value = ''
+    // 同时清空预设模特选择，这样再次点击“开始 AI 试衣”会强制用户重新选择/上传
+    selectedPresetKey.value = ''
+  }
   if (type === 'top') topGarmentUrl.value = ''
   if (type === 'bottom') bottomGarmentUrl.value = ''
 }
