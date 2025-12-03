@@ -1,28 +1,5 @@
 <template>
   <div class="mj-pattern-generation-page">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1>🎨智能图案创作</h1>
-      <p class="subtitle">专业服装图案设计，AI 驱动创意无限</p>
-    </div>
-
-    <!-- 步骤指示器 -->
-    <div class="step-indicator">
-      <div class="step-item" :class="{ active: currentStep === 1, completed: currentStep > 1 }">
-        <div class="step-number">1</div>
-        <div class="step-label">描述创意</div>
-      </div>
-      <div class="step-divider" :class="{ completed: currentStep > 1 }"></div>
-      <div class="step-item" :class="{ active: currentStep === 2, completed: currentStep > 2 }">
-        <div class="step-number">2</div>
-        <div class="step-label">选择图案</div>
-      </div>
-      <div class="step-divider" :class="{ completed: currentStep > 2 }"></div>
-      <div class="step-item" :class="{ active: currentStep === 3 }">
-        <div class="step-number">3</div>
-        <div class="step-label">确认保存</div>
-      </div>
-    </div>
 
     <!-- 主内容区域 -->
     <a-card class="generation-card" :bordered="false">

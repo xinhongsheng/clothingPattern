@@ -1,9 +1,6 @@
 <template>
   <div id="dataAnalysisPage">
-    <a-page-header
-      title="数据分析中心"
-      sub-title="平台核心数据监控与分析报告"
-    />
+    <a-page-header title="数据分析中心" sub-title="平台核心数据监控与分析报告" />
 
     <!-- 核心指标监控 -->
     <a-card title="核心指标监控" class="section-card" :bordered="false">
@@ -51,21 +48,14 @@
           </div>
         </a-col>
         <a-col :xs="24" :sm="12" :md="6">
-          <a-statistic
-            title="今日新增"
-            :value="todayCount"
-            :value-style="{ color: '#faad14' }"
-          >
+          <a-statistic title="今日新增" :value="todayCount" :value-style="{ color: '#faad14' }">
             <template #prefix>
               <FireOutlined />
             </template>
           </a-statistic>
         </a-col>
         <a-col :xs="24" :sm="12" :md="6">
-          <a-statistic
-            title="热门风格"
-            :value="topStyle"
-          >
+          <a-statistic title="热门风格" :value="topStyle">
             <template #prefix>
               <CrownOutlined />
             </template>
@@ -79,21 +69,18 @@
       <!-- 热门风格分布 -->
       <a-col :xs="24" :md="8">
         <a-card title="热门风格分布" class="chart-card">
-          <div class="style-distribution">
-            <div
-              v-for="(count, style) in statisticsData?.styleDistribution"
-              :key="style"
-              class="style-item"
-            >
-              <span class="style-name">{{ style }}</span>
-              <a-progress
-                :percent="getStylePercent(count)"
-                :show-info="false"
-                size="small"
-              />
-              <span class="style-count">{{ count }}</span>
-            </div>
-            <a-empty v-if="!statisticsData?.styleDistribution || Object.keys(statisticsData.styleDistribution).length === 0" description="暂无数据" />
+          <div
+            ref="styleChartRef"
+            class="chart-container"
+            :style="{ height: '300px', width: '100%' }"
+          >
+            <a-empty
+              v-if="
+                !statisticsData?.styleDistribution ||
+                Object.keys(statisticsData.styleDistribution).length === 0
+              "
+              description="暂无数据"
+            />
           </div>
         </a-card>
       </a-col>
@@ -101,22 +88,15 @@
       <!-- 活跃用户排行 -->
       <a-col :xs="24" :md="8">
         <a-card title="活跃用户TOP5" class="chart-card">
-          <div class="active-users">
-            <div
-              v-for="(item, index) in statisticsData?.activeUsers"
-              :key="item.user?.id"
-              class="user-item"
-            >
-              <div class="user-rank" :class="`rank-${index + 1}`">{{ index + 1 }}</div>
-              <a-avatar :src="item.user?.userAvatar" :size="32">
-                {{ item.user?.userName?.charAt(0) }}
-              </a-avatar>
-              <div class="user-info">
-                <div class="user-name">{{ item.user?.userName }}</div>
-                <div class="user-count">{{ item.patternCount }} 个图案</div>
-              </div>
-            </div>
-            <a-empty v-if="!statisticsData?.activeUsers || statisticsData.activeUsers.length === 0" description="暂无数据" />
+          <div
+            ref="userChartRef"
+            class="chart-container"
+            :style="{ height: '300px', width: '100%' }"
+          >
+            <a-empty
+              v-if="!statisticsData?.activeUsers || statisticsData.activeUsers.length === 0"
+              description="暂无数据"
+            />
           </div>
         </a-card>
       </a-col>
@@ -124,21 +104,15 @@
       <!-- 创作趋势 -->
       <a-col :xs="24" :md="8">
         <a-card title="创作趋势（最近7天）" class="chart-card">
-          <div class="trend-chart">
-            <div
-              v-for="item in statisticsData?.trendData"
-              :key="item.date"
-              class="trend-item"
-            >
-              <div class="trend-date">{{ formatDate(item.date) }}</div>
-              <a-progress
-                :percent="getTrendPercent(item.count)"
-                :show-info="false"
-                size="small"
-              />
-              <div class="trend-count">{{ item.count }}</div>
-            </div>
-            <a-empty v-if="!statisticsData?.trendData || statisticsData.trendData.length === 0" description="暂无数据" />
+          <div
+            ref="trendChartRef"
+            class="chart-container"
+            :style="{ height: '300px', width: '100%' }"
+          >
+            <a-empty
+              v-if="!statisticsData?.trendData || statisticsData.trendData.length === 0"
+              description="暂无数据"
+            />
           </div>
         </a-card>
       </a-col>
@@ -149,23 +123,11 @@
       <a-row :gutter="16">
         <a-col :xs="24" :md="12">
           <a-card title="生成方式分布" :bordered="false" size="small">
-            <div class="behavior-chart">
-              <div class="chart-item">
-                <span>文字生成</span>
-                <a-progress
-                  :percent="generationTypePercent.text"
-                  status="active"
-                />
-              </div>
-              <div class="chart-item">
-                <span>图片参考</span>
-                <a-progress
-                  :percent="generationTypePercent.image"
-                  status="active"
-                  stroke-color="#52c41a"
-                />
-              </div>
-            </div>
+            <div
+              ref="generationChartRef"
+              class="chart-container"
+              :style="{ height: '300px', width: '100%' }"
+            ></div>
           </a-card>
         </a-col>
         <a-col :xs="24" :md="12">
@@ -184,6 +146,17 @@
                 <a-tag color="green">{{ activeUserStats.activeRate }}%</a-tag>
               </a-descriptions-item>
             </a-descriptions>
+          </a-card>
+        </a-col>
+      </a-row>
+      <a-row :gutter="16" style="margin-top: 16px">
+        <a-col :xs="24" :md="24">
+          <a-card title="风格趋势变化" :bordered="false" size="small">
+            <div
+              ref="styleTrendChartRef"
+              class="chart-container"
+              :style="{ height: '400px', width: '100%' }"
+            ></div>
           </a-card>
         </a-col>
       </a-row>
@@ -236,24 +209,12 @@
         <a-divider />
 
         <a-descriptions title="报告包含内容" :column="{ xs: 1, sm: 2, md: 3 }" bordered>
-          <a-descriptions-item label="作品统计">
-            总数、增长趋势、分类分布
-          </a-descriptions-item>
-          <a-descriptions-item label="用户分析">
-            用户总数、活跃度、创作排行
-          </a-descriptions-item>
-          <a-descriptions-item label="风格分析">
-            热门风格、风格分布、趋势变化
-          </a-descriptions-item>
-          <a-descriptions-item label="时间分析">
-            日/周/月趋势图、高峰时段
-          </a-descriptions-item>
-          <a-descriptions-item label="行为分析">
-            生成方式偏好、使用习惯
-          </a-descriptions-item>
-          <a-descriptions-item label="质量指标">
-            审核通过率、平均质量分
-          </a-descriptions-item>
+          <a-descriptions-item label="作品统计"> 总数、增长趋势、分类分布 </a-descriptions-item>
+          <a-descriptions-item label="用户分析"> 用户总数、活跃度、创作排行 </a-descriptions-item>
+          <a-descriptions-item label="风格分析"> 热门风格、风格分布、趋势变化 </a-descriptions-item>
+          <a-descriptions-item label="时间分析"> 日/周/月趋势图、高峰时段 </a-descriptions-item>
+          <a-descriptions-item label="行为分析"> 生成方式偏好、使用习惯 </a-descriptions-item>
+          <a-descriptions-item label="质量指标"> 审核通过率、平均质量分 </a-descriptions-item>
         </a-descriptions>
       </a-space>
     </a-card>
@@ -261,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, h, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   PictureOutlined,
@@ -270,10 +231,11 @@ import {
   CrownOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
-  DownloadOutlined
+  DownloadOutlined,
 } from '@ant-design/icons-vue'
 import { getHomeStatistics } from '@/api/homeController'
 import type { Dayjs } from 'dayjs'
+import * as echarts from 'echarts'
 
 // 统计数据
 const statisticsData = ref<API.HomeStatisticsVO>()
@@ -282,19 +244,19 @@ const exportLoading = ref(false)
 // 增长率数据（模拟）
 const growthRates = ref({
   patterns: 12.5,
-  users: 8.3
+  users: 8.3,
 })
 
 // 导出配置
 const exportConfig = ref({
   format: 'excel',
-  dateRange: undefined as [Dayjs, Dayjs] | undefined
+  dateRange: undefined as [Dayjs, Dayjs] | undefined,
 })
 
 // 生成方式分布（模拟数据，实际应该从后端获取）
 const generationTypePercent = ref({
   text: 65,
-  image: 35
+  image: 35,
 })
 
 // 用户活跃度统计（模拟数据）
@@ -302,7 +264,7 @@ const activeUserStats = ref({
   active: 0,
   normal: 0,
   inactive: 0,
-  activeRate: 0
+  activeRate: 0,
 })
 
 // 计算属性：今日新增
@@ -323,7 +285,7 @@ const topStyle = computed(() => {
     return '无'
   }
   const maxEntry = styles.reduce((max, curr) =>
-    (curr[1] as number) > (max[1] as number) ? curr : max
+    (curr[1] as number) > (max[1] as number) ? curr : max,
   )
   return maxEntry[0]
 })
@@ -349,15 +311,19 @@ const calculateActiveUserStats = () => {
   }
 
   const totalUsers = statisticsData.value.totalUsers
-  const activeCount = statisticsData.value.activeUsers.filter(u => (u.patternCount || 0) >= 5).length
-  const normalCount = statisticsData.value.activeUsers.filter(u => (u.patternCount || 0) > 0 && (u.patternCount || 0) < 5).length
+  const activeCount = statisticsData.value.activeUsers.filter(
+    (u) => (u.patternCount || 0) >= 5,
+  ).length
+  const normalCount = statisticsData.value.activeUsers.filter(
+    (u) => (u.patternCount || 0) > 0 && (u.patternCount || 0) < 5,
+  ).length
   const inactiveCount = totalUsers - activeCount - normalCount
 
   activeUserStats.value = {
     active: activeCount,
     normal: normalCount,
     inactive: inactiveCount > 0 ? inactiveCount : 0,
-    activeRate: totalUsers > 0 ? Math.round((activeCount / totalUsers) * 100) : 0
+    activeRate: totalUsers > 0 ? Math.round((activeCount / totalUsers) * 100) : 0,
   }
 }
 
@@ -374,7 +340,7 @@ const getTrendPercent = (count: number | undefined) => {
   if (!count || !statisticsData.value?.trendData) {
     return 0
   }
-  const maxCount = Math.max(...statisticsData.value.trendData.map(item => item.count || 0))
+  const maxCount = Math.max(...statisticsData.value.trendData.map((item) => item.count || 0))
   if (maxCount === 0) {
     return 0
   }
@@ -398,13 +364,13 @@ const handleExport = async () => {
   }
 
   exportLoading.value = true
-  
+
   try {
     // 准备请求参数
     const params = {
       format: exportConfig.value.format,
       startDate: exportConfig.value.dateRange?.[0]?.format('YYYY-MM-DD'),
-      endDate: exportConfig.value.dateRange?.[1]?.format('YYYY-MM-DD')
+      endDate: exportConfig.value.dateRange?.[1]?.format('YYYY-MM-DD'),
     }
 
     // 调用后端导出接口
@@ -414,7 +380,7 @@ const handleExport = async () => {
         'Content-Type': 'application/json',
       },
       credentials: 'include', // 携带cookie
-      body: JSON.stringify(params)
+      body: JSON.stringify(params),
     })
 
     if (!response.ok) {
@@ -423,16 +389,16 @@ const handleExport = async () => {
 
     // 获取文件blob
     const blob = await response.blob()
-    
+
     // 确定文件扩展名
     let fileExtension = exportConfig.value.format
     if (exportConfig.value.format === 'excel') {
       fileExtension = 'xlsx'
     }
-    
+
     // 生成文件名
     const fileName = `数据报告_${new Date().getTime()}.${fileExtension}`
-    
+
     // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -440,11 +406,11 @@ const handleExport = async () => {
     link.download = fileName
     document.body.appendChild(link)
     link.click()
-    
+
     // 清理
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    
+
     message.success(`报告导出成功（${exportConfig.value.format.toUpperCase()}格式）`)
   } catch (error: any) {
     message.error('导出失败：' + error.message)
@@ -457,14 +423,290 @@ const handleExport = async () => {
 const resetExportConfig = () => {
   exportConfig.value = {
     format: 'excel',
-    dateRange: undefined
+    dateRange: undefined,
   }
 }
 
+// 图表引用
+const styleChartRef = ref<HTMLElement>()
+const userChartRef = ref<HTMLElement>()
+const trendChartRef = ref<HTMLElement>()
+const generationChartRef = ref<HTMLElement>()
+const styleTrendChartRef = ref<HTMLElement>()
+
+// 图表实例
+let styleChart: echarts.ECharts | null = null
+let userChart: echarts.ECharts | null = null
+let trendChart: echarts.ECharts | null = null
+let generationChart: echarts.ECharts | null = null
+let styleTrendChart: echarts.ECharts | null = null
+
+// 初始化图表
+const initCharts = () => {
+  if (styleChartRef.value) {
+    styleChart = echarts.init(styleChartRef.value)
+  }
+  if (userChartRef.value) {
+    userChart = echarts.init(userChartRef.value)
+  }
+  if (trendChartRef.value) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+  if (generationChartRef.value) {
+    generationChart = echarts.init(generationChartRef.value)
+  }
+  if (styleTrendChartRef.value) {
+    styleTrendChart = echarts.init(styleTrendChartRef.value)
+  }
+}
+
+// 更新图表数据
+const updateCharts = () => {
+  // 热门风格分布 - 饼图
+  if (styleChart && statisticsData.value?.styleDistribution) {
+    const styleData = Object.entries(statisticsData.value.styleDistribution).map(
+      ([name, value]) => ({
+        name,
+        value,
+      }),
+    )
+
+    const styleOption: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'item',
+        formatter: '{b}: {c} ({d}%)',
+      },
+      series: [
+        {
+          name: '风格分布',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#fff',
+            borderWidth: 2,
+          },
+          label: {
+            show: false,
+            position: 'center',
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '18',
+              fontWeight: 'bold',
+            },
+          },
+          labelLine: {
+            show: false,
+          },
+          data: styleData,
+        },
+      ],
+    }
+    styleChart.setOption(styleOption)
+  }
+
+  // 活跃用户排行 - 柱状图
+  if (userChart && statisticsData.value?.activeUsers) {
+    const userData = statisticsData.value.activeUsers.slice(0, 5)
+    const userNames = userData.map((item) => item.user?.userName || '未知用户')
+    const patternCounts = userData.map((item) => item.patternCount || 0)
+
+    const userOption: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      xAxis: {
+        type: 'category',
+        data: userNames,
+        axisLabel: {
+          rotate: 45,
+          fontSize: 10,
+        },
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        {
+          data: patternCounts,
+          type: 'bar',
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#83bff6' },
+              { offset: 0.5, color: '#188df0' },
+              { offset: 1, color: '#188df0' },
+            ]),
+          },
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#2378f7' },
+                { offset: 0.7, color: '#2378f7' },
+                { offset: 1, color: '#83bff6' },
+              ]),
+            },
+          },
+        },
+      ],
+    }
+    userChart.setOption(userOption)
+  }
+
+  // 创作趋势 - 折线图
+  if (trendChart && statisticsData.value?.trendData) {
+    const dates = statisticsData.value.trendData.map((item) => formatDate(item.date))
+    const counts = statisticsData.value.trendData.map((item) => item.count || 0)
+
+    const trendOption: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'axis',
+      },
+      xAxis: {
+        type: 'category',
+        data: dates,
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: [
+        {
+          data: counts,
+          type: 'line',
+          smooth: true,
+          itemStyle: {
+            color: '#52c41a',
+          },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(82, 196, 26, 0.5)' },
+              { offset: 1, color: 'rgba(82, 196, 26, 0.1)' },
+            ]),
+          },
+        },
+      ],
+    }
+    trendChart.setOption(trendOption)
+  }
+
+  // 生成方式分布 - 环形图
+  if (generationChart) {
+    const generationOption: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'item',
+      },
+      series: [
+        {
+          name: '生成方式',
+          type: 'pie',
+          radius: ['50%', '70%'],
+          avoidLabelOverlap: false,
+          label: {
+            show: true,
+            formatter: '{b}: {c} ({d}%)',
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: '18',
+              fontWeight: 'bold',
+            },
+          },
+          data: [
+            {
+              value: generationTypePercent.value.text,
+              name: '文字生成',
+              itemStyle: { color: '#1890ff' },
+            },
+            {
+              value: generationTypePercent.value.image,
+              name: '图片参考',
+              itemStyle: { color: '#52c41a' },
+            },
+          ],
+        },
+      ],
+    }
+    generationChart.setOption(generationOption)
+  }
+
+  // 风格趋势变化 - 柱状图
+  if (styleTrendChart && statisticsData.value?.trendData) {
+    // 模拟风格趋势数据（实际应从后端获取）
+    const styleTrendData = [
+      { name: '简约', data: [12, 19, 3, 5, 2, 3, 20] },
+      { name: '复古', data: [2, 3, 20, 15, 10, 13, 23] },
+      { name: '卡通', data: [15, 10, 13, 23, 20, 15, 10] },
+    ]
+
+    const trendOption: echarts.EChartsOption = {
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+        },
+      },
+      legend: {
+        data: styleTrendData.map((item) => item.name),
+      },
+      xAxis: {
+        type: 'category',
+        data: statisticsData.value.trendData.map((item) => formatDate(item.date)),
+      },
+      yAxis: {
+        type: 'value',
+      },
+      series: styleTrendData.map((item) => ({
+        name: item.name,
+        type: 'bar',
+        data: item.data,
+      })),
+    }
+    styleTrendChart.setOption(trendOption)
+  }
+}
+
+// 监听窗口大小变化，调整图表大小
+const handleResize = () => {
+  styleChart?.resize()
+  userChart?.resize()
+  trendChart?.resize()
+  generationChart?.resize()
+  styleTrendChart?.resize()
+}
+
 // 页面加载时获取数据
-onMounted(() => {
-  fetchStatistics()
+onMounted(async () => {
+  await fetchStatistics()
+  initCharts()
+  updateCharts()
+  window.addEventListener('resize', handleResize)
 })
+
+// 组件卸载时移除事件监听和销毁图表
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  // 销毁图表实例，避免内存泄漏
+  styleChart?.dispose()
+  userChart?.dispose()
+  trendChart?.dispose()
+  generationChart?.dispose()
+  styleTrendChart?.dispose()
+})
+
+// 监听统计数据变化，更新图表
+watch(
+  statisticsData,
+  () => {
+    updateCharts()
+  },
+  { deep: true },
+)
 </script>
 
 <style scoped lang="scss">
@@ -628,6 +870,22 @@ onMounted(() => {
         font-size: 14px;
         color: #666;
       }
+    }
+  }
+
+  .chart-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    :deep(.ant-empty) {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
   }
 }
