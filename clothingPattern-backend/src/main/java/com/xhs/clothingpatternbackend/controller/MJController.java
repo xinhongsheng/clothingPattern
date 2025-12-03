@@ -96,109 +96,6 @@ public class MJController {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败：" + e.getMessage());
         }
     }
-    
-//    /**
-//     * 生成图片并保存到图案库
-//     *
-//     * @param request 请求参数
-//     * @param httpRequest HTTP请求
-//     * @return 保存的图案ID
-//     */
-//    @PostMapping("/generate")
-//    @Operation(summary = "生成图片并保存")
-//    public BaseResponse<Long> generateAndSave(@RequestBody MJImagineRequest request,
-//                                               HttpServletRequest httpRequest)  {
-//        // 参数校验
-//        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
-//        String originalPrompt = request.getPrompt();
-//        ThrowUtils.throwIf(StringUtils.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
-//
-//        // 获取登录用户
-//        User loginUser = userService.getLoginUser(httpRequest);
-//
-//        // 获取额外字段
-//        String style = request.getStyle();
-//        String season = request.getSeason();
-//        String targetAudience = request.getTargetAudience();
-//
-//        try {
-//            // 翻译并优化 prompt（添加服装专业前缀，包含风格、季节、受众信息）
-//            log.info("原始提示词：{}, 风格：{}, 季节：{}, 受众：{}",
-//                    originalPrompt, style, season, targetAudience);
-//            String optimizedPrompt = promptTranslateService.translateAndOptimize(
-//                    originalPrompt,
-//                    style,
-//                    season,
-//                    targetAudience
-//            );
-//            log.info("优化后提示词：{}", optimizedPrompt);
-//
-//            // 使用优化后的 prompt
-//            request.setPrompt(optimizedPrompt);
-//
-//            // 调用Midjourney API生成图片
-//            MJImagineVO mjResponse = mjGenImage.imagine(request);
-//
-//            // 检查是否成功
-//            if (mjResponse == null || !Boolean.TRUE.equals(mjResponse.getSuccess())) {
-//                log.error("Midjourney图片生成失败，响应：{}", mjResponse);
-//                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败");
-//            }
-//
-//            // 打印完整响应用于调试
-//            log.info("MJ响应详情 - taskId: {}, imageId: {}, rawImageUrl: {}, imageUrl: {}",
-//                mjResponse.getTaskId(), mjResponse.getImageId(),
-//                mjResponse.getRawImageUrl(), mjResponse.getImageUrl());
-//
-//            // 检查必要的字段
-//            String rawImageUrl = mjResponse.getRawImageUrl();
-//            String imageUrl = mjResponse.getImageUrl();
-//
-//            // 如果原始图片URL为空，使用缩略图URL
-//            if (StringUtils.isBlank(rawImageUrl)) {
-//                rawImageUrl = imageUrl;
-//            }
-//
-//            // 如果两个URL都为空，抛出异常
-//            ThrowUtils.throwIf(StringUtils.isBlank(rawImageUrl), ErrorCode.SYSTEM_ERROR,
-//                "图片URL为空，生成失败");
-//
-//            // 保存到数据库
-//            Pattern pattern = new Pattern();
-//            pattern.setUserId(loginUser.getId());
-//            pattern.setPatternName("MJ-" + originalPrompt.substring(0, Math.min(originalPrompt.length(), 30))); // 使用原始提示词作为名称
-//            pattern.setDescription(originalPrompt); // 保存原始提示词（用户输入的）
-//            pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
-//            pattern.setPatternUrl(rawImageUrl); // 使用原始图片URL
-//            pattern.setThumbUrl(StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl); // 使用缩略图URL，如果为空则使用原始URL
-//            pattern.setStyle(style);
-//            pattern.setSeason(season);
-//            pattern.setTargetAudience(targetAudience);
-//
-//            //如果是管理员则自动通过
-//            if (userService.isAdmin(loginUser)) {
-//                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
-//            }else{
-//                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
-//            }
-//
-//            // 将MJ响应信息保存到generationParams字段
-//            pattern.setGenerationParams(JSON.toJSONString(mjResponse));
-//
-//            // 保存到数据库
-//            boolean saved = patternService.save(pattern);
-//            ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
-//
-//            log.info("MJ图片生成并保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}",
-//                    pattern.getId(), loginUser.getId(), style, season, targetAudience);
-//            log.info("1");
-//            return ResultUtils.success(pattern.getId());
-//        } catch (IOException e) {
-//            log.error("调用Midjourney API异常", e);
-//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败：" + e.getMessage());
-//        }
-//    }
-    
     /**
      * 执行动作（如upsample、variation等）
      *
@@ -289,12 +186,6 @@ public class MJController {
             pattern.setSeason(season);
             pattern.setTargetAudience(targetAudience);
             patternService.fillReviewParams(pattern, loginUser);
-//            // 如果是管理员则自动通过
-//            if (userService.isAdmin(loginUser)) {
-//                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
-//            } else {
-//                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
-//            }
             
             // 将MJ响应信息保存到generationParams字段
             pattern.setGenerationParams(JSON.toJSONString(request));

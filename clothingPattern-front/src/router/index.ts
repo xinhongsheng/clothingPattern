@@ -46,14 +46,14 @@ const router = createRouter({
     name: '用户管理',
     component: UserManagePage,
   },
-  {
-    path: '/patternGeneration',
-    name: '智能创作',
-    component: PatternGenerationPage,
-  },
+  // {
+  //   path: '/patternGeneration',
+  //   name: '智能创作',
+  //   component: PatternGenerationPage,
+  // },
   {
     path: '/mj/generation',
-    name: 'MJ图案创作',
+    name: '图案创作',
     component: MJPatternGenerationPage,
   },
   {

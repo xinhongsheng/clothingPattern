@@ -78,12 +78,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         String generationType = patternGenerateRequest.getGenerationType();
         String description = patternGenerateRequest.getDescription();
         String referenceImageUrl = patternGenerateRequest.getReferenceImageUrl();
-        String serviceType = patternGenerateRequest.getServiceType(); // 获取服务类型
-
-        // 默认使用千问服务
-        if (StrUtil.isBlank(serviceType)) {
-            serviceType = "qwen";
-        }
+//        String serviceType = patternGenerateRequest.getServiceType(); // 已废弃，仅兼容旧参数
 
         // 校验生成类型
         GenerationTypeEnum typeEnum = GenerationTypeEnum.getEnumByValue(generationType);
@@ -99,162 +94,57 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         File generatedImageFile = null;
         String finalReferenceImageUrl = null; // 用于保存到数据库的参考图片URL
         try {
-            // 根据serviceType选择不同AI服务
-            if ("doubao".equals(serviceType)) {
-                // 使用豆包服务，根据doubaoMode选择不同的生成方式
-                String doubaoMode = patternGenerateRequest.getDoubaoMode();
-                if (StrUtil.isBlank(doubaoMode)) {
-                    doubaoMode = "single_text"; // 默认文生图
-                }
-
-                switch (doubaoMode) {
-                    case "single_text": // 文生图（单张）
-                        generatedImageFile = douBaoImage.generateImageByText(
-                                description,
-                                patternGenerateRequest.getSize(),
-                                true
-                        );
-                        break;
-                    case "single_image": // 图生图（单张）
-                        generatedImageFile = douBaoImage.generateImageByReference(
-                                referenceImageUrl,
-                                description,
-                                patternGenerateRequest.getSize()
-                        );
-                        // 处理参考图片URL
-                        if (referenceImageUrl.startsWith("data:image")) {
-                            finalReferenceImageUrl = uploadBase64ToCos(referenceImageUrl, loginUser.getId());
-                        } else {
-                            finalReferenceImageUrl = referenceImageUrl;
-                        }
-                        break;
-                    case "multi_image": // 多图生图（单张）
-                        java.util.List<String> imageUrls = patternGenerateRequest.getReferenceImageUrls();
-                        if (imageUrls == null || imageUrls.size() < 2) {
-                            throw new BusinessException(ErrorCode.PARAMS_ERROR, "多图生图至少需要2张图片");
-                        }
-                        // 处理base64图片
-                        java.util.List<String> processedUrls = new java.util.ArrayList<>();
-                        for (String url : imageUrls) {
-                            if (url.startsWith("data:image")) {
-                                processedUrls.add(uploadBase64ToCos(url, loginUser.getId()));
-                            } else {
-                                processedUrls.add(url);
-                            }
-                        }
-                        generatedImageFile = douBaoImage.generateImageByMultipleReferences(
-                                processedUrls,
-                                description,
-                                patternGenerateRequest.getSize()
-                        );
-                        break;
-                    case "batch_text": // 文生组图（多张）
-                        java.util.List<File> batchFiles = douBaoImage.generateImagesByText(
-                                description,
-                                patternGenerateRequest.getMaxImages(),
-                                patternGenerateRequest.getSize()
-                        );
-                        if (batchFiles != null && !batchFiles.isEmpty()) {
-                            // 保存所有生成的图片
-                            return saveBatchPatterns(batchFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
-                        }
-                        break;
-                    case "batch_single_image": // 单图生组图（多张）
-                        java.util.List<File> batchSingleFiles = douBaoImage.generateImagesByReference(
-                                referenceImageUrl,
-                                description,
-                                patternGenerateRequest.getMaxImages(),
-                                patternGenerateRequest.getSize()
-                        );
-                        if (referenceImageUrl.startsWith("data:image")) {
-                            finalReferenceImageUrl = uploadBase64ToCos(referenceImageUrl, loginUser.getId());
-                        } else {
-                            finalReferenceImageUrl = referenceImageUrl;
-                        }
-                        if (batchSingleFiles != null && !batchSingleFiles.isEmpty()) {
-                            return saveBatchPatterns(batchSingleFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
-                        }
-                        break;
-                    case "batch_multi_image": // 多图生组图（多张）
-                        java.util.List<String> multiImageUrls = patternGenerateRequest.getReferenceImageUrls();
-                        if (multiImageUrls == null || multiImageUrls.size() < 2) {
-                            throw new BusinessException(ErrorCode.PARAMS_ERROR, "多图生组图至少需要2张图片");
-                        }
-                        java.util.List<String> processedMultiUrls = new java.util.ArrayList<>();
-                        for (String url : multiImageUrls) {
-                            if (url.startsWith("data:image")) {
-                                processedMultiUrls.add(uploadBase64ToCos(url, loginUser.getId()));
-                            } else {
-                                processedMultiUrls.add(url);
-                            }
-                        }
-                        java.util.List<File> batchMultiFiles = douBaoImage.generateImagesByMultipleReferences(
-                                processedMultiUrls,
-                                description,
-                                patternGenerateRequest.getMaxImages(),
-                                patternGenerateRequest.getSize()
-                        );
-                        if (batchMultiFiles != null && !batchMultiFiles.isEmpty()) {
-                            return saveBatchPatterns(batchMultiFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
-                        }
-                        break;
-                    default:
-                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的豆包生成模式");
-                }
+            // 使用千问服务（支持文生图和图生图）
+            if (GenerationTypeEnum.TEXT_GENERATED.equals(typeEnum)) {
+                // 文字生成模式，不需要参考图片URL
+                generatedImageFile = qwenImage.generateImageByText(
+                        description,
+                        patternGenerateRequest.getSize(),
+                        patternGenerateRequest.getNegativePrompt(),
+                        patternGenerateRequest.getPromptExtend()
+                );
+                // 文生图模式，参考图片URL为空
                 finalReferenceImageUrl = null;
-            } else {
-                // 使用千问服务（支持文生图和图生图）
-                if (GenerationTypeEnum.TEXT_GENERATED.equals(typeEnum)) {
-                    // 文字生成模式，不需要参考图片URL
-                    generatedImageFile = qwenImage.generateImageByText(
-                            description,
-                            patternGenerateRequest.getSize(),
-                            patternGenerateRequest.getNegativePrompt(),
-                            patternGenerateRequest.getPromptExtend()
-                    );
-                    // 文生图模式，参考图片URL为空
-                    finalReferenceImageUrl = null;
-                } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
-                    // 图片参考生成模式
-                    // 如果是base64图片，会在generateImageByReference方法中上传到COS并返回COS URL
-                    generatedImageFile = qwenImage.generateImageByReference(
-                            referenceImageUrl,
-                            description,
-                            patternGenerateRequest.getSize()
-                    );
-                    
-                    // 如果原始URL是base64，需要上传到COS并获取URL用于保存到数据库
-                    if (referenceImageUrl.startsWith("data:image")) {
-                        // base64图片已经在generateImageByReference中上传到COS
-                        // 需要重新上传一份作为参考图片记录（或者从generateImageByReference返回COS URL）
-                        try {
-                            // 解码base64
-                            String base64Data = referenceImageUrl;
-                            if (base64Data.contains(",")) {
-                                base64Data = base64Data.split(",")[1];
-                            }
-                            byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
-                            
-                            // 保存为临时文件
-                            File refTempFile = File.createTempFile("ref_save_", ".png");
-                            java.nio.file.Files.write(refTempFile.toPath(), imageBytes);
-                            
-                            // 上传到COS作为参考图片记录
-                            String refKey = "reference/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
-                            cosUtils.putObject(refKey, refTempFile);
-                            finalReferenceImageUrl = cosClientConfig.getHost() + "/" + refKey;
-                            
-                            // 删除临时文件
-                            deleteTempFile(refTempFile);
-                        } catch (Exception e) {
-                            log.error("上传参考图片到COS失败", e);
-                            // 如果上传失败，使用null，不影响主流程
-                            finalReferenceImageUrl = null;
+            } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
+                // 图片参考生成模式
+                // 如果是base64图片，会在generateImageByReference方法中上传到COS并返回COS URL
+                generatedImageFile = qwenImage.generateImageByReference(
+                        referenceImageUrl,
+                        description,
+                        patternGenerateRequest.getSize()
+                );
+
+                // 如果原始URL是base64，需要上传到COS并获取URL用于保存到数据库
+                if (referenceImageUrl.startsWith("data:image")) {
+                    // base64图片已经在generateImageByReference中上传到COS
+                    // 需要重新上传一份作为参考图片记录（或者从generateImageByReference返回COS URL）
+                    try {
+                        // 解码base64
+                        String base64Data = referenceImageUrl;
+                        if (base64Data.contains(",")) {
+                            base64Data = base64Data.split(",")[1];
                         }
-                    } else {
-                        // 如果是URL，直接使用
-                        finalReferenceImageUrl = referenceImageUrl;
+                        byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+
+                        // 保存为临时文件
+                        File refTempFile = File.createTempFile("ref_save_", ".png");
+                        java.nio.file.Files.write(refTempFile.toPath(), imageBytes);
+
+                        // 上传到COS作为参考图片记录
+                        String refKey = "reference/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
+                        cosUtils.putObject(refKey, refTempFile);
+                        finalReferenceImageUrl = cosClientConfig.getHost() + "/" + refKey;
+
+                        // 删除临时文件
+                        deleteTempFile(refTempFile);
+                    } catch (Exception e) {
+                        log.error("上传参考图片到COS失败", e);
+                        // 如果上传失败，使用null，不影响主流程
+                        finalReferenceImageUrl = null;
                     }
+                } else {
+                    // 如果是URL，直接使用
+                    finalReferenceImageUrl = referenceImageUrl;
                 }
             }
             

@@ -78,63 +78,66 @@ const originItems = [
     label: '主页',
     title: '主页',
   },
-  {
-    key: '/admin/userManage',
-    label: '用户管理',
-    title: '用户管理',
-  },
-  {
-    key: '/patternGeneration',
+
+   {
+    key: '/mj/generation',
     label: '智能创作',
     title: '智能创作',
   },
+  // {
+  //   key: '/patternGeneration',
+  //   label: '智能创作',
+  //   title: '智能创作',
+  // },
   {
     key: '/image-fusion',
     label: '衣图智融',
     title: '衣图智融',
   },
-  
+
   {
     key: '/ai/try-on',
     label: 'AI试衣',
     title: 'AI试衣',
   },
   {
-    key: '/mj/generation',
-    label: 'VIP智能创作',
-    title: 'VIP智能创作',
+    key: '/ai',
+    label: 'AI服装知识问答',
+    title: 'AI服装知识问答',
+  },
+   {
+    key: '/article',
+    label: '文章资讯',
+    title: '文章资讯',
+  },
+ {
+    key: '/admin/userManage',
+    label: '用户管理',
+    title: '用户管理',
   },
   {
     key: '/admin/patternManage',
     label: '图案管理',
     title: '图案管理',
   },
-  {
-    key: '/ai',
-    label: 'AI服装知识问答',
-    title: 'AI服装知识问答',
-  },
+
   {
     key: '/admin/DataAnalysis',
     label: '作品库分析',
     title: '作品库分析',
   },
-  {
-    key: '/article',
-    label: '文章资讯',
-    title: '文章资讯',
-  },
+
   {
     key: '/admin/article/manage',
     label: '文章管理',
     title: '文章管理',
   },
 
-  {
-    key: 'others',
-    label: h('a', { href: 'https://chat.deepseek.com/', target: '_blank' }, '免费壁纸库'),
-    title: 'deepseek',
-  },
+  // {
+  //   key: 'others',
+  //   label: h('a', { href: 'https://chat.deepseek.com/', target: '_blank' }, '免费壁纸库'),
+  //   title: 'deepseek',
+  // },
 ]
 
 const filterMenus = (menus = [] as MenuProps['items']) => {

@@ -1,6 +1,7 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xhs.clothingpatternbackend.controller.PatternController;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.mapper.PatternMapper;
@@ -370,7 +371,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
             log.info("开始清空图案列表缓存...");
             
             // 1. 清空本地 Caffeine 缓存（关键！）
-            com.xhs.clothingpatternbackend.controller.PatternController.LOCAL_CACHE.invalidateAll();
+            PatternController.LOCAL_CACHE.invalidateAll();
             log.info("清空本地Caffeine缓存完成");
             
             // 2. 清空 Redis 中的图案列表缓存

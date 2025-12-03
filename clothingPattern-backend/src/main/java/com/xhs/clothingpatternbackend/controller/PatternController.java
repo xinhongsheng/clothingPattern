@@ -72,7 +72,9 @@ public class PatternController {
         // 获取生成的图案详情并返回
         Pattern pattern = patternService.getById(patternId);
 //        PatternVO patternVO = patternService.getPatternVO(pattern, loginUser.getId());
-        
+        // 清空图案列表缓存
+        clearPatternListCache();
+
         return ResultUtils.success(pattern);
     }
 
@@ -246,6 +248,8 @@ public class PatternController {
         patternService.validPattern(pattern, false);
         boolean result = patternService.updateById(pattern);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 清空图案列表缓存
+        clearPatternListCache();
         return ResultUtils.success(true);
     }
 
@@ -273,6 +277,8 @@ public class PatternController {
         }
         boolean result = patternService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 清空图案列表缓存
+        clearPatternListCache();
         return ResultUtils.success(true);
     }
 
@@ -295,6 +301,8 @@ public class PatternController {
         User loginUser = userService.getLoginUser(request);
         boolean result = patternService.auditPattern(id, auditStatus, rejectReason, loginUser.getId());
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        // 清空图案列表缓存
+        clearPatternListCache();
         return ResultUtils.success(true);
     }
 
@@ -308,6 +316,23 @@ public class PatternController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         patternService.editPicture(patternEditRequest, userService.getLoginUser(request));
+        // 清空图案列表缓存
+        clearPatternListCache();
         return ResultUtils.success(true);
+    }
+
+    private void clearPatternListCache() {
+        try {
+            // 清空本地 Caffeine 缓存
+            LOCAL_CACHE.invalidateAll();
+
+            // 清空 Redis 中的图案列表缓存
+            java.util.Set<String> keys = stringRedisTemplate.keys("xhs_pattern:listPictureVOByPage:*");
+            if (keys != null && !keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            // 缓存清理失败不影响主流程
+        }
     }
 }

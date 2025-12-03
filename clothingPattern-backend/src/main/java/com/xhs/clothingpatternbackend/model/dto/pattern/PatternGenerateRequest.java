@@ -13,12 +13,12 @@ public class PatternGenerateRequest implements Serializable {
     /**
      * AI服务类型：qwen、doubao
      */
-    private String serviceType;
+//    private String serviceType;
 
     /**
      * 豆包生成模式：single_text, single_image, multi_image, batch_text, batch_single_image, batch_multi_image
      */
-    private String doubaoMode;
+//    private String doubaoMode;
 
     /**
      * 多图参考URL列表（多图生图时使用）
