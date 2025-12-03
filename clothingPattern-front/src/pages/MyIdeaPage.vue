@@ -398,7 +398,7 @@ onBeforeUnmount(() => {
 #myIdeaPage {
   padding: 24px;
   min-height: 100vh;
-  background-image: url(https://api.imlcd.cn/bg/gq.php);
+  // background-image: url(https://api.imlcd.cn/bg/gq.php);
 
   .my-idea-page {
     max-width: 1200px;

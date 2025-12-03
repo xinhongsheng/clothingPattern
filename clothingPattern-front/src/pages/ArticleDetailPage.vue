@@ -229,9 +229,9 @@ const handleLike = async () => {
   try {
     const res = await likeArticle({ articleId: article.value.id })
     if (res.data.code === 0 && res.data.data) {
-      article.value.liked = res.data.data.liked
+      article.value.liked = res.data.data.isLiked
       article.value.likeCount = res.data.data.likeCount || 0
-      message.success(res.data.data.liked ? '点赞成功' : '取消点赞')
+      message.success(res.data.data.isLiked ? '点赞成功' : '取消点赞')
     } else {
       message.error('操作失败：' + res.data.message)
     }

@@ -13,16 +13,6 @@
 
     <!-- 筛选条件 -->
     <div class="filter-section">
-      <!-- 生成方式 -->
-      <!-- <div class="filter-row">
-        <span class="filter-label">生成方式：</span>
-        <a-radio-group v-model:value="searchParams.generationType" button-style="solid" @change="doSearch">
-          <a-radio-button value="">全部</a-radio-button>
-          <a-radio-button value="TEXT_GENERATED">文字生成</a-radio-button>
-          <a-radio-button value="IMAGE_REFERENCED">图片参考</a-radio-button>
-        </a-radio-group>
-      </div> -->
-
       <!-- 风格标签 -->
       <div class="filter-row">
         <span class="filter-label">风格：</span>
@@ -179,98 +169,264 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 全局样式重置与基础设置 */
 #homePage {
-  padding: 24px;
+  padding: 32px 24px;
   min-height: 100vh;
-  /* background: #f5f5f5; */
-  background-image:  url('../assets/backgroundImage/homePage-bg.png');
+  background: linear-gradient(145deg, #f5f7fa 0%, #e4eaf5 100%);
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
 
-  .search-bar {
-    max-width: 600px;
-    margin: 0 auto 32px;
+/* 搜索框样式优化 */
+.search-bar {
+  max-width: 720px;
+  margin: 0 auto 40px;
+  position: relative;
+}
+
+:deep(.ant-input-search-large) {
+  --ant-input-height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.ant-input-search-large:hover) {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+:deep(.ant-input-search-large .ant-input) {
+  font-size: 16px;
+  padding: 0 24px;
+  border: none;
+}
+
+:deep(.ant-input-search-large .ant-input-search-button) {
+  height: 100%;
+  padding: 0 32px;
+  font-size: 16px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  border: none;
+  transition: all 0.3s;
+}
+
+:deep(.ant-input-search-large .ant-input-search-button:hover) {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+  transform: scale(1.02);
+}
+
+:deep(.ant-input-search-large .ant-input-search-button:active) {
+  transform: scale(0.98);
+}
+
+/* 筛选区域样式优化 */
+.filter-section {
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  margin-bottom: 32px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f2f5;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-label {
+  font-weight: 600;
+  margin-right: 20px;
+  min-width: 70px;
+  color: #1d2129;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* 标签样式优化 */
+:deep(.ant-tag-checkable) {
+  cursor: pointer;
+  border-radius: 20px;
+  padding: 6px 16px;
+  margin-right: 12px;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  border-color: #e5e6eb;
+  color: #4e5969;
+  background-color: #f7f8fa;
+}
+
+:deep(.ant-tag-checkable:hover) {
+  border-color: #1890ff;
+  color: #1890ff;
+  background-color: #e6f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+}
+
+:deep(.ant-tag-checkable-checked) {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  color: #ffffff;
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+}
+
+:deep(.ant-tag-checkable-checked:hover) {
+  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
+  color: #ffffff;
+}
+
+/* 分页样式优化 */
+.pagination {
+  text-align: center;
+  margin-top: 40px;
+  padding: 20px 0;
+}
+
+:deep(.ant-pagination) {
+  font-size: 14px;
+}
+
+:deep(.ant-pagination-item) {
+  border-radius: 8px !important;
+  margin: 0 4px;
+  transition: all 0.3s;
+}
+
+:deep(.ant-pagination-item:hover) {
+  border-color: #1890ff;
+  transform: translateY(-2px);
+}
+
+:deep(.ant-pagination-item-active) {
+  border-color: #1890ff !important;
+  background-color: #e6f7ff !important;
+}
+
+:deep(.ant-pagination-item-active a) {
+  color: #1890ff !important;
+  font-weight: 500;
+}
+
+:deep(.ant-pagination-prev, .ant-pagination-next) {
+  border-radius: 8px !important;
+  transition: all 0.3s;
+}
+
+:deep(.ant-pagination-prev:hover, .ant-pagination-next:hover) {
+  border-color: #1890ff;
+  background-color: #f0f9ff;
+}
+
+:deep(.ant-pagination-show-size-changer) {
+  margin-left: 16px;
+}
+
+/* 响应式优化 */
+@media (max-width: 1024px) {
+  #homePage {
+    padding: 24px 16px;
   }
 
   .filter-section {
-    background: white;
     padding: 24px;
-    border-radius: 8px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    .filter-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 16px;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .filter-label {
-        font-weight: 500;
-        margin-right: 16px;
-        min-width: 80px;
-        color: #333;
-      }
-
-      :deep(.ant-radio-group) {
-        .ant-radio-button-wrapper {
-          border-radius: 4px;
-          margin-right: 8px;
-
-          &:first-child {
-            border-radius: 4px;
-          }
-
-          &:last-child {
-            border-radius: 4px;
-          }
-        }
-      }
-
-      :deep(.ant-tag-checkable) {
-        cursor: pointer;
-        border-radius: 16px;
-        padding: 4px 12px;
-        margin-right: 8px;
-        margin-bottom: 8px;
-        transition: all 0.3s;
-
-        &:hover {
-          border-color: #1890ff;
-        }
-
-        &.ant-tag-checkable-checked {
-          background-color: #1890ff;
-          color: white;
-        }
-      }
-    }
   }
 
-  .pagination {
-    text-align: center;
-    margin-top: 32px;
-    padding: 16px 0;
+  .filter-row {
+    margin-bottom: 20px;
   }
 }
 
 @media (max-width: 768px) {
   #homePage {
-    padding: 16px;
-
-    .filter-section {
-      padding: 16px;
-
-      .filter-row {
-        flex-direction: column;
-        align-items: flex-start;
-
-        .filter-label {
-          margin-bottom: 8px;
-        }
-      }
-    }
+    padding: 16px 8px;
   }
+
+  .search-bar {
+    max-width: 100%;
+    margin-bottom: 24px;
+  }
+
+  :deep(.ant-input-search-large) {
+    --ant-input-height: 48px;
+  }
+
+  :deep(.ant-input-search-large .ant-input) {
+    font-size: 14px;
+    padding: 0 16px;
+  }
+
+  :deep(.ant-input-search-large .ant-input-search-button) {
+    padding: 0 24px;
+    font-size: 14px;
+  }
+
+  .filter-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .filter-label {
+    margin-bottom: 12px;
+    margin-right: 0;
+    font-size: 14px;
+  }
+
+  :deep(.ant-tag-checkable) {
+    padding: 4px 12px;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .pagination {
+    margin-top: 24px;
+    padding: 16px 0;
+  }
+
+  :deep(.ant-pagination) {
+    font-size: 13px;
+  }
+
+  :deep(.ant-pagination-item) {
+    margin: 0 2px;
+    min-width: 32px;
+    height: 32px;
+    line-height: 32px;
+  }
+}
+
+/* 加载状态相关（如果PatternList组件需要） */
+:deep(.ant-spin) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+}
+
+:deep(.ant-spin-dot) {
+  font-size: 48px;
+}
+
+:deep(.ant-spin-text) {
+  font-size: 16px;
+  color: #4e5969;
+  margin-top: 16px;
 }
 </style>
