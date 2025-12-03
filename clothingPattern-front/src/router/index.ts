@@ -18,6 +18,7 @@ import ArticleManagePage from '@/pages/admin/ArticleManagePage.vue'
 import ArticleEditPage from '@/pages/admin/ArticleEditPage.vue'
 import BannerManagePage from '@/pages/admin/BannerManagePage.vue'
 import UserProfilePage from '@/pages/user/UserProfilePage.vue'
+import DataAnalysisPageV2 from '@/pages/admin/DataAnalysisPageV2.vue'
 
 
 
@@ -91,6 +92,11 @@ const router = createRouter({
     path: '/admin/dataAnalysis',
     name: '数据分析',
     component: DataAnalysisPage,
+  },
+  {
+    path: '/admin/dataAnalysisV2',
+    name: '可视化大屏',
+    component: DataAnalysisPageV2,
   },
   {
     path: '/article',

@@ -17,6 +17,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@kjgl77/datav-vue3": "^1.7.4",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
