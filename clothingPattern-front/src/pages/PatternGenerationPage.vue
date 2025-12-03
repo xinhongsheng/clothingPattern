@@ -1,5 +1,5 @@
 <template>
-  <div class="pattern-generation-page">
+  <div id="patternGenerationPage" class="pattern-generation-page">
     <!-- 页面标题 -->
     <div class="page-header">
       <h1>🎨 智能服装图案创作</h1>
@@ -800,170 +800,22 @@ const formatDateTime = (date: Date | string) => {
 </script>
 
 <style scoped>
-.pattern-generation-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+#patternGenerationPage {
   padding: 40px 20px;
+  min-height: 100vh;
+  background-image: url(https://api.imlcd.cn/bg/gq.php);
 
-  .page-header {
-    text-align: center;
-    margin-bottom: 40px;
-    color: white;
-
-    h1 {
-      font-size: 48px;
-      font-weight: 700;
-      margin: 0;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .subtitle {
-      font-size: 18px;
-      margin-top: 10px;
-      opacity: 0.95;
-    }
-  }
-
-  .generation-card {
-    max-width: 1400px;
-    margin: 0 auto;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-
-    :deep(.ant-card-body) {
-      padding: 40px;
-    }
-  }
-
-  .section-title {
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 24px;
-    color: #1f1f1f;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    .anticon {
-      color: #667eea;
-    }
-  }
-
-  .config-section {
-    .tip-text {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #8c8c8c;
-      line-height: 1.6;
-    }
-
-    .mt-2 {
-      margin-top: 8px;
-    }
-
-    .ml-2 {
-      margin-left: 8px;
-    }
-
-    .submit-btn-wrapper {
-      margin-top: 32px;
-      margin-bottom: 0;
-
-      .ant-btn-primary {
-        height: 50px;
-        font-size: 16px;
-        font-weight: 600;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        transition: all 0.3s ease;
-
-        &:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        &:disabled {
-          background: #d9d9d9;
-          box-shadow: none;
-        }
-      }
-    }
-  }
-
-  .preview-section {
-    .generating-placeholder {
-      text-align: center;
-      padding: 100px 20px;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      border-radius: 12px;
-
-      .generating-text {
-        margin-top: 20px;
-        font-size: 18px;
-        font-weight: 500;
-        color: #1f1f1f;
-      }
-
-      .generating-tip {
-        margin-top: 10px;
-        font-size: 14px;
-        color: #8c8c8c;
-      }
-    }
-
-    .result-container {
-      .image-preview {
-        margin-bottom: 24px;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-
-        :deep(.ant-image) {
-          width: 100%;
-          display: block;
-
-          img {
-            width: 100%;
-            height: auto;
-            display: block;
-          }
-        }
-      }
-
-      .result-info {
-        .action-buttons {
-          margin-top: 16px;
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-
-          .ant-btn {
-            flex: 1;
-            min-width: 120px;
-          }
-        }
-      }
-    }
-
-    .empty-placeholder {
-      padding: 100px 20px;
-
-      :deep(.ant-empty-description) {
-        color: #8c8c8c;
-        font-size: 14px;
-      }
-    }
-  }
-}
-
-@media (max-width: 768px) {
   .pattern-generation-page {
-    padding: 20px 10px;
-
     .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+      color: white;
+
       h1 {
-        font-size: 32px;
+        font-size: 48px;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
       }
 
       .subtitle {

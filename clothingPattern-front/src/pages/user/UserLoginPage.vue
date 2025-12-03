@@ -30,7 +30,6 @@
 </template>
 <script lang="ts" setup>
 import { reactive } from 'vue'
-import { API } from '@/api/index.ts'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { userLogin } from '@/api/userController.ts'
 import { useRouter } from 'vue-router'

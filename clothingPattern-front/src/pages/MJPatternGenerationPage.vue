@@ -2,7 +2,7 @@
   <div class="mj-pattern-generation-page">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h1>🎨 Midjourney 智能图案创作</h1>
+      <h1>🎨智能图案创作</h1>
       <p class="subtitle">专业服装图案设计，AI 驱动创意无限</p>
     </div>
 
@@ -509,7 +509,7 @@ const getActionName = (action: string) => {
 <style scoped>
 .mj-pattern-generation-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: url('../assets/backgroundImage/MjGen.jpg');
   padding: 40px 20px;
 
   .page-header {

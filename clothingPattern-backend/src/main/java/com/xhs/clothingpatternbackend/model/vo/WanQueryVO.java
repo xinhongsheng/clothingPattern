@@ -47,7 +47,7 @@ public class WanQueryVO {
         @JSONField(name = "end_time", format = "yyyy-MM-dd HH:mm:ss.SSS")
         private LocalDateTime endTime;
 
-        // 结果图片列表（results → results，1-4张图）
+        // 结果图片列表（results  → results，1-4张图）
         private List<Result> results;
 
         // 错误信息（失败时返回，code/message对应错误码和详情）

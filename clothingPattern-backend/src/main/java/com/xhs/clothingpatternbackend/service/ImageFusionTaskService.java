@@ -1,7 +1,13 @@
 package com.xhs.clothingpatternbackend.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.xhs.clothingpatternbackend.model.dto.mj.WanQueryRequest;
+import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.ImageFusionTask;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xhs.clothingpatternbackend.model.entity.Pattern;
+import com.xhs.clothingpatternbackend.model.vo.PatternVO;
+import com.xhs.clothingpatternbackend.model.vo.WanQueryVO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -23,4 +29,8 @@ public interface ImageFusionTaskService extends IService<ImageFusionTask> {
 
     // -------------------------- 查询结果图片（通过 DashScope 任务ID 获取COS永久URL列表） --------------------------
     List<String> getTaskResults(String dashscopeTaskId);
+
+    QueryWrapper<ImageFusionTask> getQueryWrapper(WanQueryRequest wanQueryRequest);
+
+    List<WanQueryVO> getImageFusionVOList(List<ImageFusionTask> imageFusionTaskList, Long loginUserId);
 }

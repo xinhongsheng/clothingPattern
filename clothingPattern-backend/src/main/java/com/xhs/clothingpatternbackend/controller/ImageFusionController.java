@@ -1,20 +1,40 @@
 package com.xhs.clothingpatternbackend.controller;
 
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
+import com.xhs.clothingpatternbackend.exception.ErrorCode;
+import com.xhs.clothingpatternbackend.exception.ThrowUtils;
+import com.xhs.clothingpatternbackend.model.dto.mj.WanQueryRequest;
+import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.ImageFusionTask;
+import com.xhs.clothingpatternbackend.model.entity.Pattern;
+import com.xhs.clothingpatternbackend.model.entity.User;
+import com.xhs.clothingpatternbackend.model.vo.PatternVO;
+import com.xhs.clothingpatternbackend.model.vo.WanQueryVO;
 import com.xhs.clothingpatternbackend.service.ImageFusionTaskService;
+import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
 import com.xhs.clothingpatternbackend.utils.CosUtils;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author: 小辛同学
@@ -32,6 +52,21 @@ public class ImageFusionController {
     private CosUtils cosUtils;
     @Resource
     private CosClientConfig cosClientConfig;
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private  ImageFusionTaskService imageFusionTaskService;
+    // 改为公共静态变量，方便其他服务清空缓存
+    public static final Cache<String, String> LOCAL_CACHE =
+            Caffeine.newBuilder().initialCapacity(1024)
+                    .maximumSize(10000L)
+                    // 缓存 5 分钟移除
+                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+                    .build();
 
     /**
      * 多图融合固定提示词：将服装图案自然、美观地融合到服装款式图上
@@ -107,5 +142,66 @@ public class ImageFusionController {
             log.error("查询结果失败", e);
             throw new BusinessException(500, "查询结果失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 分页获取融合图片封装列表
+     *
+     * @param wanQueryRequest
+     * @return
+     */
+    @PostMapping("/list/page/vo")
+    public BaseResponse<Page<WanQueryVO>> listImageFusionVOByPage(@RequestBody WanQueryRequest wanQueryRequest,
+                                                                  HttpServletRequest request) {
+        long current = wanQueryRequest.getCurrent();
+        long size = wanQueryRequest.getPageSize();
+        // 限制爬虫
+        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户ID（未登录用户为null）
+        Long loginUserId = null;
+        try {
+            User loginUser = userService.getLoginUser(request);
+            if (loginUser != null) {
+                loginUserId = loginUser.getId();
+            }
+        } catch (Exception e) {
+            // 未登录，保持loginUserId为null
+        }
+
+        //构建缓存
+        String queryCondition = JSONUtil.toJsonStr(wanQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String cacheKey = String.format("xhs_pattern:listWanVOByPage:%s", hashKey);
+        //先从本地缓存读取
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+        if(cachedValue!=null){
+            Page<WanQueryVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachePage);
+        }
+
+        //从redis中读取
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(cacheKey);
+        if(cachedValue!=null){
+            //存入本地缓存
+            LOCAL_CACHE.put(cacheKey, cachedValue);
+            Page<WanQueryVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachePage);
+        }
+
+        Page<ImageFusionTask> imageFusionTaskPage = imageFusionTaskService.page(new Page<>(current, size),
+                imageFusionTaskService.getQueryWrapper(wanQueryRequest));
+        Page<WanQueryVO> wanQueryVOPage = new Page<>(current, size, imageFusionTaskPage.getTotal());
+        List<WanQueryVO> wanQueryVOList = imageFusionTaskService.getImageFusionVOList(imageFusionTaskPage.getRecords(), loginUserId);
+        wanQueryVOPage.setRecords(wanQueryVOList);
+
+        //存入缓存中
+        String cacheValue = JSONUtil.toJsonStr(wanQueryVOPage);
+        int cacheExpireTime=300+ RandomUtil.randomInt(0, 300);
+        LOCAL_CACHE.put(cacheKey, cacheValue);
+        valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+
+        return ResultUtils.success(wanQueryVOPage);
     }
 }

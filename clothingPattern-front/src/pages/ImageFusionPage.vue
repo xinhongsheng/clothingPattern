@@ -21,9 +21,7 @@
                   accept="image/*"
                 >
                   <div class="upload-box">
-                    <a-button>
-                      <picture-outlined /> 选择服装图片
-                    </a-button>
+                    <a-button> <picture-outlined /> 选择服装图片 </a-button>
                     <span class="upload-tip">支持 JPG / PNG，大小 ≤ 5MB，仅 1 张</span>
                   </div>
                 </a-upload>
@@ -41,18 +39,12 @@
                   accept="image/*"
                 >
                   <div class="upload-box">
-                    <a-button>
-                      <picture-outlined /> 添加图案图片
-                    </a-button>
+                    <a-button> <picture-outlined /> 添加图案图片 </a-button>
                     <span class="upload-tip">支持 1-2 张图案，总数量（服装+图案）不超过 3 张</span>
                   </div>
                 </a-upload>
                 <div v-if="patternImageUrls.length" class="pattern-list">
-                  <div
-                    v-for="(url, index) in patternImageUrls"
-                    :key="index"
-                    class="pattern-item"
-                  >
+                  <div v-for="(url, index) in patternImageUrls" :key="index" class="pattern-item">
                     <a-image :src="url" :width="100" />
                     <a-button type="link" danger @click="removePattern(index)">移除</a-button>
                   </div>
@@ -278,7 +270,7 @@ const handleSubmit = async () => {
 <style scoped>
 .fusion-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('../assets/backgroundImage/fusionPage-bg.png');
   padding: 40px 20px;
 }
 

@@ -14,14 +14,14 @@
     <!-- 筛选条件 -->
     <div class="filter-section">
       <!-- 生成方式 -->
-      <div class="filter-row">
+      <!-- <div class="filter-row">
         <span class="filter-label">生成方式：</span>
         <a-radio-group v-model:value="searchParams.generationType" button-style="solid" @change="doSearch">
           <a-radio-button value="">全部</a-radio-button>
           <a-radio-button value="TEXT_GENERATED">文字生成</a-radio-button>
           <a-radio-button value="IMAGE_REFERENCED">图片参考</a-radio-button>
         </a-radio-group>
-      </div>
+      </div> -->
 
       <!-- 风格标签 -->
       <div class="filter-row">
@@ -103,11 +103,11 @@ const searchParams = reactive<API.PatternQueryRequest>({
   pageSize: 10,
   sortField: 'createTime',
   sortOrder: 'descend',
-  auditStatus: 'APPROVED' // 默认只显示已通过的图案
+  auditStatus: 'APPROVED', // 默认只显示已通过的图案
 })
 
 // 筛选选项
-const styleList = ref<string[]>(['简约','可爱', '复古', '卡通', '抽象', '民族', '未来'])
+const styleList = ref<string[]>(['简约', '可爱', '复古', '卡通', '抽象', '民族', '未来'])
 const seasonList = ref<string[]>(['春季', '夏季', '秋季', '冬季', '四季通用'])
 const targetAudienceList = ref<string[]>(['儿童', '青少年', '成人', '中老年', '通用'])
 
@@ -178,11 +178,12 @@ onMounted(() => {
 })
 </script>
 
-<style  scoped>
+<style scoped>
 #homePage {
   padding: 24px;
   min-height: 100vh;
-  background: #f5f5f5;
+  /* background: #f5f5f5; */
+  background-image:  url('../assets/backgroundImage/homePage-bg.png');
 
   .search-bar {
     max-width: 600px;

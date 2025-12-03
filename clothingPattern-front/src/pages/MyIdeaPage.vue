@@ -1,5 +1,5 @@
 <template>
-  <div class="my-idea-page">
+  <div id="myIdeaPage" class="my-idea-page">
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -143,6 +143,11 @@
       </a-col>
     </a-row>
 
+    <!-- 作品状态分布图表 -->
+    <a-card class="chart-card" :bordered="false" title="作品状态分布">
+      <div ref="statusChartRef" class="status-chart"></div>
+    </a-card>
+
     <!-- 图案列表 -->
     <a-card class="list-card" :bordered="false">
       <template #title>
@@ -189,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, h } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, nextTick, computed, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Empty } from 'ant-design-vue'
 import {
@@ -203,6 +208,7 @@ import {
   CloseCircleOutlined,
   AppstoreOutlined,
 } from '@ant-design/icons-vue'
+import * as echarts from 'echarts'
 import { listMyPatternVoByPage } from '@/api/patternController'
 import PatternList from '@/components/PatternList.vue'
 import {
@@ -222,6 +228,10 @@ const loading = ref(true)
 const approvedCount = ref(0)
 const pendingCount = ref(0)
 const rejectedCount = ref(0)
+
+// ECharts 图表实例
+const statusChartRef = ref<HTMLDivElement | null>(null)
+let statusChart: echarts.ECharts | null = null
 
 // 风格列表（与 HomePage 保持一致）
 const styleList = ['简约','可爱', '复古', '民族', '抽象', '未来']
@@ -261,9 +271,64 @@ const fetchStatistics = async () => {
       rejectedCount.value = allData.filter(
         (item) => item.auditStatus === AUDIT_STATUS_ENUM.REJECTED
       ).length
+
+      // 统计更新后重新渲染图表
+      await nextTick()
+      renderStatusChart()
     }
   } catch (error: any) {
     console.error('获取统计数据失败：', error.message)
+  }
+}
+
+// 渲染作品状态分布图表
+const renderStatusChart = () => {
+  if (!statusChartRef.value) {
+    return
+  }
+
+  if (!statusChart) {
+    statusChart = echarts.init(statusChartRef.value)
+  }
+
+  const option: echarts.EChartsOption = {
+    tooltip: {
+      trigger: 'item',
+    },
+    legend: {
+      bottom: 0,
+    },
+    series: [
+      {
+        name: '作品状态',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 2,
+        },
+        label: {
+          formatter: '{b}: {c} ({d}%)',
+        },
+        data: [
+          { value: approvedCount.value, name: '已通过' },
+          { value: pendingCount.value, name: '待审核' },
+          { value: rejectedCount.value, name: '已拒绝' },
+        ],
+      },
+    ],
+  }
+
+  statusChart.setOption(option)
+  statusChart.resize()
+}
+
+// 窗口缩放自适应
+const handleResize = () => {
+  if (statusChart) {
+    statusChart.resize()
   }
 }
 
@@ -317,163 +382,193 @@ const goToCreate = () => {
 // 页面加载
 onMounted(() => {
   fetchData()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  if (statusChart) {
+    statusChart.dispose()
+    statusChart = null
+  }
 })
 </script>
 
 <style scoped lang="scss">
-.my-idea-page {
-  min-height: calc(100vh - 200px);
+#myIdeaPage {
+  padding: 24px;
+  min-height: 100vh;
+  background-image: url(https://api.imlcd.cn/bg/gq.php);
 
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding: 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    color: white;
-
-    .header-content {
-      .page-title {
-        font-size: 32px;
-        font-weight: 700;
-        margin: 0 0 8px 0;
-        color: white;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        .title-icon {
-          font-size: 36px;
-        }
-      }
-
-      .page-subtitle {
-        font-size: 16px;
-        margin: 0;
-        opacity: 0.9;
-      }
-    }
-  }
-
-  .filter-card {
-    margin-bottom: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    :deep(.ant-card-body) {
-      padding: 20px;
-    }
-  }
-
-  .stats-row {
-    margin-bottom: 24px;
-
-    .stat-card {
-      border-radius: 8px;
-      transition: all 0.3s ease;
-
-      &:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-      }
-
-      :deep(.ant-statistic-title) {
-        font-size: 14px;
-        color: #8c8c8c;
-        margin-bottom: 8px;
-      }
-
-      :deep(.ant-statistic-content) {
-        font-size: 28px;
-        font-weight: 600;
-      }
-
-      &.total-card {
-        border-left: 4px solid #1890ff;
-
-        :deep(.ant-statistic-content) {
-          color: #1890ff;
-        }
-      }
-
-      &.approved-card {
-        border-left: 4px solid #52c41a;
-
-        :deep(.ant-statistic-content) {
-          color: #52c41a;
-        }
-      }
-
-      &.pending-card {
-        border-left: 4px solid #faad14;
-
-        :deep(.ant-statistic-content) {
-          color: #faad14;
-        }
-      }
-
-      &.rejected-card {
-        border-left: 4px solid #ff4d4f;
-
-        :deep(.ant-statistic-content) {
-          color: #ff4d4f;
-        }
-      }
-    }
-  }
-
-  .list-card {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-    :deep(.ant-card-head) {
-      border-bottom: 2px solid #f0f0f0;
-    }
-
-    :deep(.ant-card-head-title) {
-      font-size: 18px;
-      font-weight: 600;
-    }
-  }
-
-  .pagination {
-    margin-top: 32px;
-    text-align: center;
-  }
-}
-
-@media (max-width: 768px) {
   .my-idea-page {
+    max-width: 1200px;
+    margin: 0 auto;
+
     .page-header {
-      flex-direction: column;
-      gap: 16px;
-      align-items: flex-start;
-      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      color: white;
 
       .header-content {
         .page-title {
-          font-size: 24px;
+          font-size: 32px;
+          font-weight: 700;
+          margin: 0 0 8px 0;
+          color: white;
+          display: flex;
+          align-items: center;
+          gap: 12px;
 
           .title-icon {
-            font-size: 28px;
+            font-size: 36px;
           }
         }
 
         .page-subtitle {
-          font-size: 14px;
+          font-size: 16px;
+          margin: 0;
+          opacity: 0.9;
         }
       }
+    }
 
-      .ant-btn {
-        width: 100%;
+    .list-card {
+      margin-top: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+      :deep(.ant-card-head) {
+        border-bottom: 2px solid #f0f0f0;
+      }
+
+      :deep(.ant-card-head-title) {
+        font-size: 18px;
+        font-weight: 600;
+      }
+    }
+
+    .chart-card {
+      margin-top: 16px;
+    }
+
+    .status-chart {
+      width: 100%;
+      height: 320px;
+    }
+
+    .filter-card {
+      margin-bottom: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+      :deep(.ant-card-body) {
+        padding: 20px;
       }
     }
 
     .stats-row {
-      .ant-col {
-        margin-bottom: 12px;
+      margin-bottom: 24px;
+
+      .stat-card {
+        border-radius: 8px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        :deep(.ant-statistic-title) {
+          font-size: 14px;
+          color: #8c8c8c;
+          margin-bottom: 8px;
+        }
+
+        :deep(.ant-statistic-content) {
+          font-size: 28px;
+          font-weight: 600;
+        }
+
+        &.total-card {
+          border-left: 4px solid #1890ff;
+
+          :deep(.ant-statistic-content) {
+            color: #1890ff;
+          }
+        }
+
+        &.approved-card {
+          border-left: 4px solid #52c41a;
+
+          :deep(.ant-statistic-content) {
+            color: #52c41a;
+          }
+        }
+
+        &.pending-card {
+          border-left: 4px solid #faad14;
+
+          :deep(.ant-statistic-content) {
+            color: #faad14;
+          }
+        }
+
+        &.rejected-card {
+          border-left: 4px solid #ff4d4f;
+
+          :deep(.ant-statistic-content) {
+            color: #ff4d4f;
+          }
+        }
+      }
+    }
+
+    .pagination {
+      margin-top: 32px;
+      text-align: center;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  #myIdeaPage {
+    padding: 16px;
+
+    .my-idea-page {
+      .page-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 20px;
+
+        .header-content {
+          .page-title {
+            font-size: 24px;
+
+            .title-icon {
+              font-size: 28px;
+            }
+          }
+
+          .page-subtitle {
+            font-size: 14px;
+          }
+        }
+
+        .ant-btn {
+          width: 100%;
+        }
+      }
+
+      .stats-row {
+        .ant-col {
+          margin-bottom: 12px;
+        }
       }
     }
   }

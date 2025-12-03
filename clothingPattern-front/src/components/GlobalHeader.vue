@@ -4,8 +4,8 @@
       <a-col flex="200px">
         <RouterLink to="/">
           <div class="title-bar">
-            <img class="logo" src="../assets/logo.png" alt="logo" />
-            <div class="title">服装智能创作平台</div>
+            <!-- <img class="logo" src="../assets/logo.png" alt="logo" /> -->
+            <!-- <div class="title">服装图案智能创作</div> -->
           </div>
         </RouterLink>
       </a-col>
@@ -59,8 +59,19 @@
   </div>
 </template>
 <script lang="ts" setup>
-// 补充：导入 UserOutlined 图标（之前代码漏了，会导致图标不显示）
-import { HomeOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons-vue'
+// 补充：导入导航栏所需的图标
+import {
+  HomeOutlined,
+  LogoutOutlined,
+  UserOutlined,
+  HighlightOutlined,
+  PicCenterOutlined,
+  SkinOutlined,
+  RobotOutlined,
+  ReadOutlined,
+  TeamOutlined,
+  AppstoreOutlined,
+} from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { ref, h, computed } from 'vue' // 注意：h 函数需要导入（用于渲染图标）
@@ -79,8 +90,9 @@ const originItems = [
     title: '主页',
   },
 
-   {
+  {
     key: '/mj/generation',
+    icon: () => h(HighlightOutlined),
     label: '智能创作',
     title: '智能创作',
   },
@@ -91,44 +103,52 @@ const originItems = [
   // },
   {
     key: '/image-fusion',
+    icon: () => h(PicCenterOutlined),
     label: '衣图智融',
     title: '衣图智融',
   },
 
   {
     key: '/ai/try-on',
+    icon: () => h(SkinOutlined),
     label: 'AI试衣',
     title: 'AI试衣',
   },
   {
     key: '/ai',
+    icon: () => h(RobotOutlined),
     label: 'AI服装知识问答',
     title: 'AI服装知识问答',
   },
-   {
+  {
     key: '/article',
+    icon: () => h(ReadOutlined),
     label: '文章资讯',
     title: '文章资讯',
   },
- {
+  {
     key: '/admin/userManage',
+    icon: () => h(TeamOutlined),
     label: '用户管理',
     title: '用户管理',
   },
   {
     key: '/admin/patternManage',
+    icon: () => h(AppstoreOutlined),
     label: '图案管理',
     title: '图案管理',
   },
 
   {
     key: '/admin/DataAnalysis',
+    icon: () => h(AppstoreOutlined),
     label: '作品库分析',
     title: '作品库分析',
   },
 
   {
     key: '/admin/article/manage',
+    icon: () => h(ReadOutlined),
     label: '文章管理',
     title: '文章管理',
   },

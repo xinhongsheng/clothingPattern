@@ -1,17 +1,24 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qcloud.cos.utils.IOUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.mapper.ImageFusionTaskMapper;
+import com.xhs.clothingpatternbackend.model.dto.mj.WanQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.ImageFusionTask;
+import com.xhs.clothingpatternbackend.model.entity.Pattern;
+import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.WanQueryVO;
 import com.xhs.clothingpatternbackend.sdk.dashscope.WanApiClient;
 import com.xhs.clothingpatternbackend.service.ImageFusionTaskService;
+import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
 import com.xhs.clothingpatternbackend.utils.CosUtils;
 import io.micrometer.common.util.StringUtils;
@@ -20,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +40,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +52,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMapper, ImageFusionTask>
-    implements ImageFusionTaskService{
+    implements ImageFusionTaskService {
 
     @Resource
     private WanApiClient wanApiClient;
@@ -53,7 +60,8 @@ public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMappe
     private CosUtils cosUtils;
     @Autowired
     private CosClientConfig cosClientConfig;
-
+    @Resource
+    private UserService userService;
     // -------------------------- 提交任务（返回 DashScope 任务ID） --------------------------
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -338,7 +346,141 @@ public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMappe
         return task.getLocalImageUrlList();
     }
 
+    @Override
+    public QueryWrapper<ImageFusionTask> getQueryWrapper(WanQueryRequest wanQueryRequest) {
+        QueryWrapper<ImageFusionTask> queryWrapper = new QueryWrapper<>();
+
+        if (wanQueryRequest == null) {
+            return queryWrapper;
+        }
+
+        // 1. 提取请求中的查询字段（与ImageFusionTask实体字段一一对应，适配查询场景）
+        Long id = wanQueryRequest.getId();
+        Long userId = wanQueryRequest.getUserId();
+        String dashscopeTaskId = wanQueryRequest.getDashscopeTaskId();
+        String taskStatus = wanQueryRequest.getTaskStatus();
+        String promptKeyword = wanQueryRequest.getPromptKeyword(); // 模糊查询：匹配prompt/origPrompts
+        String errorCode = wanQueryRequest.getErrorCode();
+        LocalDateTime startSubmitTime = wanQueryRequest.getStartSubmitTime(); // 提交时间-开始
+        LocalDateTime endSubmitTime = wanQueryRequest.getEndSubmitTime(); // 提交时间-结束
+        LocalDateTime startEndTime = wanQueryRequest.getStartEndTime(); // 结束时间-开始
+        LocalDateTime endEndTime = wanQueryRequest.getEndEndTime(); // 结束时间-结束
+        String sortField = wanQueryRequest.getSortField(); // 排序字段
+        String sortOrder = wanQueryRequest.getSortOrder(); // 排序方向（ascend/descend）
+
+        // 2. 拼接查询条件（精确匹配用eq，模糊查询用like，时间范围用ge/le）
+        // 精确匹配：主键、用户ID、第三方任务ID、任务状态、错误码
+        queryWrapper.eq(id != null, "id", id);
+        queryWrapper.eq(userId != null, "userId", userId);
+        queryWrapper.eq(StrUtil.isNotBlank(dashscopeTaskId), "dashscopeTaskId", dashscopeTaskId);
+        queryWrapper.eq(StrUtil.isNotBlank(taskStatus), "taskStatus", taskStatus);
+        queryWrapper.eq(StrUtil.isNotBlank(errorCode), "errorCode", errorCode);
+
+        // 模糊查询：提示词关键词（同时匹配原始提示词和结果提示词）
+        if (StrUtil.isNotBlank(promptKeyword)) {
+            queryWrapper.like("prompt", promptKeyword)
+                    .or()
+                    .like("origPrompts", promptKeyword);
+        }
+
+        // 时间范围查询：提交时间（>=开始时间 && <=结束时间）
+        queryWrapper.ge(startSubmitTime != null, "submitTime", startSubmitTime);
+        queryWrapper.le(endSubmitTime != null, "submitTime", endSubmitTime);
+
+        // 时间范围查询：任务结束时间（>=开始时间 && <=结束时间）
+        queryWrapper.ge(startEndTime != null, "endTime", startEndTime);
+        queryWrapper.le(endEndTime != null, "endTime", endEndTime);
+
+        // 3. 排序（与示例逻辑完全一致）
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField),
+                "ascend".equals(sortOrder), // true=升序，false=降序
+                sortField);
+
+        return queryWrapper;
+    }
+
+    @Override
+    public List<WanQueryVO> getImageFusionVOList(List<ImageFusionTask> imageFusionTaskList, Long loginUserId) {
+        if (CollUtil.isEmpty(imageFusionTaskList)) {
+            return List.of();
+        }
+
+        return imageFusionTaskList.stream().map(task -> {
+            WanQueryVO wanQueryVO = new WanQueryVO();
+
+            // 填充基础请求信息（这里使用 DashScope 任务ID 作为 requestId 占位）
+            wanQueryVO.setRequestId(task.getDashscopeTaskId());
+
+            // 填充输出信息
+            WanQueryVO.Output output = new WanQueryVO.Output();
+            output.setTaskId(task.getDashscopeTaskId());
+            output.setTaskStatus(task.getTaskStatus());
+            output.setSubmitTime(task.getSubmitTime());
+            output.setScheduledTime(task.getScheduledTime());
+            output.setEndTime(task.getEndTime());
+
+            // 构造结果列表（与实体中的多值字段对应）
+            List<String> origPrompts = task.getOrigPromptList();
+            List<String> tempUrls = task.getTempImageUrlList();
+            List<String> localUrls = task.getLocalImageUrlList();
+
+            int resultSize = Math.max(
+                    origPrompts != null ? origPrompts.size() : 0,
+                    Math.max(
+                            tempUrls != null ? tempUrls.size() : 0,
+                            localUrls != null ? localUrls.size() : 0
+                    )
+            );
+
+            List<WanQueryVO.Result> results = new ArrayList<>();
+            for (int i = 0; i < resultSize; i++) {
+                WanQueryVO.Result result = new WanQueryVO.Result();
+
+                if (origPrompts != null && i < origPrompts.size()) {
+                    result.setOrigPrompt(origPrompts.get(i));
+                }
+
+                // 优先使用永久COS URL，其次使用临时URL
+                String url = null;
+                if (localUrls != null && i < localUrls.size()) {
+                    url = localUrls.get(i);
+                }
+                if (StrUtil.isBlank(url) && tempUrls != null && i < tempUrls.size()) {
+                    url = tempUrls.get(i);
+                }
+                result.setUrl(url);
+
+                // 本地结果默认视为成功（code/message 留空或为0即可）
+                result.setCode("0");
+                result.setMessage(null);
+
+                results.add(result);
+            }
+
+            output.setResults(results);
+
+            // 任务指标：根据本地URL列表统计
+            if (localUrls != null && !localUrls.isEmpty()) {
+                WanQueryVO.TaskMetrics metrics = new WanQueryVO.TaskMetrics();
+                int total = localUrls.size();
+                long succeeded = localUrls.stream()
+                        .filter(StrUtil::isNotBlank)
+                        .count();
+                metrics.setTotal(total);
+                metrics.setSucceeded((int) succeeded);
+                metrics.setFailed(total - (int) succeeded);
+                output.setTaskMetrics(metrics);
+            }
+
+            wanQueryVO.setOutput(output);
+
+            // usage 信息目前本地无统计，保持为 null
+            return wanQueryVO;
+        }).collect(Collectors.toList());
+    }
 }
+
+
 
 
 
