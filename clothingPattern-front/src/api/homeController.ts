@@ -1,4 +1,4 @@
-
+// @ts-ignore
 /* eslint-disable */
 import request from '@/request'
 
@@ -36,6 +36,14 @@ export async function getPatternCount(options?: { [key: string]: any }) {
 /** 此处后端没有提供注释 GET /home/statistics */
 export async function getHomeStatistics(options?: { [key: string]: any }) {
   return request<API.BaseResponseHomeStatisticsVO>('/home/statistics', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
+/** 此处后端没有提供注释 GET /home/style/hot */
+export async function getHotStyleTopFive(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMapStringObject>('/home/style/hot', {
     method: 'GET',
     ...(options || {}),
   })

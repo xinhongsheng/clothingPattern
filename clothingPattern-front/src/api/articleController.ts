@@ -258,5 +258,3 @@ export async function uploadCoverImage(body: {}, options?: { [key: string]: any 
     ...(options || {}),
   })
 }
-
-

@@ -5,44 +5,66 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
-import * as echarts from "echarts";
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import * as echarts from 'echarts'
+import { getHotStyleTopFive } from '@/api/homeController'
 
-const chartRef = ref(null);
-let chartInstance = null;
-let timer = null;
-let currentGroupIndex = 0;
+const chartRef = ref(null)
+let chartInstance = null
+let timer = null
+const chartData = ref([])
 
-// 定义固定的数据
-const allData = [
-  { value: 45, name: "rose 1" },
-  { value: 60, name: "rose 2" },
-  { value: 75, name: "rose 3" },
-  { value: 30, name: "rose 4" },
-  { value: 55, name: "rose 5" },
-  { value: 80, name: "rose 6" },
-  { value: 25, name: "rose 7" },
-  { value: 90, name: "rose 8" },
-  { value: 10, name: "rose 9" },
-  { value: 65, name: "rose 10" }
-];
+// 从后端获取数据
+const fetchData = async () => {
+  try {
+    console.log('开始调用getHotStyleTopFive接口...')
+    const response = await getHotStyleTopFive()
+    console.log('API返回结果:', response)
 
-// 将数据分成两个数组，每个数组包含5条数据
-const dataGroups = [
-  allData.slice(0, 5),
-  allData.slice(5, 10),
-];
+    // 检查响应结构，注意axios返回的response.data才是后端真正返回的数据
+    if (response && response.data && response.data.code === 0) {
+      // 检查数据是否存在
+      const data = response.data.data
+      console.log('API返回data:', data)
+
+      if (data && Array.isArray(data)) {
+        // 转换数据格式为图表所需的格式
+        const newData = data.map((item) => ({
+          value: parseInt(item.count),
+          name: item.style,
+        }))
+        console.log('转换后的数据:', newData)
+
+        chartData.value = newData
+        updateChart()
+      } else {
+        console.error('API返回的数据不是数组:', data)
+        chartData.value = []
+        updateChart()
+      }
+    } else {
+      console.error('API返回错误:', response)
+      chartData.value = []
+      updateChart()
+    }
+  } catch (error) {
+    console.error('调用API失败:', error)
+    // 如果请求失败，使用空数据更新图表
+    chartData.value = []
+    updateChart()
+  }
+}
 
 const initChart = () => {
-  chartInstance = echarts.init(chartRef.value);
-  updateChart();
-};
+  chartInstance = echarts.init(chartRef.value)
+  updateChart()
+}
 
 const updateChart = () => {
   const option = {
-    color: ["#80FFA5", "#00DDFF", "#37A2FF", "#FF0087", "#FFBF00"],
+    color: ['#80FFA5', '#00DDFF', '#37A2FF', '#FF0087', '#FFBF00'],
     legend: {
-      top: "bottom",
+      top: 'bottom',
       textStyle: {
         color: '#00bfff', // 设置图例文字颜色为科技感蓝色
       },
@@ -53,60 +75,70 @@ const updateChart = () => {
       },
       backgroundColor: 'rgba(0, 0, 0, 0.7)', // 设置工具箱背景颜色为半透明黑色
       borderColor: '#00bfff', // 设置工具箱边框颜色为科技感蓝色
-      borderWidth: 1
+      borderWidth: 1,
     },
     series: [
       {
-        name: "Nightingale Chart",
-        type: "pie",
+        name: '热门风格',
+        type: 'pie',
         radius: [30, 80],
-        center: ["50%", "50%"],
-        roseType: "area",
+        center: ['50%', '50%'],
+        roseType: 'area',
         itemStyle: {
           borderRadius: 8,
           borderColor: '#000',
           borderWidth: 1,
           shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+          shadowColor: 'rgba(0, 0, 0, 0.5)',
         },
         label: {
           show: true,
           formatter: '{b}: {c}',
           color: '#00bfff', // 设置标签文字颜色为科技感蓝色
+          fontSize: 10, // 调整标签字体大小
         },
         labelLine: {
           show: true,
+          length: 10, // 调整标签线长度
+          length2: 10, // 调整标签线第二段长度
           lineStyle: {
-            color: '#00bfff' // 设置标签线颜色为科技感蓝色
-          }
+            color: '#00bfff', // 设置标签线颜色为科技感蓝色
+            width: 1, // 调整标签线宽度
+          },
         },
-        data: dataGroups[currentGroupIndex],
+        data: chartData.value,
       },
     ],
     backgroundColor: 'rgba(0, 0, 0, 0.1)', // 设置图表背景颜色为半透明黑色
-  };
-  chartInstance.setOption(option);
-};
+  }
+  chartInstance.setOption(option)
+}
 
-const startDataSwitching = () => {
-  timer = setInterval(() => {
-    currentGroupIndex = (currentGroupIndex + 1) % dataGroups.length;
-    updateChart();
-  }, 2000);
-};
+// 开始定时刷新数据（5分钟）
+const startDataRefresh = () => {
+  // 设置5分钟定时刷新
+  timer = setInterval(
+    () => {
+      fetchData()
+    },
+    5 * 60 * 1000,
+  )
+}
 
 onMounted(() => {
-  initChart();
-  startDataSwitching();
-});
+  initChart()
+  // 图表初始化后立即获取一次数据
+  fetchData()
+  startDataRefresh()
+})
 
 onBeforeUnmount(() => {
-  chartInstance?.dispose();
-  clearInterval(timer);
-});
+  chartInstance?.dispose()
+  clearInterval(timer)
+})
 </script>
 
-<style scoped >
+<style scoped>
 /* 添加一些基本样式以确保图表容器能够正确显示 */
 .chart-container {
   width: 100%;
