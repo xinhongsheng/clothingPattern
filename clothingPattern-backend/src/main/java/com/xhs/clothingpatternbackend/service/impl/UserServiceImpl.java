@@ -24,7 +24,12 @@ import org.springframework.util.DigestUtils;
 
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.text.SimpleDateFormat;
 import java.util.stream.Collectors;
 
 /**
@@ -207,6 +212,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean isAdmin(User user) {
         return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
+    }
+    /**
+     * 获取近15日每日用户增长量
+     *
+     * @return 包含日期和用户增长量的列表
+     */
+    @Override
+    public List<Map<String, Object>> getUserGrowth() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        // 获取当前日期
+        Date currentDate = new Date();
+        // 计算15天前的日期
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_MONTH, -14);
+        
+        // 遍历近15天，每天查询用户增长量
+        for (int i = 0; i < 15; i++) {
+            // 计算当天日期
+            calendar.add(Calendar.DAY_OF_MONTH, i == 0 ? 0 : 1);
+            Date targetDate = calendar.getTime();
+            
+            // 构建当天的开始时间和结束时间
+            Calendar startCalendar = Calendar.getInstance();
+            startCalendar.setTime(targetDate);
+            startCalendar.set(Calendar.HOUR_OF_DAY, 0);
+            startCalendar.set(Calendar.MINUTE, 0);
+            startCalendar.set(Calendar.SECOND, 0);
+            startCalendar.set(Calendar.MILLISECOND, 0);
+            
+            Calendar endCalendar = Calendar.getInstance();
+            endCalendar.setTime(targetDate);
+            endCalendar.set(Calendar.HOUR_OF_DAY, 23);
+            endCalendar.set(Calendar.MINUTE, 59);
+            endCalendar.set(Calendar.SECOND, 59);
+            endCalendar.set(Calendar.MILLISECOND, 999);
+            
+            // 查询当天注册的用户数量
+            QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+            queryWrapper.between("createTime", startCalendar.getTime(), endCalendar.getTime());
+            long count = this.baseMapper.selectCount(queryWrapper);
+            
+            // 格式化日期为YYYY-MM-DD
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String dateStr = sdf.format(targetDate);
+            
+            // 添加到结果列表
+            Map<String, Object> dayData = new HashMap<>();
+            dayData.put("date", dateStr);
+            dayData.put("count", count);
+            result.add(dayData);
+        }
+        
+        return result;
     }
 
 }

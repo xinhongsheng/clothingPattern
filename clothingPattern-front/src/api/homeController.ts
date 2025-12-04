@@ -40,3 +40,11 @@ export async function getUserCount(options?: { [key: string]: any }) {
     ...(options || {}),
   })
 }
+
+/** 此处后端没有提供注释 GET /home/user/growth */
+export async function getUserGrowth(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMapStringObject>('/home/user/growth', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}

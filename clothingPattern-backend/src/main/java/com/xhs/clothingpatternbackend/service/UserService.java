@@ -9,6 +9,7 @@ import com.xhs.clothingpatternbackend.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author 小辛
@@ -92,5 +93,10 @@ public interface UserService extends IService<User> {
      * @return
      */
     boolean isAdmin(User user);
-
+    /**
+     * 获取近15日每日用户增长量
+     *
+     * @return 包含日期和用户增长量的列表
+     */
+    List<Map<String, Object>> getUserGrowth();
 }
