@@ -219,6 +219,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseListMapStringObject = {
+    code?: number
+    data?: Record<string, any>[]
+    message?: string
+  }
+
   type BaseResponseListString = {
     code?: number
     data?: string[]
@@ -513,9 +519,9 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    sortList?: number[]
-    localImageUrlList?: string[]
     tempImageUrlList?: string[]
+    localImageUrlList?: string[]
+    sortList?: number[]
     origPromptList?: string[]
   }
 
