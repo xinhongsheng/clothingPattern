@@ -12,6 +12,7 @@ import { getUserGrowth } from '@/api/homeController' // 导入获取用户增长
 
 const chartRef1 = ref(null)
 let chartInstance = null
+let refreshTimer = null
 
 const { width, height } = useWindowSize()
 
@@ -43,6 +44,16 @@ const updateChart = () => {
   const counts = userGrowthData.value.map((item) => parseInt(item.count))
 
   const option = {
+    title: {
+      text: '近15日用户增长量',
+      textStyle: {
+        color: '#00bfff',
+        fontSize: 16,
+        fontWeight: 'bold',
+      },
+      left: 'center',
+      top: 10,
+    },
     color: ['#00bfff', '#1e90ff'],
     tooltip: {
       trigger: 'axis',
@@ -183,12 +194,20 @@ const toggleFullScreen = (element) => {
 onMounted(() => {
   initChart1()
   window.addEventListener('resize', resizeChart)
+  // 设置定时器，每隔5分钟刷新一次数据
+  refreshTimer = setInterval(() => {
+    fetchUserGrowthData()
+  }, 300000) // 5分钟 = 300000毫秒
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', resizeChart)
   if (chartInstance) {
     chartInstance.dispose()
+  }
+  // 清除定时器
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
   }
 })
 

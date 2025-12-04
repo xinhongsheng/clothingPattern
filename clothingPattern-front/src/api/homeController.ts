@@ -33,6 +33,14 @@ export async function getHomeStatistics(options?: { [key: string]: any }) {
   })
 }
 
+/** 此处后端没有提供注释 GET /home/target/top5 */
+export async function getTargetAudienceTopFive(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMapStringObject>('/home/target/topFive', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /home/user/count */
 export async function getUserCount(options?: { [key: string]: any }) {
   return request<API.BaseResponseLong>('/home/user/count', {

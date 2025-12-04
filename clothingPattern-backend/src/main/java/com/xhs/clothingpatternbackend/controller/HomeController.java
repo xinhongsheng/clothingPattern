@@ -4,6 +4,7 @@ import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.model.dto.pattern.DataExportRequest;
 import com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO;
+import com.xhs.clothingpatternbackend.service.ArticleService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import jakarta.annotation.Resource;
@@ -27,6 +28,8 @@ public class HomeController {
     private PatternService patternService;
     @Resource
     private UserService userService;
+    @Resource
+    private ArticleService articleService;
     /**
      * 获取首页统计数据
      */
@@ -80,5 +83,21 @@ public class HomeController {
     public BaseResponse<List<Map<String, Object>>> getUserGrowth() {
         List<Map<String, Object>> growth = userService.getUserGrowth();
         return ResultUtils.success(growth);
+    }
+    /**
+     * 获取目标人群Top5
+     */
+    @GetMapping("/target/topFive")
+    public BaseResponse<List<Map<String, Object>>> getTargetAudienceTopFive() {
+        List<Map<String, Object>> topCount = patternService.getTargetAudienceTopFive();
+        return ResultUtils.success(topCount);
+    }
+    /**
+     * 获取一周的文章前五（分三组，一组是按照点赞数，第二组是按照收藏数，第三组是按照浏览量）
+     */
+    @GetMapping("/article/topOne")
+    public BaseResponse<List<Map<String, Object>>> getArticleTopOne() {
+        List<Map<String, Object>> topCount = articleService.getArticleTopOne();
+        return ResultUtils.success(topCount);
     }
 }

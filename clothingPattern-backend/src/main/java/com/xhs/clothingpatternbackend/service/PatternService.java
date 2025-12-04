@@ -14,6 +14,7 @@ import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author 小辛
@@ -107,4 +108,9 @@ public interface PatternService extends IService<Pattern> {
      */
     void exportDataReport(DataExportRequest exportRequest,
                           OutputStream outputStream) throws IOException;
+    /**
+     * 获取目标群体Top5
+     * @return
+     */
+    List<Map<String, Object>> getTargetAudienceTopFive();
 }

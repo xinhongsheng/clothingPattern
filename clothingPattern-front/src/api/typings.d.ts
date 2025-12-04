@@ -519,10 +519,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    tempImageUrlList?: string[]
     localImageUrlList?: string[]
-    sortList?: number[]
+    tempImageUrlList?: string[]
     origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {
@@ -961,10 +961,5 @@ declare namespace API {
     requestId?: string
     output?: Output
     usage?: Usage
-  }
-   type BaseResponseListMapStringObject = {
-    code?: number
-    data?: Record<string, any>[]
-    message?: string
   }
 }

@@ -723,6 +723,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         }
     }
 
+
     /**
      * 导出CSV格式报告
      */
@@ -894,6 +895,25 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         
         writer.flush();
     }
+    @Override
+    public List<Map<String, Object>> getTargetAudienceTopFive() {
+        // 查询条件：targetAudience不为空
+        QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+        queryWrapper.isNotNull("targetAudience");
+        queryWrapper.ne("targetAudience", "");
+        
+        // 按targetAudience分组，统计数量，按数量降序排序，取前5个
+        queryWrapper.select("targetAudience", "count(*) as count");
+        queryWrapper.groupBy("targetAudience");
+        queryWrapper.orderByDesc("count");
+        queryWrapper.last("limit 5");
+        
+        // 执行查询
+        List<Map<String, Object>> result = this.baseMapper.selectMaps(queryWrapper);
+        
+        return result;
+    }
+
 }
 
 
