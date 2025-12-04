@@ -279,6 +279,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponsePageWanQueryVO = {
+    code?: number
+    data?: PageWanQueryVO
+    message?: string
+  }
+
   type BaseResponsePattern = {
     code?: number
     data?: Pattern
@@ -464,7 +470,7 @@ declare namespace API {
   }
 
   type getResultsParams = {
-    taskId: number
+    taskId: string
   }
 
   type getStatusParams = {
@@ -507,8 +513,8 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    localImageUrlList?: string[]
     tempImageUrlList?: string[]
+    localImageUrlList?: string[]
     origPromptList?: string[]
     sortList?: number[]
   }
@@ -590,6 +596,18 @@ declare namespace API {
     asc?: boolean
   }
 
+  type Output = {
+    taskId?: string
+    taskStatus?: string
+    submitTime?: string
+    scheduledTime?: string
+    endTime?: string
+    results?: Result[]
+    code?: string
+    message?: string
+    taskMetrics?: TaskMetrics
+  }
+
   type PageArticleVO = {
     records?: ArticleVO[]
     total?: number
@@ -651,6 +669,20 @@ declare namespace API {
     pages?: number
   }
 
+  type PageWanQueryVO = {
+    records?: WanQueryVO[]
+    total?: number
+    size?: number
+    current?: number
+    orders?: OrderItem[]
+    optimizeCountSql?: PageWanQueryVO
+    searchCount?: PageWanQueryVO
+    optimizeJoinOfCountSql?: boolean
+    maxLimit?: number
+    countId?: string
+    pages?: number
+  }
+
   type Pattern = {
     id?: number
     userId?: number
@@ -692,8 +724,6 @@ declare namespace API {
   }
 
   type PatternGenerateRequest = {
-    serviceType?: string
-    doubaoMode?: string
     referenceImageUrls?: string[]
     maxImages?: number
     patternName?: string
@@ -761,7 +791,14 @@ declare namespace API {
   }
 
   type queryStatusParams = {
-    taskId: number
+    taskId: string
+  }
+
+  type Result = {
+    origPrompt?: string
+    url?: string
+    code?: string
+    message?: string
   }
 
   type searchArticlesParams = {
@@ -784,6 +821,12 @@ declare namespace API {
     userId: number
     imageUrls: string
     parameters?: string
+  }
+
+  type TaskMetrics = {
+    total?: number
+    succeeded?: number
+    failed?: number
   }
 
   type toggleCommentLikeParams = {
@@ -816,6 +859,10 @@ declare namespace API {
     errorCode?: string
     errorMessage?: string
     localResultUrl?: string
+  }
+
+  type Usage = {
+    imageCount?: number
   }
 
   type User = {
@@ -885,5 +932,28 @@ declare namespace API {
     userProfile?: string
     userRole?: string
     createTime?: string
+  }
+
+  type WanQueryRequest = {
+    current?: number
+    pageSize?: number
+    sortField?: string
+    sortOrder?: string
+    id?: number
+    userId?: number
+    taskStatus?: string
+    dashscopeTaskId?: string
+    promptKeyword?: string
+    startSubmitTime?: string
+    endSubmitTime?: string
+    startEndTime?: string
+    endEndTime?: string
+    errorCode?: string
+  }
+
+  type WanQueryVO = {
+    requestId?: string
+    output?: Output
+    usage?: Usage
   }
 }

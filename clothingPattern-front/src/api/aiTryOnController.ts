@@ -35,7 +35,9 @@ export async function submit(
 export async function upload(body: FormData, options?: { [key: string]: any }) {
   return request<string>('/try-on/upload', {
     method: 'POST',
-    // 交给浏览器自动设置 multipart/form-data 边界，不要强制指定 Content-Type
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
     data: body,
     ...(options || {}),
   })

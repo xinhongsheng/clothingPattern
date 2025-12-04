@@ -1,13 +1,47 @@
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import LeftOne from '@/components/LeftOne.vue'
+import LeftTwo from '@/components/LeftTwo.vue'
+import LeftThree from '@/components/LeftThree.vue'
+import CenterOne from '@/components/CenterOne.vue'
+import CenterTwo from '@/components/CenterTwo.vue'
+import RightOne from '@/components/RightOne.vue'
+import RightTwo from '@/components/RightTwo.vue'
+import RightThree from '@/components/RightThree.vue'
 
+// 定义一个响应式变量来存储当前时间
+const currentTime = ref(getCurrentDateTime())
+
+function getCurrentDateTime() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = (now.getMonth() + 1).toString().padStart(2, '0')
+  const day = now.getDate().toString().padStart(2, '0')
+  const hours = now.getHours().toString().padStart(2, '0')
+  const minutes = now.getMinutes().toString().padStart(2, '0')
+  const seconds = now.getSeconds().toString().padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+let timer = null
+
+// 在组件挂载时启动定时器
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = getCurrentDateTime()
+  }, 1000)
+})
+
+// 在组件卸载时清除定时器
+onBeforeUnmount(() => {
+  clearInterval(timer)
+})
+</script>
 
 <template>
   <div class="home">
     <header class="top">
-      <dv-border-box-11
-        title="服装图案智能创作-数据可视化"
-        class="top-nav"
-        :color="['#188ffe']"
-      >
+      <dv-border-box-11 title="服装图案智能创作-数据可视化" class="top-nav" :color="['#188ffe']">
         <div class="name">创作人：小辛同学</div>
         <div class="time">当前时间：{{ currentTime }}</div>
       </dv-border-box-11>
@@ -30,15 +64,15 @@
         <dv-border-box-1 class="center-top">
           <div class="center-top-item">
             <div class="center-top-item-span">
-              <span>当前需求数量</span>
-              <CenterOne />
+              <span>当前总用户量</span>
+              <CenterOne type="user" />
             </div>
 
             <div class="line"></div>
 
             <div class="center-top-item-span">
-              <span>预计需求数量</span>
-              <CenterOne />
+              <span>图案总数</span>
+              <CenterOne type="pattern" />
             </div>
           </div>
         </dv-border-box-1>
@@ -64,46 +98,7 @@
   </div>
 </template>
 
-<script setup >
-import { ref, onMounted, onBeforeUnmount } from "vue";
-import LeftOne from "@/components/LeftOne.vue";
-import LeftTwo from "@/components/LeftTwo.vue";
-import LeftThree from "@/components/LeftThree.vue";
-import CenterOne from "@/components/CenterOne.vue";
-import CenterTwo from "@/components/CenterTwo.vue";
-import RightOne from "@/components/RightOne.vue";
-import RightTwo from "@/components/RightTwo.vue";
-import RightThree from "@/components/RightThree.vue";
-
-// 定义一个响应式变量来存储当前时间
-const currentTime = ref(getCurrentDateTime());
-
-function getCurrentDateTime() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const day = now.getDate().toString().padStart(2, "0");
-  const hours = now.getHours().toString().padStart(2, "0");
-  const minutes = now.getMinutes().toString().padStart(2, "0");
-  const seconds = now.getSeconds().toString().padStart(2, "0");
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-}
-
-let timer = null;
-
-// 在组件挂载时启动定时器
-onMounted(() => {
-  timer = setInterval(() => {
-    currentTime.value = getCurrentDateTime();
-  }, 1000);
-});
-
-// 在组件卸载时清除定时器
-onBeforeUnmount(() => {
-  clearInterval(timer);
-});
-</script>
-<style scoped lang="scss">
+<style scoped lang="less">
 html,
 body {
   margin: 0;
@@ -134,7 +129,9 @@ body {
       left: 100px;
       top: 50%;
       color: #00f2ff;
-      text-shadow: 0 0 5px #00f2ff, 0 0 40px #00f2ff;
+      text-shadow:
+        0 0 5px #00f2ff,
+        0 0 40px #00f2ff;
       font-weight: 700;
       // 发光
       font-size: 0.9rem;
@@ -146,7 +143,9 @@ body {
       font-weight: 700;
       color: #409eff;
       color: #00f2ff; /* 霓虹蓝 */
-      text-shadow: 0 0 5px #00f2ff, /* 内层光晕 */ 0 0 40px #00f2ff; /* 最外层扩散 */
+      text-shadow:
+        0 0 5px #00f2ff,
+        /* 内层光晕 */ 0 0 40px #00f2ff; /* 最外层扩散 */
       font-size: 0.9rem;
     }
   }

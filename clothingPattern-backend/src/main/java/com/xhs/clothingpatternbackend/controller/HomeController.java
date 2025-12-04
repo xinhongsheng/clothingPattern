@@ -5,6 +5,7 @@ import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.model.dto.pattern.DataExportRequest;
 import com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
+import com.xhs.clothingpatternbackend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,8 @@ import java.io.IOException;
 public class HomeController {
     @Resource
     private PatternService patternService;
+    @Resource
+    private UserService userService;
     /**
      * 获取首页统计数据
      */
@@ -51,5 +54,13 @@ public class HomeController {
 
         // 调用服务层生成报告并写入响应
         patternService.exportDataReport(exportRequest, response.getOutputStream());
+    }
+    /**
+     * 获取用户数量
+     */
+    @GetMapping("/user/count")
+    public BaseResponse<Long> getUserCount() {
+        long count = userService.count();
+        return ResultUtils.success(count);
     }
 }

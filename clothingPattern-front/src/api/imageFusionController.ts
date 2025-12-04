@@ -2,7 +2,22 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** 此处后端没有提供注释 GET /api/image-fusion/results/${param0} */
+/** 此处后端没有提供注释 POST /image-fusion/list/page/vo */
+export async function listImageFusionVoByPage(
+  body: API.WanQueryRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePageWanQueryVO>('/image-fusion/list/page/vo', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 此处后端没有提供注释 GET /image-fusion/results/${param0} */
 export async function getResults(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getResultsParams,
@@ -16,7 +31,7 @@ export async function getResults(
   })
 }
 
-/** 此处后端没有提供注释 GET /api/image-fusion/status/${param0} */
+/** 此处后端没有提供注释 GET /image-fusion/status/${param0} */
 export async function queryStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.queryStatusParams,
@@ -30,13 +45,13 @@ export async function queryStatus(
   })
 }
 
-/** 此处后端没有提供注释 POST /api/image-fusion/submit */
+/** 此处后端没有提供注释 POST /image-fusion/submit */
 export async function submitTask(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.submitTaskParams,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong>('/image-fusion/submit', {
+  return request<API.BaseResponseString>('/image-fusion/submit', {
     method: 'POST',
     params: {
       ...params,
@@ -45,11 +60,14 @@ export async function submitTask(
   })
 }
 
-/** 此处后端没有提供注释 POST /api/image-fusion/upload */
-export async function uploadImage(formData: FormData, options?: { [key: string]: any }) {
+/** 此处后端没有提供注释 POST /image-fusion/upload */
+export async function uploadImage(body: {}, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/image-fusion/upload', {
     method: 'POST',
-    data: formData,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   })
 }
