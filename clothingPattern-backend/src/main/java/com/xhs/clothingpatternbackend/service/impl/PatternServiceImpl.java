@@ -19,9 +19,11 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
 import com.xhs.clothingpatternbackend.model.enums.UserRoleEnum;
+import com.xhs.clothingpatternbackend.model.vo.CommentStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.model.vo.UserVO;
+import com.xhs.clothingpatternbackend.service.CommentService;
 import com.xhs.clothingpatternbackend.service.LikeService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.UserService;
@@ -40,20 +42,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
-* @author 小辛
-* @description 针对表【pattern(服装图案表（智能图案生成模块核心表）)】的数据库操作Service实现
-* @createDate 2025-11-21 15:44:19
-*/
+ * @author 小辛
+ * @description 针对表【pattern(服装图案表（智能图案生成模块核心表）)】的数据库操作Service实现
+ * @createDate 2025-11-21 15:44:19
+ */
 @Service
 @Slf4j
 public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
-    implements PatternService{
+        implements PatternService {
 
     @Resource
     private UserService userService;
 
     @Resource
     private LikeService likeService;
+
+    @Resource
+    private CommentService commentService;
 
     @Resource
     private CosUtils cosUtils;
@@ -67,7 +72,6 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
     @Resource
     private com.xhs.clothingpatternbackend.sdk.doubao.DouBaoImage douBaoImage;
 
-
     @Override
     public Long generatePattern(PatternGenerateRequest patternGenerateRequest, User loginUser) {
         // 校验参数
@@ -78,7 +82,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         String generationType = patternGenerateRequest.getGenerationType();
         String description = patternGenerateRequest.getDescription();
         String referenceImageUrl = patternGenerateRequest.getReferenceImageUrl();
-//        String serviceType = patternGenerateRequest.getServiceType(); // 已废弃，仅兼容旧参数
+        // String serviceType = patternGenerateRequest.getServiceType(); // 已废弃，仅兼容旧参数
 
         // 校验生成类型
         GenerationTypeEnum typeEnum = GenerationTypeEnum.getEnumByValue(generationType);
@@ -101,8 +105,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                         description,
                         patternGenerateRequest.getSize(),
                         patternGenerateRequest.getNegativePrompt(),
-                        patternGenerateRequest.getPromptExtend()
-                );
+                        patternGenerateRequest.getPromptExtend());
                 // 文生图模式，参考图片URL为空
                 finalReferenceImageUrl = null;
             } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
@@ -111,8 +114,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 generatedImageFile = qwenImage.generateImageByReference(
                         referenceImageUrl,
                         description,
-                        patternGenerateRequest.getSize()
-                );
+                        patternGenerateRequest.getSize());
 
                 // 如果原始URL是base64，需要上传到COS并获取URL用于保存到数据库
                 if (referenceImageUrl.startsWith("data:image")) {
@@ -147,33 +149,35 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                     finalReferenceImageUrl = referenceImageUrl;
                 }
             }
-            
+
             // 上传到COS并生成缩略图
             String key = "pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
             String generatedPatternUrl;
             String thumbUrl;
             Integer fileSize;
-            
+
             if (generatedImageFile != null && generatedImageFile.exists()) {
                 // 使用CosUtils上传图片，自动生成缩略图
                 PutObjectResult putResult = cosUtils.putPictureObject(key, generatedImageFile);
-                
+
                 // 设置文件大小
                 fileSize = (int) generatedImageFile.length();
-                
+
                 // 从COS处理结果中获取实际的图片URL
                 try {
                     // 获取COS图片处理结果
                     com.qcloud.cos.model.ciModel.persistence.CIUploadResult ciResult = putResult.getCiUploadResult();
                     if (ciResult != null && ciResult.getProcessResults() != null) {
-                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult.getProcessResults();
-                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults.getObjectList();
-                        
+                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult
+                                .getProcessResults();
+                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults
+                                .getObjectList();
+
                         if (objectList != null && !objectList.isEmpty()) {
                             // 第一个是压缩后的webp图片
                             com.qcloud.cos.model.ciModel.persistence.CIObject compressedObject = objectList.get(0);
                             generatedPatternUrl = cosClientConfig.getHost() + "/" + compressedObject.getKey();
-                            
+
                             // 如果有第二个，则是缩略图（仅当文件>20KB时）
                             if (objectList.size() > 1) {
                                 com.qcloud.cos.model.ciModel.persistence.CIObject thumbnailObject = objectList.get(1);
@@ -215,12 +219,12 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             pattern.setSeason(patternGenerateRequest.getSeason());
             pattern.setTargetAudience(patternGenerateRequest.getTargetAudience());
             this.fillReviewParams(pattern, loginUser);
-//            //如果是管理员则直接通过
-//            if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
-//                pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
-//            }else{
-//                pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
-//            }
+            // //如果是管理员则直接通过
+            // if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
+            // pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+            // }else{
+            // pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+            // }
 
             pattern.setFileType("image/png");
             pattern.setFileSize(fileSize);
@@ -361,7 +365,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
             // 获取当前用户是否点赞
             if (loginUserId != null && loginUserId > 0) {
-                boolean isLiked = likeService.getLikeStatus(loginUserId,patternId );
+                boolean isLiked = likeService.getLikeStatus(loginUserId, patternId);
                 patternVO.setIsLiked(isLiked);
             } else {
                 patternVO.setIsLiked(false);
@@ -400,7 +404,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         Map<Long, Boolean> userLikeMap = new HashMap<>();
         if (loginUserId != null && loginUserId > 0) {
             for (Long patternId : patternIdSet) {
-                boolean isLiked = likeService.getLikeStatus(loginUserId,patternId);
+                boolean isLiked = likeService.getLikeStatus(loginUserId, patternId);
                 userLikeMap.put(patternId, isLiked);
             }
         }
@@ -446,6 +450,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         boolean result = this.updateById(pattern);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
     }
+
     /**
      * 校验图案参数
      */
@@ -491,19 +496,19 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 base64Data = base64Data.split(",")[1];
             }
             byte[] imageBytes = java.util.Base64.getDecoder().decode(base64Data);
-            
+
             // 保存为临时文件
             File refTempFile = File.createTempFile("ref_save_", ".png");
             java.nio.file.Files.write(refTempFile.toPath(), imageBytes);
-            
+
             // 上传到COS作为参考图片记录
             String refKey = "reference/" + userId + "/" + System.currentTimeMillis() + ".png";
             cosUtils.putObject(refKey, refTempFile);
             String cosUrl = cosClientConfig.getHost() + "/" + refKey;
-            
+
             // 删除临时文件
             deleteTempFile(refTempFile);
-            
+
             return cosUrl;
         } catch (Exception e) {
             log.error("上传参考图片到COS失败", e);
@@ -515,8 +520,8 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
      * 批量保存生成的图片（组图模式）
      * 返回第一张图片的ID，其他图片也会保存到数据库
      */
-    private Long saveBatchPatterns(java.util.List<File> files, PatternGenerateRequest request, 
-                                    User loginUser, String referenceImageUrl) {
+    private Long saveBatchPatterns(java.util.List<File> files, PatternGenerateRequest request,
+            User loginUser, String referenceImageUrl) {
         if (files == null || files.isEmpty()) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成的图片为空");
         }
@@ -525,25 +530,27 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         try {
             for (int i = 0; i < files.size(); i++) {
                 File imageFile = files.get(i);
-                
+
                 // 上传到COS
                 String key = "pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + "_" + i + ".png";
                 PutObjectResult putResult = cosUtils.putPictureObject(key, imageFile);
                 Integer fileSize = (int) imageFile.length();
-                
+
                 // 获取COS处理结果
                 String patternUrl;
                 String thumbUrl;
                 try {
                     com.qcloud.cos.model.ciModel.persistence.CIUploadResult ciResult = putResult.getCiUploadResult();
                     if (ciResult != null && ciResult.getProcessResults() != null) {
-                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult.getProcessResults();
-                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults.getObjectList();
-                        
+                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult
+                                .getProcessResults();
+                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults
+                                .getObjectList();
+
                         if (objectList != null && !objectList.isEmpty()) {
                             com.qcloud.cos.model.ciModel.persistence.CIObject compressedObject = objectList.get(0);
                             patternUrl = cosClientConfig.getHost() + "/" + compressedObject.getKey();
-                            
+
                             if (objectList.size() > 1) {
                                 com.qcloud.cos.model.ciModel.persistence.CIObject thumbnailObject = objectList.get(1);
                                 thumbUrl = cosClientConfig.getHost() + "/" + thumbnailObject.getKey();
@@ -563,7 +570,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                     patternUrl = cosClientConfig.getHost() + "/" + key;
                     thumbUrl = patternUrl;
                 }
-                
+
                 // 创建图案实体
                 Pattern pattern = new Pattern();
                 pattern.setUserId(loginUser.getId());
@@ -578,43 +585,44 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 pattern.setTargetAudience(request.getTargetAudience());
                 pattern.setFileType("image/png");
                 pattern.setFileSize(fileSize);
-                
+
                 // 设置审核状态
-                if(loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())){
+                if (loginUser.getUserRole().equals(UserRoleEnum.ADMIN.getValue())) {
                     pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
                 } else {
                     pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
                 }
-                
+
                 // 校验数据
                 validPattern(pattern, true);
-                
+
                 // 保存到数据库
                 boolean result = this.save(pattern);
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图案生成失败");
-                
+
                 // 记录第一张图片的ID
                 if (i == 0) {
                     firstPatternId = pattern.getId();
                 }
-                
+
                 log.info("已保存第 {} 张图片，ID: {}", i + 1, pattern.getId());
             }
         } finally {
             // 清理所有临时文件
             files.forEach(this::deleteTempFile);
         }
-        
+
         return firstPatternId;
     }
 
     @Override
     public void checkPictureAuth(User loginUser, Pattern pattern) {
-            // 只能修改自己的图案
-            if (!pattern.getUserId().equals(loginUser.getId())) {
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-            }
+        // 只能修改自己的图案
+        if (!pattern.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+    }
+
     @Override
     public void fillReviewParams(Pattern pattern, User loginUser) {
         if (userService.isAdmin(loginUser)) {
@@ -628,10 +636,11 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
         }
 
-
     }
+
     /**
      * 获取首页统计数据
+     * 
      * @return
      */
     @Override
@@ -660,7 +669,8 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         Map<Long, Long> userPatternCount = approvedPatterns.stream()
                 .collect(Collectors.groupingBy(Pattern::getUserId, Collectors.counting()));
 
-        List<com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.ActiveUserVO> activeUsers = userPatternCount.entrySet().stream()
+        List<com.xhs.clothingpatternbackend.model.vo.HomeStatisticsVO.ActiveUserVO> activeUsers = userPatternCount
+                .entrySet().stream()
                 .sorted(Map.Entry.<Long, Long>comparingByValue().reversed())
                 .limit(5)
                 .map(entry -> {
@@ -685,7 +695,8 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             // 统计当天创建的图案数量
             long count = approvedPatterns.stream()
                     .filter(pattern -> {
-                        if (pattern.getCreateTime() == null) return false;
+                        if (pattern.getCreateTime() == null)
+                            return false;
                         java.time.LocalDate createDate = pattern.getCreateTime().toInstant()
                                 .atZone(java.time.ZoneId.systemDefault())
                                 .toLocalDate();
@@ -707,7 +718,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
     public void exportDataReport(DataExportRequest exportRequest, OutputStream outputStream) throws IOException {
         // 获取统计数据
         HomeStatisticsVO statisticsVO = getHomeStatistics();
-        
+
         // 根据导出格式调用不同的导出方法
         String format = exportRequest.getFormat();
         if ("csv".equalsIgnoreCase(format)) {
@@ -723,30 +734,28 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         }
     }
 
-
     /**
      * 导出CSV格式报告
      */
     private void exportToCsv(HomeStatisticsVO statisticsVO, OutputStream outputStream) throws IOException {
         java.io.PrintWriter writer = new java.io.PrintWriter(
-            new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8)
-        );
-        
+                new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8));
+
         // 写入UTF-8 BOM，让Excel正确识别中文
-        outputStream.write(new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF});
-        
+        outputStream.write(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF });
+
         // 报告标题
         writer.println("服装图案平台数据分析报告");
         writer.println("生成时间," + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         writer.println();
-        
+
         // 一、总体概况
         writer.println("===== 一、总体概况 =====");
         writer.println("指标,数值");
         writer.println("总图案数," + (statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0));
         writer.println("总用户数," + (statisticsVO.getTotalUsers() != null ? statisticsVO.getTotalUsers() : 0));
         writer.println();
-        
+
         // 二、风格分布统计
         writer.println("===== 二、风格分布统计 =====");
         writer.println("风格,图案数量,占比");
@@ -760,7 +769,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("暂无数据,-,-");
         }
         writer.println();
-        
+
         // 三、活跃用户TOP5
         writer.println("===== 三、活跃用户TOP5 =====");
         writer.println("排名,用户名,账号,图案数量");
@@ -776,7 +785,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("暂无数据,-,-,-");
         }
         writer.println();
-        
+
         // 四、创作趋势（最近7天）
         writer.println("===== 四、创作趋势（最近7天） =====");
         writer.println("日期,图案数量");
@@ -790,19 +799,19 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("暂无数据,-");
         }
         writer.println();
-        
+
         // 五、数据统计汇总
         writer.println("===== 五、数据统计汇总 =====");
         if (statisticsVO.getTrendData() != null && !statisticsVO.getTrendData().isEmpty()) {
             long totalTrendCount = statisticsVO.getTrendData().stream()
-                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
-                .sum();
+                    .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                    .sum();
             double avgDailyCount = totalTrendCount / 7.0;
             writer.println("指标,数值");
             writer.println("近7天总图案数," + totalTrendCount);
             writer.println(String.format("日均图案数,%.2f", avgDailyCount));
         }
-        
+
         writer.flush();
     }
 
@@ -811,9 +820,8 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
      */
     private void exportToPdf(HomeStatisticsVO statisticsVO, OutputStream outputStream) throws IOException {
         java.io.PrintWriter writer = new java.io.PrintWriter(
-            new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8)
-        );
-        
+                new java.io.OutputStreamWriter(outputStream, java.nio.charset.StandardCharsets.UTF_8));
+
         // 报告头部
         writer.println("===============================================");
         writer.println("       服装图案平台数据分析报告");
@@ -821,13 +829,14 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         writer.println("生成时间：" + new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
         writer.println("报告类型：综合数据统计报告");
         writer.println();
-        
+
         // 一、总体概况
         writer.println("【一、总体概况】");
-        writer.println("  • 总图案数：" + (statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0) + " 个");
+        writer.println(
+                "  • 总图案数：" + (statisticsVO.getTotalPatterns() != null ? statisticsVO.getTotalPatterns() : 0) + " 个");
         writer.println("  • 总用户数：" + (statisticsVO.getTotalUsers() != null ? statisticsVO.getTotalUsers() : 0) + " 人");
         writer.println();
-        
+
         // 二、风格分布分析
         writer.println("【二、风格分布分析】");
         if (statisticsVO.getStyleDistribution() != null && !statisticsVO.getStyleDistribution().isEmpty()) {
@@ -840,7 +849,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("  暂无风格分布数据");
         }
         writer.println();
-        
+
         // 三、活跃用户榜单
         writer.println("【三、活跃用户榜单】");
         if (statisticsVO.getActiveUsers() != null && !statisticsVO.getActiveUsers().isEmpty()) {
@@ -855,29 +864,29 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("  暂无活跃用户数据");
         }
         writer.println();
-        
+
         // 四、创作趋势图表
         writer.println("【四、创作趋势图表（最近7天）】");
         if (statisticsVO.getTrendData() != null && !statisticsVO.getTrendData().isEmpty()) {
             // 找出最大值用于绘制简易图表
             long maxCount = statisticsVO.getTrendData().stream()
-                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
-                .max()
-                .orElse(1);
-            
+                    .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                    .max()
+                    .orElse(1);
+
             for (HomeStatisticsVO.TrendDataVO trend : statisticsVO.getTrendData()) {
                 String date = trend.getDate() != null ? trend.getDate() : "-";
                 Long count = trend.getCount() != null ? trend.getCount() : 0;
                 // 简易柱状图（最多20个字符）
-                int barLength = maxCount > 0 ? (int)(count * 20.0 / maxCount) : 0;
+                int barLength = maxCount > 0 ? (int) (count * 20.0 / maxCount) : 0;
                 String bar = "█".repeat(Math.max(0, barLength));
                 writer.println(String.format("  %s | %-20s %d", date, bar, count));
             }
-            
+
             // 统计汇总
             long totalTrendCount = statisticsVO.getTrendData().stream()
-                .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
-                .sum();
+                    .mapToLong(t -> t.getCount() != null ? t.getCount() : 0)
+                    .sum();
             double avgDailyCount = totalTrendCount / 7.0;
             writer.println();
             writer.println("  趋势统计：");
@@ -887,35 +896,37 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             writer.println("  暂无趋势数据");
         }
         writer.println();
-        
+
         // 报告尾部
         writer.println("===============================================");
         writer.println("              报告生成完成");
         writer.println("===============================================");
-        
+
         writer.flush();
     }
+
     @Override
     public List<Map<String, Object>> getTargetAudienceTopFive() {
         // 查询条件：targetAudience不为空
         QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
         queryWrapper.isNotNull("targetAudience");
         queryWrapper.ne("targetAudience", "");
-        
+
         // 按targetAudience分组，统计数量，按数量降序排序，取前5个
         queryWrapper.select("targetAudience", "count(*) as count");
         queryWrapper.groupBy("targetAudience");
         queryWrapper.orderByDesc("count");
         queryWrapper.last("limit 5");
-        
+
         // 执行查询
         List<Map<String, Object>> result = this.baseMapper.selectMaps(queryWrapper);
-        
+
         return result;
     }
 
     /**
      * 获取最热门的服装风格
+     * 
      * @return
      */
     @Override
@@ -929,9 +940,48 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         return result;
     }
 
+    /**
+     * 获取互动数据
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getInteraction() {
+        // 查询所有审核通过的作品
+        QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue());
+        List<Pattern> patternList = this.list(queryWrapper);
+
+        // 如果没有作品，返回空列表
+        if (CollUtil.isEmpty(patternList)) {
+            return new ArrayList<>();
+        }
+
+        // 计算每个作品的总分
+        List<Map<String, Object>> scoreList = new ArrayList<>();
+        for (Pattern pattern : patternList) {
+            // 获取评论统计信息
+            CommentStatisticsVO commentStats = commentService.getCommentStatistics(pattern.getId());
+            int commentCount = commentStats.getTotalComments() != null ? commentStats.getTotalComments() : 0;
+
+            // 获取点赞数
+            long likeCount = likeService.getLikeCount(pattern.getId());
+
+            // 计算总分（评论占0.4，点赞占0.6）
+            double score = commentCount * 0.4 + likeCount * 0.6;
+
+            // 构建结果Map
+            Map<String, Object> scoreMap = new HashMap<>();
+            scoreMap.put("patternName", pattern.getPatternName());
+            scoreMap.put("score", Math.round(score * 100.0) / 100.0); // 保留两位小数
+
+            scoreList.add(scoreMap);
+        }
+
+        // 按分数降序排序，取前5名
+        return scoreList.stream()
+                .sorted((a, b) -> Double.compare((Double) b.get("score"), (Double) a.get("score")))
+                .limit(5)
+                .collect(Collectors.toList());
+    }
+
 }
-
-
-
-
-

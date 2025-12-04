@@ -109,4 +109,13 @@ public class HomeController {
         List<Map<String, Object>> hotStyle = patternService.getHotStyleTopFive();
         return ResultUtils.success(hotStyle);
     }
+    /**
+     * 获取作品互动
+     * 根据点赞量+评论数去评估
+     */
+    @GetMapping("/interaction")
+    public BaseResponse<List<Map<String, Object>>> getInteraction() {
+        List<Map<String, Object>> interaction = patternService.getInteraction();
+        return ResultUtils.success(interaction);
+    }
 }
