@@ -1,6 +1,14 @@
-// @ts-ignore
+
 /* eslint-disable */
 import request from '@/request'
+
+/** 此处后端没有提供注释 GET /home/article/topOne */
+export async function getArticleTopOne(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMapStringObject>('/home/article/topOne', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
 
 /** 此处后端没有提供注释 POST /home/data/export */
 export async function exportDataReport(
@@ -33,7 +41,7 @@ export async function getHomeStatistics(options?: { [key: string]: any }) {
   })
 }
 
-/** 此处后端没有提供注释 GET /home/target/top5 */
+/** 此处后端没有提供注释 GET /home/target/topFive */
 export async function getTargetAudienceTopFive(options?: { [key: string]: any }) {
   return request<API.BaseResponseListMapStringObject>('/home/target/topFive', {
     method: 'GET',

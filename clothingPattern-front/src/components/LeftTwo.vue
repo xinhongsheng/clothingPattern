@@ -7,7 +7,7 @@
 <script setup>
 import * as echarts from 'echarts'
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
-import { getTargetTopFive } from '@/api/homeController'
+import { getTargetAudienceTopFive } from '@/api/homeController'
 
 const chartRef = ref(null)
 let chartInstance = null
@@ -17,7 +17,7 @@ let refreshTimer = null
 // 获取目标人群数据
 const fetchTargetAudienceData = async () => {
   try {
-    const response = await getTargetTopFive()
+    const response = await getTargetAudienceTopFive()
     console.log('目标人群数据:', response)
     if (response.data.code === 0 && response.data.data) {
       // 将后端数据转换为ECharts需要的格式

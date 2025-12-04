@@ -92,12 +92,21 @@ public class HomeController {
         List<Map<String, Object>> topCount = patternService.getTargetAudienceTopFive();
         return ResultUtils.success(topCount);
     }
+
     /**
-     * 获取一周的文章前五（分三组，一组是按照点赞数，第二组是按照收藏数，第三组是按照浏览量）
+     * 获取过去一周每天的文章第一（点赞数、收藏数、浏览量）
      */
     @GetMapping("/article/topOne")
     public BaseResponse<List<Map<String, Object>>> getArticleTopOne() {
         List<Map<String, Object>> topCount = articleService.getArticleTopOne();
         return ResultUtils.success(topCount);
+    }
+    /**
+     * 获取热门风格
+     */
+    @GetMapping("/style/hot")
+    public BaseResponse<List<Map<String, Object>>> getHotStyleTopFive() {
+        List<Map<String, Object>> hotStyle = patternService.getHotStyleTopFive();
+        return ResultUtils.success(hotStyle);
     }
 }

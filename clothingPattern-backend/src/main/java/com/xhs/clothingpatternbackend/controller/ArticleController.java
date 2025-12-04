@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 文章接口
@@ -57,7 +58,7 @@ public class ArticleController {
      */
     @PostMapping("/list")
     public BaseResponse<Page<ArticleVO>> getArticleList(@Valid @RequestBody ArticleQueryRequest query,
-                                                        HttpServletRequest request) {
+            HttpServletRequest request) {
         // 获取当前用户ID（未登录用户为null）
         Long currentUserId = null;
         try {
@@ -351,4 +352,6 @@ public class ArticleController {
         List<ArticleVO> articles = articleService.getMyCollectArticles(loginUser.getId());
         return ResultUtils.success(articles);
     }
+
+
 }

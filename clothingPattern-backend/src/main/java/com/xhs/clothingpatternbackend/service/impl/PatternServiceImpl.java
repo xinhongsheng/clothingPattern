@@ -914,6 +914,21 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         return result;
     }
 
+    /**
+     * 获取最热门的服装风格
+     * @return
+     */
+    @Override
+    public List<Map<String, Object>> getHotStyleTopFive() {
+        QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("style", "count(*) as count");
+        queryWrapper.groupBy("style");
+        queryWrapper.orderByDesc("count");
+        queryWrapper.last("limit 5");
+        List<Map<String, Object>> result = this.baseMapper.selectMaps(queryWrapper);
+        return result;
+    }
+
 }
 
 

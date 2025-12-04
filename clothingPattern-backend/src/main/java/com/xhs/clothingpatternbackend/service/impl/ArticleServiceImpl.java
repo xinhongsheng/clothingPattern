@@ -36,6 +36,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -721,5 +724,115 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         // sortField);
         queryWrapper.orderBy(StrUtil.isNotBlank(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
+    }
+
+
+    // 常量提取：文章状态相关
+    private static final String ARTICLE_STATUS_PUBLISHED = "PUBLISHED";
+    private static final String AUDIT_STATUS_APPROVED = "APPROVED";
+    private static final Integer IS_DELETE_NO = 0;
+    // 排序维度映射
+    private static final List<Map<String, String>> SORT_DIMENSIONS = new ArrayList<Map<String, String>>() {{
+        add(new HashMap<String, String>() {{ put("type", "view"); put("field", "viewCount"); }});   // 浏览量
+        add(new HashMap<String, String>() {{ put("type", "like"); put("field", "likeCount"); }});   // 点赞数
+        add(new HashMap<String, String>() {{ put("type", "collect"); put("field", "collectCount"); }}); // 收藏数
+    }};
+
+    // 注入Mapper（如果用SpringBoot，必须注入，注释掉会导致空指针）
+//    public ArticleStatisticsService(ArticleMapper articleMapper) {
+//        this.articleMapper = articleMapper;
+//    }
+
+    /**
+     * 查询过去7天（系统时间），每天「当天创建的文章」中 浏览/点赞/收藏 维度的TOP1文章
+     * 核心修正：按统计日期筛选当天创建的文章，再取TOP1，而非全量文章
+     * @return 统计结果：7天 × 3维度 = 21条数据（包含无数据的空值情况）
+     */
+    public List<Map<String, Object>> getArticleTopOne() {
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        // 1. 生成系统时间的过去7天日期（包含今天，共7天）
+        LocalDate today = LocalDate.now();
+        List<LocalDate> past7Days = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            past7Days.add(date);
+            log.info("统计日期维度: {}", date);
+        }
+
+        // 2. 遍历过去7天，每天统计3个维度的TOP1
+        for (LocalDate statDate : past7Days) {
+            String dateStr = statDate.toString();
+            log.info("开始处理统计日期: {}", dateStr);
+
+            // 构建当天的时间范围：statDate 00:00:00 到 statDate 23:59:59
+            LocalDateTime startTime = LocalDateTime.of(statDate, LocalTime.MIN);
+            LocalDateTime endTime = LocalDateTime.of(statDate, LocalTime.MAX);
+
+            // 遍历3个排序维度：浏览、点赞、收藏
+            for (Map<String, String> dimension : SORT_DIMENSIONS) {
+                String type = dimension.get("type");
+                String sortField = dimension.get("field");
+                log.info("处理维度: {} (排序字段: {})，时间范围: {} ~ {}", type, sortField, startTime, endTime);
+
+                // 构建查询条件：1.状态合规 2.当天创建 3.按维度排序取TOP1
+                QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
+                queryWrapper.eq("status", ARTICLE_STATUS_PUBLISHED)
+                        .eq("auditStatus", AUDIT_STATUS_APPROVED)
+                        .eq("isDelete", IS_DELETE_NO)
+                        // 核心：只统计「当天创建」的文章（也可以换成publishTime，根据业务选）
+                        .ge("createTime", startTime)
+                        .le("createTime", endTime)
+                        // 按当前维度降序，同分值按ID降序（保证结果唯一）
+                        .orderByDesc(sortField)
+                        .orderByDesc("id")
+                        .last("LIMIT 1");
+
+                // 查询当天该维度的TOP1文章
+                Article topArticle = articleMapper.selectOne(queryWrapper);
+
+                // 封装结果
+                Map<String, Object> statResult = new HashMap<>();
+                statResult.put("date_day", dateStr);       // 统计日期
+                statResult.put("type", type);               // 统计类型：view/like/collect
+                if (topArticle != null) {
+                    statResult.put("id", topArticle.getId());
+                    statResult.put("title", topArticle.getTitle());
+                    statResult.put("count", getCountByField(topArticle, sortField));
+                    statResult.put("createTime", topArticle.getCreateTime());
+                    log.info("[{}][{}] TOP1文章: {} (数值: {})", dateStr, type, topArticle.getTitle(),
+                            statResult.get("count"));
+                } else {
+                    statResult.put("id", null);
+                    statResult.put("title", null);
+                    statResult.put("count", 0);
+                    statResult.put("createTime", null);
+                    log.info("[{}][{}] 当天无符合条件的文章", dateStr, type);
+                }
+                result.add(statResult);
+            }
+        }
+
+        log.info("统计完成，总结果数: {} (7天 × 3维度 = 21条)", result.size());
+        return result;
+    }
+
+    /**
+     * 根据排序字段获取文章对应维度的数值
+     * @param article 文章实体
+     * @param field 字段名：viewCount/likeCount/collectCount
+     * @return 对应数值
+     */
+    private Integer getCountByField(Article article, String field) {
+        switch (field) {
+            case "viewCount":
+                return article.getViewCount() == null ? 0 : article.getViewCount();
+            case "likeCount":
+                return article.getLikeCount() == null ? 0 : article.getLikeCount();
+            case "collectCount":
+                return article.getCollectCount() == null ? 0 : article.getCollectCount();
+            default:
+                return 0;
+        }
     }
 }

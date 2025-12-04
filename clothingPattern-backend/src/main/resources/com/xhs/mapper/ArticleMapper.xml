@@ -39,4 +39,6 @@
         auditStatus,publishTime,createTime,
         updateTime,isDelete
     </sql>
+
+
 </mapper>

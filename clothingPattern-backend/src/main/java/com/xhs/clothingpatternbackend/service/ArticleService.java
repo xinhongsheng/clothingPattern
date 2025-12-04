@@ -13,6 +13,7 @@ import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author 小辛
@@ -116,4 +117,9 @@ public interface ArticleService extends IService<Article> {
      * 将Article列表转换为ArticleVO列表
      */
     List<ArticleVO> getArticleVOList(List<Article> articleList);
+
+    /**
+     * 获取过去一周每天的文章第一（点赞数、收藏数、浏览量）
+     */
+    List<Map<String, Object>> getArticleTopOne();
 }

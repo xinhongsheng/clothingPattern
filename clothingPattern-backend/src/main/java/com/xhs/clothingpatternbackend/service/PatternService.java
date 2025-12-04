@@ -113,4 +113,6 @@ public interface PatternService extends IService<Pattern> {
      * @return
      */
     List<Map<String, Object>> getTargetAudienceTopFive();
+
+    List<Map<String, Object>> getHotStyleTopFive();
 }
