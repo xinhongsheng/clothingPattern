@@ -43,8 +43,16 @@ const updateChart = () => {
   const counts = userGrowthData.value.map((item) => parseInt(item.count))
 
   const option = {
-    color: ['#80FFA5', '#00DDFF', '#37A2FF', '#FF0087', '#FFBF00'],
-    tooltip: {},
+    color: ['#00bfff', '#1e90ff'],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        label: {
+          backgroundColor: 'rgba(0, 191, 255, 0.8)',
+        },
+      },
+    },
     xAxis: {
       data: dates,
       axisLine: {
@@ -67,17 +75,34 @@ const updateChart = () => {
       axisLabel: {
         color: '#00bfff',
       },
+      splitLine: {
+        lineStyle: {
+          color: 'rgba(0, 191, 255, 0.2)',
+        },
+      },
     },
     series: [
       {
         name: '用户增长',
-        type: 'bar',
+        type: 'line',
         data: counts,
-        barWidth: 26,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
         itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+          color: '#00bfff',
+        },
+        lineStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
             { offset: 0, color: '#00bfff' },
             { offset: 1, color: '#1e90ff' },
+          ]),
+          width: 3,
+        },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(0, 191, 255, 0.3)' },
+            { offset: 1, color: 'rgba(0, 191, 255, 0.05)' },
           ]),
         },
         label: {
