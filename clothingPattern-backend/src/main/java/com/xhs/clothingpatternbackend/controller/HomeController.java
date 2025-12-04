@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @Author: 小辛同学
@@ -70,5 +72,13 @@ public class HomeController {
     public BaseResponse<Long> getPatternCount() {
         long count = patternService.count();
         return ResultUtils.success(count);
+    }
+    /**
+     * 获取用户增长数据
+     */
+    @GetMapping("/user/growth")
+    public BaseResponse<List<Map<String, Object>>> getUserGrowth() {
+        List<Map<String, Object>> growth = userService.getUserGrowth();
+        return ResultUtils.success(growth);
     }
 }

@@ -9,6 +9,7 @@ import com.xhs.clothingpatternbackend.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author 小辛
@@ -93,4 +94,5 @@ public interface UserService extends IService<User> {
      */
     boolean isAdmin(User user);
 
+    List<Map<String, Object>> getUserGrowth();
 }

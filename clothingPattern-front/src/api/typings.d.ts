@@ -956,4 +956,9 @@ declare namespace API {
     output?: Output
     usage?: Usage
   }
+   type BaseResponseListMapStringObject = {
+    code?: number
+    data?: Record<string, any>[]
+    message?: string
+  }
 }
