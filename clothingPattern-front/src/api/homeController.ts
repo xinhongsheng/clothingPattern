@@ -17,6 +17,14 @@ export async function exportDataReport(
   })
 }
 
+/** 此处后端没有提供注释 GET /home/pattern/count */
+export async function getPatternCount(options?: { [key: string]: any }) {
+  return request<API.BaseResponseLong>('/home/pattern/count', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /home/statistics */
 export async function getHomeStatistics(options?: { [key: string]: any }) {
   return request<API.BaseResponseHomeStatisticsVO>('/home/statistics', {

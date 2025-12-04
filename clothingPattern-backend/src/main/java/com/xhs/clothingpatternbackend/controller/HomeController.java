@@ -63,4 +63,12 @@ public class HomeController {
         long count = userService.count();
         return ResultUtils.success(count);
     }
+    /**
+     * 获取图案数量
+     */
+    @GetMapping("/pattern/count")
+    public BaseResponse<Long> getPatternCount() {
+        long count = patternService.count();
+        return ResultUtils.success(count);
+    }
 }

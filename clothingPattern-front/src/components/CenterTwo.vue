@@ -35,7 +35,6 @@ const initChart = async () => {
 
     // 添加点击事件
     chartInstance.on('click', handleMapClick)
-
   } catch (error) {
     console.error('地图初始化失败:', error)
   }
@@ -50,7 +49,7 @@ const handleMapClick = (params) => {
     chartInstance.dispatchAction({
       type: 'highlight',
       seriesIndex: 0,
-      name: provinceName
+      name: provinceName,
     })
   }
 }
@@ -65,12 +64,12 @@ const getChartOption = () => {
         color: '#00f2ff',
         fontSize: getResponsiveFontSize(window.innerWidth, 24, 16), // 根据屏幕宽度调整字体大小
         fontWeight: 'bold',
-        textShadow: '0 0 10px rgba(0, 242, 255, 0.7)'
-      }
+        textShadow: '0 0 10px rgba(0, 242, 255, 0.7)',
+      },
     },
     tooltip: {
       trigger: 'item',
-      formatter: params => {
+      formatter: (params) => {
         return `
           <div style="font-weight:bold; color: #00f2ff;">${params.name}</div>
         `
@@ -79,8 +78,8 @@ const getChartOption = () => {
       borderColor: '#00f2ff',
       padding: 10,
       textStyle: {
-        color: '#fff'
-      }
+        color: '#fff',
+      },
     },
     visualMap: {
       min: 0,
@@ -89,11 +88,11 @@ const getChartOption = () => {
       realtime: false,
       calculable: true,
       inRange: {
-        color: ['#0a2dae', '#0b5bce', '#1990ff', '#38b1ff', '#50d2ff']
+        color: ['#0a2dae', '#0b5bce', '#1990ff', '#38b1ff', '#50d2ff'],
       },
       textStyle: {
-        color: '#fff'
-      }
+        color: '#fff',
+      },
     },
     series: [
       {
@@ -105,40 +104,40 @@ const getChartOption = () => {
         label: {
           show: true,
           color: '#fff',
-          fontSize: getResponsiveFontSize(window.innerWidth, 10, 8) // 根据屏幕宽度调整字体大小
+          fontSize: getResponsiveFontSize(window.innerWidth, 10, 8), // 根据屏幕宽度调整字体大小
         },
         itemStyle: {
           areaColor: '#0c2c5a',
           borderColor: '#00f2ff',
           borderWidth: 1,
           shadowColor: 'rgba(0, 242, 255, 0.3)',
-          shadowBlur: 10
+          shadowBlur: 10,
         },
         emphasis: {
           label: {
             color: '#fff',
             fontSize: getResponsiveFontSize(window.innerWidth, 12, 10), // 根据屏幕宽度调整字体大小
-            fontWeight: 'bold'
+            fontWeight: 'bold',
           },
           itemStyle: {
             areaColor: '#1990ff',
             borderWidth: 2,
-            shadowBlur: 15
-          }
+            shadowBlur: 15,
+          },
         },
         select: {
           label: {
             color: '#ff0',
             fontSize: getResponsiveFontSize(window.innerWidth, 12, 10), // 根据屏幕宽度调整字体大小
-            fontWeight: 'bold'
+            fontWeight: 'bold',
           },
           itemStyle: {
             areaColor: '#ff0',
-            borderColor: '#ff0'
-          }
+            borderColor: '#ff0',
+          },
         },
-      }
-    ]
+      },
+    ],
   }
 }
 
@@ -158,9 +157,9 @@ echarts.registerTheme('tech', {
   color: ['#00f2ff', '#1990ff', '#0b5bce', '#0a2dae'],
   title: {
     textStyle: {
-      color: '#00f2ff'
-    }
-  }
+      color: '#00f2ff',
+    },
+  },
 })
 </script>
 

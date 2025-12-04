@@ -11,8 +11,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
-import { getUserCount } from '@/api/homeController'
-import { getHomeStatistics } from '@/api/homeController'
+import { getUserCount, getPatternCount } from '@/api/homeController'
 
 // 定义props，用于区分显示的数据类型
 const props = defineProps({
@@ -51,10 +50,10 @@ const fetchData = async () => {
       }
     } else if (props.type === 'pattern') {
       // 获取图案总数
-      const res = await getHomeStatistics()
-      console.log('getHomeStatistics返回结果:', res)
+      const res = await getPatternCount()
+      console.log('getPatternCount返回结果:', res)
       if (res.data.code === 0) {
-        currentNumber.value = Number(res.data.data?.patternCount) || 0
+        currentNumber.value = Number(res.data.data) || 0
       }
     }
   } catch (error) {
