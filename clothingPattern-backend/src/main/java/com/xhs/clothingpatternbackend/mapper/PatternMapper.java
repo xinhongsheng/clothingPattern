@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /**
 * @author 小辛
@@ -39,6 +40,8 @@ public interface PatternMapper extends BaseMapper<Pattern> {
      */
     @Select("SELECT COUNT(*) FROM user_like WHERE userId = #{userId} AND patternId = #{patternId} AND isDelete = 0")
     int selectUserLikeStatus(@Param("userId") Long userId, @Param("patternId") Long patternId);
+
+
 }
 
 

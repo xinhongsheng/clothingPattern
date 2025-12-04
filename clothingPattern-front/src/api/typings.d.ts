@@ -519,10 +519,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    sortList?: number[]
-    origPromptList?: string[]
-    localImageUrlList?: string[]
     tempImageUrlList?: string[]
+    localImageUrlList?: string[]
+    origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {

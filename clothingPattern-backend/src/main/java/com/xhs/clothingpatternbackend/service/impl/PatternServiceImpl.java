@@ -38,6 +38,10 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -942,6 +946,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
     /**
      * 获取互动数据
+     * 
      * @return
      */
     @Override
@@ -984,4 +989,72 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 获取服装风格偏好
+     * 
+     * @return
+     */
+
+    // 日期格式化器（统一返回yyyy-MM-dd格式）
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    // 系统默认时区
+    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    @Override
+    public List<Map<String, Object>> getStylePreference() {
+        // 最终返回结果：每个元素对应一天的统计（日期+当日风格Top5）
+        List<Map<String, Object>> dailyResultList = new ArrayList<>();
+
+        // 1. 生成过去7天的日期（包含今天，共7天）
+        LocalDate today = LocalDate.now();
+        for (int i = 6; i >= 0; i--) { // 从7天前到今天，倒序遍历（也可正序，根据需求调整）
+            LocalDate currentDate = today.minusDays(i);
+            String dateStr = currentDate.format(DATE_FORMATTER);
+
+            // 2. 构建当天的时间范围：00:00:00 到 23:59:59
+            LocalDateTime dayStart = currentDate.atStartOfDay(); // 当天0点
+            LocalDateTime dayEnd = currentDate.atTime(23, 59, 59); // 当天23:59:59
+            Date startTime = Date.from(dayStart.atZone(DEFAULT_ZONE).toInstant());
+            Date endTime = Date.from(dayEnd.atZone(DEFAULT_ZONE).toInstant());
+
+            // 3. 查询当天符合条件的图案（审核通过、未删除、有风格）
+            QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("isDelete", 0)
+                    .eq("auditStatus", "APPROVED")
+                    .ge("createTime", startTime)
+                    .le("createTime", endTime)
+                    .isNotNull("style")
+                    .ne("style", "");
+
+            List<Pattern> patternList = this.list(queryWrapper);
+
+            // 4. 统计当天各风格的数量
+            Map<String, Long> styleCountMap = new HashMap<>();
+            for (Pattern pattern : patternList) {
+                String style = pattern.getStyle().trim(); // 防空格干扰
+                if (!style.isEmpty()) {
+                    styleCountMap.put(style, styleCountMap.getOrDefault(style, 0L) + 1);
+                }
+            }
+
+            // 5. 对当天风格数量降序排序，取前5名
+            List<Map<String, Object>> dayTop5 = styleCountMap.entrySet().stream()
+                    .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue())) // 降序
+                    .limit(5)
+                    .map(entry -> {
+                        Map<String, Object> styleMap = new HashMap<>();
+                        styleMap.put("style", entry.getKey());
+                        styleMap.put("count", entry.getValue());
+                        return styleMap;
+                    })
+                    .collect(Collectors.toList());
+
+            // 6. 封装当天的统计结果
+            Map<String, Object> dailyMap = new HashMap<>();
+            dailyMap.put("date", dateStr); // 日期（yyyy-MM-dd）
+            dailyMap.put("topStyles", dayTop5); // 当天风格Top5（空则返回空列表）
+            dailyResultList.add(dailyMap);
+        }
+
+        return dailyResultList;
+    }
 }

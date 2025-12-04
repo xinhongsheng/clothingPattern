@@ -118,4 +118,12 @@ public class HomeController {
         List<Map<String, Object>> interaction = patternService.getInteraction();
         return ResultUtils.success(interaction);
     }
+    /**
+     * 获取不同目标群体对不同风格的喜好，前五名
+     */
+    @GetMapping("/style/preference")
+    public BaseResponse<List<Map<String, Object>>> getStylePreference() {
+        List<Map<String, Object>> preference = patternService.getStylePreference();
+        return ResultUtils.success(preference);
+    }
 }
