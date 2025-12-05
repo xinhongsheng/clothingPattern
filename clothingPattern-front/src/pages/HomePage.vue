@@ -173,7 +173,7 @@ onMounted(() => {
 #homePage {
   padding: 32px 24px;
   min-height: 100vh;
-  background: linear-gradient(145deg, #f5f7fa 0%, #e4eaf5 100%);
+  background-image: url('@/assets/backgroundImage/home-bg.png');
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
@@ -224,7 +224,7 @@ onMounted(() => {
 
 /* 筛选区域样式优化 */
 .filter-section {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.5);
   padding: 32px;
   border-radius: 16px;
   margin-bottom: 32px;
@@ -430,3 +430,4 @@ onMounted(() => {
   margin-top: 16px;
 }
 </style>
+

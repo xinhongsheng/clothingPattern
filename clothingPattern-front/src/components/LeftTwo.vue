@@ -76,7 +76,7 @@ const updateChart = () => {
       formatter: '{a} <br/>{b}: {c} ({d}%)',
     },
     title: {
-      text: '目标人群Top5',
+      
       left: 'center',
       top: '10%',
       textStyle: {

@@ -1,27 +1,5 @@
 <template>
   <div class="fusion-page">
-    <div class="page-header">
-      <h1>🧵 服装图案智能融合</h1>
-      <p class="subtitle">上传服装与图案，由 AI 帮你自动贴图生成效果图</p>
-    </div>
-
-    <!-- 步骤引导 -->
-    <div class="guide-steps">
-      <div class="guide-step active">
-        <div class="step-number">1</div>
-        <div class="step-text">上传服装图片</div>
-      </div>
-      <div class="guide-divider"></div>
-      <div class="guide-step" :class="{ 'has-image': patternImageUrls.length > 0 }">
-        <div class="step-number">2</div>
-        <div class="step-text">添加图案图片</div>
-      </div>
-      <div class="guide-divider"></div>
-      <div class="guide-step" :class="{ 'has-image': polling || resultUrls.length > 0 }">
-        <div class="step-number">3</div>
-        <div class="step-text">生成融合效果</div>
-      </div>
-    </div>
 
     <a-card class="fusion-card" :bordered="false">
       <a-row :gutter="[32, 32]">
@@ -329,7 +307,7 @@ const handleSubmit = async () => {
 /* 全局基础样式 */
 .fusion-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  background-image:  url('@/assets/backgroundImage/mj-bg.png'); ;
   padding: 40px 20px;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -437,7 +415,7 @@ const handleSubmit = async () => {
   margin: 0 auto;
   border-radius: 20px;
   box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.5);
   overflow: hidden;
 }
 

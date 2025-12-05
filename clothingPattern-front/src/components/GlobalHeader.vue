@@ -140,10 +140,10 @@ const originItems = [
   },
 
   {
-    key: '/admin/DataAnalysis',
+    key: '/admin/DataAnalysisV2',
     icon: () => h(AppstoreOutlined),
-    label: '作品库分析',
-    title: '作品库分析',
+    label: '数据分析中心',
+    title: '数据分析中心',
   },
 
   {
@@ -209,9 +209,12 @@ router.afterEach((to) => {
 })
 </script>
 <style scoped>
+
 .title-bar {
   display: flex;
   align-items: center;
+  /** 设置为透明 */
+
 }
 
 .title {

@@ -13,7 +13,7 @@
       </a-layout>
 
       <a-layout-footer class="footer">
-        <a href="https://www.baidu.com" target="_blank"> 百度 by xhs </a>
+        <a href="https://www.baidu.com" target="_blank"> 服装图案智能创作 by xhs </a>
       </a-layout-footer>
     </a-layout>
   </div>
@@ -32,11 +32,6 @@ import GlobalHeader from '@/components/GlobalHeader.vue'
   margin-bottom: 1px;
 }
 
-#basicLayout .sider {
-  background: #fff;
-  border-right: 0.5px solid #eee;
-  padding-top: 20px;
-}
 
 #basicLayout :deep(.ant-menu-root) {
   border-bottom: none !important;
@@ -50,13 +45,18 @@ import GlobalHeader from '@/components/GlobalHeader.vue'
 }
 
 #basicLayout .footer {
-  background: #efefef;
+  background-color: rgba(255, 255, 255, 0.5);
   padding: 16px;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   text-align: center;
+  
+  border: none; /* 移除默认边框（如果有） */
+  box-shadow: none; /* 移除阴影（如果有） */
+  /* 可选：如果需要半透明背景而非完全透明，用 rgba */
+  /* background: rgba(239, 239, 239, 0.2); */
 }
 
 

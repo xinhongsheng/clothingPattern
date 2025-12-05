@@ -52,8 +52,8 @@ public class LikeSyncTask {
     /**
      * 每5分钟同步一次到MySQL
      */
-    @Scheduled(fixedRate = 1 * 60 * 1000) // 测试1分钟
-//    @Scheduled(fixedRate = 5 * 60 * 1000) // 5分钟
+//    @Scheduled(fixedRate = 1 * 60 * 1000) // 测试1分钟
+    @Scheduled(fixedRate = 5 * 60 * 1000) // 5分钟
     @Transactional
     public void syncLikeDataToMySQL() {
         log.info("开始同步点赞数据到MySQL...");

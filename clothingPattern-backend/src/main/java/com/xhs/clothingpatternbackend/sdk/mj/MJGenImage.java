@@ -25,12 +25,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class MJGenImage {
-    
-//    @Value("${mj.api.token:e93b4e9976d344a897ea34e0d99f87c1}")
-//    private String apiToken;
-//
-//    @Value("${mj.api.url:https://api.zhishuyun.com/midjourney/imagine}")
-//    private String apiUrl;
 
     @Resource
     private MJConfig mjConfig;

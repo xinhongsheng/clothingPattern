@@ -1,12 +1,9 @@
 <template>
   <div class="mj-pattern-generation-page">
-
     <!-- 主内容区域 -->
     <a-card class="generation-card" :bordered="false">
       <!-- 步骤1：输入提示词并生成 -->
       <div v-if="currentStep === 1" class="step-content">
-        <h2 class="section-title"><EditOutlined /> 步骤 1：描述你的图案创意</h2>
-
         <a-form :model="formState" layout="vertical" @finish="handleGenerate">
           <!-- 提示词输入 -->
           <a-form-item
@@ -99,15 +96,13 @@
         <div v-if="generating" class="generating-tips">
           <a-spin size="large" />
           <p class="tip-title">🎨 AI 正在创作中...</p>
-          <p class="tip-desc">Midjourney 会生成 4 张候选图案（2x2 网格）</p>
+          <p class="tip-desc">会生成 4 张候选图案（2x2 网格）</p>
           <p class="tip-desc">预计需要 1-2 分钟，请耐心等待</p>
         </div>
       </div>
 
       <!-- 步骤2：选择图片并执行操作 -->
       <div v-if="currentStep === 2" class="step-content">
-        <h2 class="section-title"><PictureOutlined /> 步骤 2：选择喜欢的图案</h2>
-
         <!-- 显示生成的 2x2 网格图片 -->
         <div class="grid-preview">
           <div class="image-container">
@@ -137,7 +132,6 @@
 
         <!-- 操作选择 -->
         <div class="action-selection">
-          <h3>选择你喜欢的图案位置：</h3>
           <a-row :gutter="[16, 16]">
             <!-- Upsample 操作 -->
             <a-col :span="24">
@@ -258,7 +252,12 @@
           <!-- 操作按钮 -->
           <div class="action-buttons">
             <a-button size="large" @click="backToStep2"> <LeftOutlined /> 返回重新选择 </a-button>
-            <a-button type="default" size="large" @click="continueWithoutSaving" class="secondary-action-btn">
+            <a-button
+              type="default"
+              size="large"
+              @click="continueWithoutSaving"
+              class="secondary-action-btn"
+            >
               继续操作（不保存）
             </a-button>
             <a-button
@@ -285,8 +284,6 @@
 import { ref, reactive } from 'vue'
 import { message } from 'ant-design-vue'
 import {
-  EditOutlined,
-  PictureOutlined,
   ThunderboltOutlined,
   CheckOutlined,
   LeftOutlined,
@@ -335,7 +332,7 @@ const handleGenerate = async () => {
     originalPrompt.value = formState.prompt
 
     message.loading({
-      content: 'Midjourney 正在生成图案，请耐心等待...',
+      content: '正在生成图案，请耐心等待...',
       key: 'generating',
       duration: 0,
     })
@@ -521,7 +518,7 @@ const getActionName = (action: string) => {
 /* 全局基础样式 */
 .mj-pattern-generation-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  background-image: url('@/assets/backgroundImage/gen-bg.png');
   padding: 40px 20px;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -631,12 +628,14 @@ const getActionName = (action: string) => {
   margin: 0 auto;
   border-radius: 20px;
   box-shadow: 0 20px 80px rgba(0, 0, 0, 0.3);
-  background-color: #ffffff;
+  /* background-color: #ffffff; */
+  background-color: rgba(255, 255, 255, 0.5);
   overflow: hidden;
 }
 
 :deep(.ant-card-body) {
   padding: 40px;
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 /* 步骤内容样式 */
@@ -725,32 +724,40 @@ const getActionName = (action: string) => {
 }
 
 /* 生成按钮样式 */
+/* 主按钮（Success 绿色系） */
 :deep(.ant-btn-primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* 成功色渐变：浅绿 → 深绿（匹配 Ant Design Success 色值） */
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
   border: none;
   border-radius: 12px !important;
   font-size: 16px;
   font-weight: 500;
   height: 56px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  /* 阴影同步改为绿色系，保持质感 */
+  box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
 }
 
+/* 悬浮状态（略深的绿色） */
 :deep(.ant-btn-primary:hover) {
-  background: linear-gradient(135deg, #7486e0 0%, #8561b2 100%);
+  background: linear-gradient(135deg, #84d850 0%, #5bcf22 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(82, 196, 26, 0.4);
 }
 
+/* 点击激活状态 */
 :deep(.ant-btn-primary:active) {
+  background: linear-gradient(135deg, #52c41a 0%, #41a30f 100%);
   transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 10px rgba(82, 196, 26, 0.3);
 }
 
+/* 禁用状态（生成中时的按钮，浅灰绿） */
 :deep(.ant-btn-primary:disabled) {
-  background: linear-gradient(135deg, #a5b4fc 0%, #c5b4e3 100%);
+  background: linear-gradient(135deg, #b7eb8f 0%, #95de64 100%);
   transform: none;
   box-shadow: none;
+  color: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* 生成进度提示 */
@@ -784,11 +791,13 @@ const getActionName = (action: string) => {
 }
 
 /* 图片预览区域 */
-.grid-preview, .final-preview {
+.grid-preview,
+.final-preview {
   margin-bottom: 36px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 20px;
+  align-items: flex-start;
 }
 
 .image-container {
@@ -797,6 +806,8 @@ const getActionName = (action: string) => {
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   transition: all 0.3s;
+  flex: 0 0 60%;
+  max-width: 60%;
 }
 
 .image-container:hover {
@@ -804,7 +815,8 @@ const getActionName = (action: string) => {
   transform: translateY(-2px);
 }
 
-.grid-image, .final-image {
+.grid-image,
+.final-image {
   width: 100%;
   height: auto;
   display: block;
@@ -846,22 +858,31 @@ const getActionName = (action: string) => {
 }
 
 /* 信息卡片样式 */
-.grid-info, .final-info {
+.grid-info,
+.final-info {
   padding: 24px;
   background: #f8f9fa;
   border-radius: 16px;
   border: 1px solid #f0f2f5;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  flex: 0 0 40%;
+  max-width: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 200px;
 }
 
-.grid-info p, .final-info p {
+.grid-info p,
+.final-info p {
   margin: 10px 0;
   font-size: 15px;
   color: #2d3748;
   line-height: 1.6;
 }
 
-.grid-info p strong, .final-info p strong {
+.grid-info p strong,
+.final-info p strong {
   color: #1a202c;
   margin-right: 8px;
 }
@@ -991,6 +1012,23 @@ const getActionName = (action: string) => {
     font-size: 24px;
     margin-bottom: 28px;
   }
+
+  /* 响应式布局：在平板设备上切换回垂直布局 */
+  .grid-preview,
+  .final-preview {
+    flex-direction: column;
+  }
+
+  .image-container {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .grid-info,
+  .final-info {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1065,11 +1103,13 @@ const getActionName = (action: string) => {
     font-size: 14px;
   }
 
-  .grid-info, .final-info {
+  .grid-info,
+  .final-info {
     padding: 18px;
   }
 
-  .grid-info p, .final-info p {
+  .grid-info p,
+  .final-info p {
     font-size: 14px;
     margin: 8px 0;
   }

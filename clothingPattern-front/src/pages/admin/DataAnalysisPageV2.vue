@@ -41,7 +41,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="home">
     <header class="top">
-      <dv-border-box-11 title="服装图案智能创作-数据可视化" class="top-nav" :color="['#188ffe']">
+      <dv-border-box-11 title="数据分析中心" class="top-nav" :color="['#188ffe']">
         <div class="name">创作人：小辛同学</div>
         <div class="time">当前时间：{{ currentTime }}</div>
       </dv-border-box-11>

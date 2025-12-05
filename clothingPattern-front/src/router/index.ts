@@ -88,14 +88,14 @@ const router = createRouter({
     name: '我的创意',
     component: MyIdeaPage,
   },
-  {
-    path: '/admin/dataAnalysis',
-    name: '数据分析',
-    component: DataAnalysisPage,
-  },
+  // {
+  //   path: '/admin/dataAnalysis',
+  //   name: '数据分析',
+  //   component: DataAnalysisPage,
+  // },
   {
     path: '/admin/dataAnalysisV2',
-    name: '可视化大屏',
+    name: '数据分析中心',
     component: DataAnalysisPageV2,
   },
   {

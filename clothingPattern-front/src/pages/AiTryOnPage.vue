@@ -1,9 +1,9 @@
 <template>
   <div class="tryon-page">
-    <div class="page-header">
+    <!-- <div class="page-header">
       <h1>👗 AI 智能试衣</h1>
       <p class="subtitle">上传人物与服装图片，AI 为你生成试穿效果</p>
-    </div>
+    </div> -->
 
     <a-card class="tryon-card" :bordered="false">
       <a-row :gutter="[32, 32]">
@@ -378,7 +378,7 @@ const handleSubmit = async () => {
 <style scoped>
 .tryon-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('@/assets/backgroundImage/aiTryOn-bg.png');
   padding: 40px 20px;
 }
 
@@ -403,6 +403,7 @@ const handleSubmit = async () => {
   margin: 0 auto;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .tryon-card :deep(.ant-card-body) {

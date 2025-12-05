@@ -337,9 +337,9 @@ const handleCancel = () => {
 }
 
 // 删除轮播图
-const handleDelete = async (id: string) => {
+const handleDelete = async (id: number) => {
   try {
-    const res = await deleteBanner(id)
+    const res = await deleteBanner({ id })
     if (res.data.code === 0) {
       message.success('删除成功')
       loadBanners()

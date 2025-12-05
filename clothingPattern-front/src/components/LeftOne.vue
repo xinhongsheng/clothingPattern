@@ -45,7 +45,7 @@ const updateChart = () => {
 
   const option = {
     title: {
-      text: '近15日用户增长量',
+      
       textStyle: {
         color: '#00bfff',
         fontSize: 16,

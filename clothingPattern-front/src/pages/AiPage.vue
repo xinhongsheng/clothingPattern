@@ -1,7 +1,7 @@
 <template>
   <div id="aiPage">
     <!-- 顶部标题区域 -->
-    <div class="header-section">
+    <!-- <div class="header-section">
       <div class="title-area">
         <h1 class="page-title">
           <BulbOutlined class="title-icon" />
@@ -9,7 +9,7 @@
         </h1>
         <p class="page-subtitle">专业的服装图案知识问答，为您的创作提供灵感与指导</p>
       </div>
-    </div>
+    </div> -->
 
     <!-- 主要内容区域 -->
     <div class="content-wrapper">
@@ -388,7 +388,7 @@ onMounted(() => {
 <style scoped>
 #aiPage {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('@/assets/backgroundImage/ai-bg.png');
   padding: 24px;
 }
 
