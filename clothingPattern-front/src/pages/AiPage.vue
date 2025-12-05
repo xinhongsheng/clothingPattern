@@ -264,8 +264,8 @@ const handleSend = async (e?: Event) => {
 
   try {
     // 使用 fetch 调用流式接口（axios 不支持 SSE）
-    // const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
-       const response = await fetch('http://bs.xinxiangyang.work/ai/ask/stream', {
+    const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
+      //  const response = await fetch('http://bs.xinxiangyang.work/ai/ask/stream', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

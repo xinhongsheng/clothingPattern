@@ -17,13 +17,6 @@
                   :src="pattern.thumbUrl ?? pattern.patternUrl"
                   loading="lazy"
                 />
-                <!-- 审核状态标签 -->
-                <a-tag
-                  :color="AUDIT_STATUS_COLOR_MAP[pattern.auditStatus]"
-                  class="status-tag"
-                >
-                  {{ AUDIT_STATUS_MAP[pattern.auditStatus] }}
-                </a-tag>
               </div>
             </template>
             <a-card-meta :title="pattern.patternName">
@@ -33,9 +26,7 @@
                     {{ pattern.description || '暂无描述' }}
                   </div>
                   <a-space wrap class="pattern-tags">
-                    <a-tag :color="GENERATION_TYPE_COLOR_MAP[pattern.generationType]" v-if="pattern.generationType">
-                      {{ GENERATION_TYPE_MAP[pattern.generationType] }}
-                    </a-tag>
+                    
                     <a-tag v-if="pattern.style">
                       {{ pattern.style }}
                     </a-tag>
@@ -107,7 +98,7 @@ const doClickPattern = (pattern: API.PatternVO) => {
 // 点赞/取消点赞
 const handleLike = async (pattern: API.PatternVO, e: Event) => {
   e.stopPropagation()
-  
+
   const id = pattern.id
   if (!id) {
     return
@@ -122,7 +113,7 @@ const handleLike = async (pattern: API.PatternVO, e: Event) => {
   // 乐观更新UI（先更新界面，给用户即时反馈）
   const previousLiked = pattern.isLiked
   const previousCount = pattern.likeCount || 0
-  
+
   // 立即更新UI
   pattern.isLiked = !previousLiked
   pattern.likeCount = previousLiked ? previousCount - 1 : previousCount + 1
@@ -134,7 +125,7 @@ const handleLike = async (pattern: API.PatternVO, e: Event) => {
       const result = res.data.data
       pattern.isLiked = result.isLiked
       pattern.likeCount = result.likeCount
-      
+
       // 提示用户操作成功
       message.success(result.isLiked ? '点赞成功' : '已取消点赞', 1)
     } else {
