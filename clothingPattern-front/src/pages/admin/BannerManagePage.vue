@@ -130,7 +130,7 @@ const isEditModal = ref(false)
 
 // 表单数据
 const form = reactive({
-  id: undefined as string | undefined,
+  id: undefined as number | undefined,
   title: '',
   imageUrl: '',
   linkUrl: '',
