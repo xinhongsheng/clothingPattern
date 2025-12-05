@@ -3,7 +3,9 @@ import { message } from 'ant-design-vue'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
-  baseURL: 'http://localhost:8123/api',
+  // baseURL: 'http://localhost:8123/api',
+  baseURL: 'http://bs.xinxiangyang.work/api',
+
   timeout: 300000, // 增加到5分钟，支持批量图片生成
   withCredentials: true,
 })
