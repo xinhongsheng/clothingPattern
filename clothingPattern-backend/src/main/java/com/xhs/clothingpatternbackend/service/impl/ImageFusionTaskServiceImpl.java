@@ -478,6 +478,45 @@ public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMappe
             return wanQueryVO;
         }).collect(Collectors.toList());
     }
+
+    // -------------------------- 保存选中的图片（将选中的单张图片URL替换原有的多个URL） --------------------------
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean saveSelectedImage(String dashscopeTaskId, String selectedImageUrl) {
+        // 1. 查询任务
+        ImageFusionTask task = this.lambdaQuery()
+                .eq(ImageFusionTask::getDashscopeTaskId, dashscopeTaskId)
+                .one();
+        
+        if (task == null) {
+            log.error("保存选中图片失败：任务不存在，DashScopeID={}", dashscopeTaskId);
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "任务不存在");
+        }
+
+        // 2. 验证选中的URL是否在结果列表中
+        List<String> localUrls = task.getLocalImageUrlList();
+        if (localUrls == null || !localUrls.contains(selectedImageUrl)) {
+            log.error("保存选中图片失败：选中的URL不在结果列表中，URL={}", selectedImageUrl);
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "选中的图片不在结果列表中");
+        }
+
+        // 3. 将选中的URL设置为唯一的结果URL（替换原有的多个URL）
+        task.setLocalImageUrls(selectedImageUrl);
+        task.setTempImageUrls(selectedImageUrl);
+        task.setOrigPrompts(""); // 清空原始提示词列表
+        task.setSorts("1"); // 只有一张图片，排序为1
+        task.setUpdateTime(LocalDateTime.now());
+
+        // 4. 更新数据库
+        boolean updated = this.updateById(task);
+        if (updated) {
+            log.info("保存选中图片成功：任务ID={}，选中URL={}", task.getId(), selectedImageUrl);
+        } else {
+            log.error("保存选中图片失败：数据库更新失败，任务ID={}", task.getId());
+        }
+
+        return updated;
+    }
 }
 
 

@@ -144,6 +144,20 @@ public class ImageFusionController {
         }
     }
 
+    // -------------------------- 保存选中的图片 --------------------------
+    @PostMapping("/save-selected")
+    public BaseResponse<Boolean> saveSelectedImage(
+            @RequestParam String taskId,
+            @RequestParam String imageUrl) {
+        try {
+            boolean result = fusionTaskService.saveSelectedImage(taskId, imageUrl);
+            return ResultUtils.success(result);
+        } catch (Exception e) {
+            log.error("保存选中图片失败", e);
+            throw new BusinessException(500, "保存失败：" + e.getMessage());
+        }
+    }
+
     /**
      * 分页获取融合图片封装列表
      *

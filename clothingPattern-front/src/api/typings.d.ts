@@ -521,8 +521,8 @@ declare namespace API {
     updateTime?: string
     tempImageUrlList?: string[]
     localImageUrlList?: string[]
-    origPromptList?: string[]
     sortList?: number[]
+    origPromptList?: string[]
   }
 
   type likeArticleParams = {
@@ -805,6 +805,11 @@ declare namespace API {
     url?: string
     code?: string
     message?: string
+  }
+
+  type saveSelectedImageParams = {
+    taskId: string
+    imageUrl: string
   }
 
   type searchArticlesParams = {

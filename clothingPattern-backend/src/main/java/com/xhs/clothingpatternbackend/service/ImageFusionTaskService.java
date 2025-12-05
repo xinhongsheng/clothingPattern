@@ -33,4 +33,8 @@ public interface ImageFusionTaskService extends IService<ImageFusionTask> {
     QueryWrapper<ImageFusionTask> getQueryWrapper(WanQueryRequest wanQueryRequest);
 
     List<WanQueryVO> getImageFusionVOList(List<ImageFusionTask> imageFusionTaskList, Long loginUserId);
+
+    // -------------------------- 保存选中的图片（将选中的单张图片URL替换原有的多个URL） --------------------------
+    @Transactional(rollbackFor = Exception.class)
+    boolean saveSelectedImage(String dashscopeTaskId, String selectedImageUrl);
 }

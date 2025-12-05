@@ -31,6 +31,21 @@ export async function getResults(
   })
 }
 
+/** 此处后端没有提供注释 POST /image-fusion/save-selected */
+export async function saveSelectedImage(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.saveSelectedImageParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/image-fusion/save-selected', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /image-fusion/status/${param0} */
 export async function queryStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -64,9 +79,9 @@ export async function submitTask(
 export async function uploadImage(body: {}, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/image-fusion/upload', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
     data: body,
     ...(options || {}),
   })
