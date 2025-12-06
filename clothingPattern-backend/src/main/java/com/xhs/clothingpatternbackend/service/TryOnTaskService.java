@@ -2,8 +2,10 @@ package com.xhs.clothingpatternbackend.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xhs.clothingpatternbackend.model.entity.TryOnTask;
+import com.xhs.clothingpatternbackend.model.vo.QueryTaskHistoryResultVO;
 
 import java.io.IOException;
+import java.util.List;
 
 
 /**
@@ -18,6 +20,8 @@ public interface TryOnTaskService extends IService<TryOnTask> {
 
     // 查询并更新任务状态，成功时自动保存图片到COS
     TryOnTask queryTaskStatus(String taskId) throws Exception;
+
+    List<QueryTaskHistoryResultVO> getTryOnHistory(Long userId);
 
 //    String downloadAndSaveToOss(String imageUrl) throws Exception;
 }

@@ -1,5 +1,6 @@
 package com.xhs.clothingpatternbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.qcloud.cos.utils.IOUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
@@ -7,7 +8,8 @@ import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.mapper.TryOnTaskMapper;
 import com.xhs.clothingpatternbackend.model.entity.TryOnTask;
-import com.xhs.clothingpatternbackend.model.vo.QueryTaskResult;
+import com.xhs.clothingpatternbackend.model.vo.QueryTaskHistoryResultVO;
+import com.xhs.clothingpatternbackend.model.vo.QueryTaskResultVO;
 import com.xhs.clothingpatternbackend.sdk.dashscope.DashScopeApiAiTryOnClient;
 import com.xhs.clothingpatternbackend.service.TryOnTaskService;
 import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
@@ -17,12 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -62,7 +66,7 @@ public class TryOnTaskServiceImpl extends ServiceImpl<TryOnTaskMapper, TryOnTask
     @Override
     public TryOnTask queryTaskStatus(String taskId) throws Exception {
         // 1. 调用阿里云API查询任务详情
-        QueryTaskResult queryTaskResult = dashScopeApiClient.queryTask(taskId);
+        QueryTaskResultVO queryTaskResult = dashScopeApiClient.queryTask(taskId);
 
         // 2. 查询本地任务记录
         TryOnTask task = this.lambdaQuery()
@@ -164,6 +168,16 @@ public class TryOnTaskServiceImpl extends ServiceImpl<TryOnTaskMapper, TryOnTask
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "下载并上传图片失败");
         }
     }
+    /**
+     * 删除指定用户下的所有任务记录
+     */
+    public Boolean removeByUserId(Long id, Long userId) {
+        QueryWrapper<TryOnTask> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userId", userId);
+        queryWrapper.eq("id", id);
+        return this.remove(queryWrapper);
+    }
+
 
     /**
      * 自定义MultipartFile实现：将InputStream转换为MultipartFile（无本地文件残留）
@@ -224,6 +238,22 @@ public class TryOnTaskServiceImpl extends ServiceImpl<TryOnTaskMapper, TryOnTask
                 outputStream.write(content);
             }
         }
+    }
+
+
+    @Override
+    public List<QueryTaskHistoryResultVO> getTryOnHistory(Long userId) {
+        List<TryOnTask> tryOnTasks = this.list(new QueryWrapper<TryOnTask>().eq("userId", userId));
+
+        List<QueryTaskHistoryResultVO> queryTaskHistoryResultVOList = tryOnTasks.stream().map(tryOnTask -> {
+            QueryTaskHistoryResultVO queryTaskHistoryResultVO = new QueryTaskHistoryResultVO();
+            queryTaskHistoryResultVO.setId(tryOnTask.getId());  // 设置任务ID
+            queryTaskHistoryResultVO.setLocalImageUrl(tryOnTask.getLocalResultUrl());
+            queryTaskHistoryResultVO.setSubmitTime(tryOnTask.getSubmitTime());
+            queryTaskHistoryResultVO.setEndTime(tryOnTask.getEndTime());
+            return  queryTaskHistoryResultVO;
+        }).toList();
+        return  queryTaskHistoryResultVOList;
     }
 
 }

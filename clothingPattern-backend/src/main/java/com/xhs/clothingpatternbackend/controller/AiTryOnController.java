@@ -1,9 +1,15 @@
 package com.xhs.clothingpatternbackend.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.xhs.clothingpatternbackend.common.BaseResponse;
+import com.xhs.clothingpatternbackend.common.DeleteRequest;
+import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
+import com.xhs.clothingpatternbackend.exception.ErrorCode;
+import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.entity.TryOnTask;
 import com.xhs.clothingpatternbackend.model.entity.User;
+import com.xhs.clothingpatternbackend.model.vo.QueryTaskHistoryResultVO;
 import com.xhs.clothingpatternbackend.service.TryOnTaskService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.service.impl.TryOnTaskServiceImpl;
@@ -20,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @Author: 小辛同学
@@ -78,4 +85,25 @@ public class AiTryOnController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+    /**
+     * 获取用户试衣的历史记录
+     */
+    @GetMapping("/{userId}")
+    public BaseResponse<List<QueryTaskHistoryResultVO>> getTryOnHistory(@PathVariable Long userId) {
+        ThrowUtils.throwIf(userId <= 0, ErrorCode.PARAMS_ERROR);
+        List<QueryTaskHistoryResultVO> taskHistory = tryOnTaskService.getTryOnHistory(userId);
+        return ResultUtils.success(taskHistory);
+    }
+    /**
+     * 删除试衣记录
+     */
+    @PostMapping("/delete")
+    public BaseResponse<Boolean> deleteTryOnRecord(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        Long userId = loginUser.getId();
+        return ResultUtils.success(tryOnTaskService.removeByUserId(deleteRequest.getId(), userId));
+    }
+
 }

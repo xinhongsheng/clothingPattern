@@ -225,6 +225,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseListQueryTaskHistoryResultVO = {
+    code?: number
+    data?: QueryTaskHistoryResultVO[]
+    message?: string
+  }
+
   type BaseResponseListString = {
     code?: number
     data?: string[]
@@ -481,6 +487,10 @@ declare namespace API {
 
   type getStatusParams = {
     taskId: string
+  }
+
+  type getTryOnHistoryParams = {
+    userId: number
   }
 
   type getUserByIdParams = {
@@ -798,6 +808,13 @@ declare namespace API {
 
   type queryStatusParams = {
     taskId: string
+  }
+
+  type QueryTaskHistoryResultVO = {
+    id?: number
+    localImageUrl?: string
+    submitTime?: string
+    endTime?: string
   }
 
   type Result = {

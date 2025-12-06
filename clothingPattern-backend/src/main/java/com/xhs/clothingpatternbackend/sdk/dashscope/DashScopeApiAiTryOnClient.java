@@ -2,9 +2,8 @@ package com.xhs.clothingpatternbackend.sdk.dashscope;
 
 
 import com.alibaba.fastjson2.JSONObject;
-import com.xhs.clothingpatternbackend.model.vo.QueryTaskResult;
+import com.xhs.clothingpatternbackend.model.vo.QueryTaskResultVO;
 import io.micrometer.common.util.StringUtils;
-import lombok.Data;
 import okhttp3.*;
 import com.xhs.clothingpatternbackend.config.AiTryOnConfig;
 import jakarta.annotation.Resource;
@@ -90,7 +89,7 @@ public class DashScopeApiAiTryOnClient {
     /**
      * 查询任务详情，返回完整结果（包含状态、时间、错误信息等）
      */
-    public QueryTaskResult queryTask(String taskId) throws IOException {
+    public QueryTaskResultVO queryTask(String taskId) throws IOException {
         String url = aiTryOnConfig.getTaskQueryUrl().replace("{taskId}", taskId);
         Request request = new Request.Builder()
                 .url(url)
@@ -110,12 +109,12 @@ public class DashScopeApiAiTryOnClient {
     /**
      * 解析阿里云返回的JSON为Java实体
      */
-    private QueryTaskResult parseQueryResult(String json) {
+    private QueryTaskResultVO parseQueryResult(String json) {
         JSONObject root = JSONObject.parseObject(json);
         JSONObject output = root.getJSONObject("output");
         JSONObject usage = root.getJSONObject("usage");
 
-        QueryTaskResult result = new QueryTaskResult();
+        QueryTaskResultVO result = new QueryTaskResultVO();
         // 任务基本信息
         result.setTaskId(output.getString("task_id"));
         result.setTaskStatus(output.getString("task_status"));
