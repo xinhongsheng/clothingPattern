@@ -15,9 +15,10 @@
           mode="horizontal"
           :items="items"
           @click="doMenuClick"
+          style="justify-content: center; border-bottom: none;"
         />
       </a-col>
-      <a-col flex="120px">
+      <a-col flex="200px">
         <div class="user-login-status">
           <div v-if="loginUserStore.loginUser.id">
             <a-dropdown>
@@ -71,6 +72,7 @@ import {
   ReadOutlined,
   TeamOutlined,
   AppstoreOutlined,
+  CrownOutlined,
 } from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
@@ -127,37 +129,38 @@ const originItems = [
     title: '文章资讯',
   },
   {
-    key: '/admin/userManage',
-    icon: () => h(TeamOutlined),
-    label: '用户管理',
-    title: '用户管理',
-  },
-  {
-    key: '/admin/patternManage',
-    icon: () => h(AppstoreOutlined),
-    label: '图案管理',
-    title: '图案管理',
-  },
+    key: '/admin/sys',
+    label: '系统管理',
+    title: '系统管理',
+    icon: () => h(CrownOutlined),
+    children: [
+      {
+        key: '/admin/userManage',
+        icon: () => h(TeamOutlined),
+        label: '用户管理',
+        title: '用户管理',
+      },
+      {
+        key: '/admin/patternManage',
+        icon: () => h(AppstoreOutlined),
+        label: '图案管理',
+        title: '图案管理',
+      },
+      {
+        key: '/admin/article/manage',
+        icon: () => h(ReadOutlined),
+        label: '文章管理',
+        title: '文章管理',
+      },
+      {
+        key: '/admin/DataAnalysisV2',
+        icon: () => h(AppstoreOutlined),
+        label: '数据分析中心',
+        title: '数据分析中心',
+      },
 
-  {
-    key: '/admin/DataAnalysisV2',
-    icon: () => h(AppstoreOutlined),
-    label: '数据分析中心',
-    title: '数据分析中心',
+    ],
   },
-
-  {
-    key: '/admin/article/manage',
-    icon: () => h(ReadOutlined),
-    label: '文章管理',
-    title: '文章管理',
-  },
-
-  // {
-  //   key: 'others',
-  //   label: h('a', { href: 'https://chat.deepseek.com/', target: '_blank' }, '免费壁纸库'),
-  //   title: 'deepseek',
-  // },
 ]
 
 const filterMenus = (menus = [] as MenuProps['items']) => {
