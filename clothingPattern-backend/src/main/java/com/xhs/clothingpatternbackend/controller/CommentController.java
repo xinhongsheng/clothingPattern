@@ -1,12 +1,18 @@
 package com.xhs.clothingpatternbackend.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.xhs.clothingpatternbackend.annotation.AuthCheck;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
+import com.xhs.clothingpatternbackend.common.DeleteRequest;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
+import com.xhs.clothingpatternbackend.constant.UserConstant;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.comment.CommentAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.comment.CommentQueryRequest;
+import com.xhs.clothingpatternbackend.model.entity.Comment;
 import com.xhs.clothingpatternbackend.model.entity.User;
+import com.xhs.clothingpatternbackend.model.vo.AdminCommentVO;
 import com.xhs.clothingpatternbackend.model.vo.CommentStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.CommentVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
@@ -17,6 +23,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 评论接口
@@ -151,6 +159,33 @@ public class CommentController {
         
         java.util.List<CommentVO> replies = commentService.getCommentReplies(commentId, currentUserId);
         return ResultUtils.success(replies);
+    }
+
+    /**
+     * 获取所有的评论（仅管理员）
+     */
+    @PostMapping("/list/page/vo")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<AdminCommentVO>> listAdminCommentVOByPage(@RequestBody CommentQueryRequest  commentQueryRequest){
+        ThrowUtils.throwIf(commentQueryRequest == null, ErrorCode.PARAMS_ERROR);
+        long current = commentQueryRequest.getCurrent();
+        long size = commentQueryRequest.getPageSize();
+        Page<Comment> commentPage = commentService.page(new Page<>(current, size),
+                commentService.getQueryWrapper(commentQueryRequest));
+        Page<AdminCommentVO> adminCommentVOPage = new Page<>(current, size, commentPage.getTotal());
+        List<AdminCommentVO> adminCommentVOList =commentService.getCommentVOList(commentPage.getRecords());
+        adminCommentVOPage.setRecords(adminCommentVOList);
+        return ResultUtils.success(adminCommentVOPage);
+    }
+    /**
+     * 删除评论（仅管理员）
+     */
+    @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> deleteComment(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        boolean result = commentService.removeById(deleteRequest.getId());
+        return ResultUtils.success(result);
     }
 }
 

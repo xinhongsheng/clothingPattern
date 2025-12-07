@@ -24,7 +24,7 @@ public class Pattern implements Serializable {
     private Long userId;
 
     /**
-     * 模型名称
+     * 名称
      */
     private String patternName;
 
@@ -45,7 +45,7 @@ public class Pattern implements Serializable {
     private String referenceImageUrl;
 
     /**
-     * 模型图片url
+     * 图片url
      */
     private String patternUrl;
     /**

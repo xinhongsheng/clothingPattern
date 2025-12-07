@@ -1,12 +1,17 @@
 package com.xhs.clothingpatternbackend.service;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.xhs.clothingpatternbackend.model.dto.comment.CommentAddRequest;
 import com.xhs.clothingpatternbackend.model.dto.comment.CommentQueryRequest;
 import com.xhs.clothingpatternbackend.model.entity.Comment;
+import com.xhs.clothingpatternbackend.model.vo.AdminCommentVO;
 import com.xhs.clothingpatternbackend.model.vo.CommentStatisticsVO;
 import com.xhs.clothingpatternbackend.model.vo.CommentVO;
 import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
 * @author 小辛
@@ -49,4 +54,14 @@ public interface CommentService extends IService<Comment> {
      * 获取评论的所有回复
      */
     java.util.List<CommentVO> getCommentReplies(Long commentId, Long currentUserId);
+
+    /**
+     * 获取查询条件
+     */
+    QueryWrapper<Comment> getQueryWrapper(CommentQueryRequest commentQueryRequest);
+
+    /**
+     * 获取脱敏后的评论列表
+     */
+    List<AdminCommentVO> getCommentVOList(List<Comment> commentList);
 }

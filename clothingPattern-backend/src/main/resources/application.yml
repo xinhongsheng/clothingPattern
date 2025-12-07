@@ -115,3 +115,11 @@ dashscope:
     beijing-query-url: https://dashscope.aliyuncs.com/api/v1/tasks/{taskId}
     singapore-submit-url: https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/image2image/image-synthesis
     singapore-query-url: https://dashscope-intl.aliyuncs.com/api/v1/tasks/{taskId}
+sensitive:
+  word:
+    filtering:
+      AppKey: 204957190
+      AppSecret: Q51f8BHyENhRhV1oU5nv31Igs4W6szYv
+      AppCode: 5978c290de28481e924109cd144a60b3
+      host: https://lxmingan.market.alicloudapi.com
+      path: /hades/text/review

@@ -9,15 +9,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
-* @author 小辛
-* @description 针对表【pattern(服装图案表（智能图案生成模块核心表）)】的数据库操作Mapper
-* @createDate 2025-11-21 15:44:19
-* @Entity com.xhs.clothingpatternbackend.model.entity.Pattern
-*/
+ * @author 小辛
+ * @description 针对表【pattern(服装图案表（智能图案生成模块核心表）)】的数据库操作Mapper
+ * @createDate 2025-11-21 15:44:19
+ * @Entity com.xhs.clothingpatternbackend.model.entity.Pattern
+ */
 public interface PatternMapper extends BaseMapper<Pattern> {
     /**
      * 查询最近活跃的图案（用于数据预热）
-     * @param days 最近多少天
+     * 
+     * @param days  最近多少天
      * @param limit 限制数量
      * @return 图案列表
      */
@@ -41,9 +42,4 @@ public interface PatternMapper extends BaseMapper<Pattern> {
     @Select("SELECT COUNT(*) FROM user_like WHERE userId = #{userId} AND patternId = #{patternId} AND isDelete = 0")
     int selectUserLikeStatus(@Param("userId") Long userId, @Param("patternId") Long patternId);
 
-
 }
-
-
-
-

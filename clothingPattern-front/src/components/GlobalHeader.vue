@@ -15,7 +15,7 @@
           mode="horizontal"
           :items="items"
           @click="doMenuClick"
-          style="justify-content: center; border-bottom: none;"
+          style="justify-content: center; border-bottom: none"
         />
       </a-col>
       <a-col flex="200px">
@@ -152,13 +152,19 @@ const originItems = [
         label: '文章管理',
         title: '文章管理',
       },
+
+      {
+        key: '/admin/comment/manage',
+        icon: () => h(ReadOutlined),
+        label: '评论管理',
+        title: '评论管理',
+      },
       {
         key: '/admin/DataAnalysisV2',
         icon: () => h(AppstoreOutlined),
         label: '数据分析中心',
         title: '数据分析中心',
       },
-
     ],
   },
 ]
@@ -212,12 +218,10 @@ router.afterEach((to) => {
 })
 </script>
 <style scoped>
-
 .title-bar {
   display: flex;
   align-items: center;
   /** 设置为透明 */
-
 }
 
 .title {

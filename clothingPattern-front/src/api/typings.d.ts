@@ -4,6 +4,18 @@ declare namespace API {
     patternCount?: number
   }
 
+  type AdminCommentVO = {
+    id?: number
+    userId?: number
+    patternId?: number
+    content?: string
+    createTime?: string
+    likeCount?: number
+    replyCount?: number
+    userName?: string
+    patternName?: string
+  }
+
   type AiAnswerVO = {
     question?: string
     answer?: string
@@ -261,6 +273,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponsePageAdminCommentVO = {
+    code?: number
+    data?: PageAdminCommentVO
+    message?: string
+  }
+
   type BaseResponsePageArticleVO = {
     code?: number
     data?: PageArticleVO
@@ -378,8 +396,10 @@ declare namespace API {
     pageSize?: number
     sortField?: string
     sortOrder?: string
-    patternId: number
+    patternId?: number
     parentId?: number
+    userName?: string
+    patternName?: string
   }
 
   type CommentStatisticsVO = {
@@ -425,7 +445,7 @@ declare namespace API {
     id: number
   }
 
-  type deleteCommentParams = {
+  type deleteComment1Params = {
     commentId: number
   }
 
@@ -531,8 +551,8 @@ declare namespace API {
     updateTime?: string
     tempImageUrlList?: string[]
     localImageUrlList?: string[]
-    sortList?: number[]
     origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {
@@ -622,6 +642,20 @@ declare namespace API {
     code?: string
     message?: string
     taskMetrics?: TaskMetrics
+  }
+
+  type PageAdminCommentVO = {
+    records?: AdminCommentVO[]
+    total?: number
+    size?: number
+    current?: number
+    orders?: OrderItem[]
+    optimizeCountSql?: PageAdminCommentVO
+    searchCount?: PageAdminCommentVO
+    optimizeJoinOfCountSql?: boolean
+    maxLimit?: number
+    countId?: string
+    pages?: number
   }
 
   type PageArticleVO = {

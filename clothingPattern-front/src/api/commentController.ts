@@ -14,10 +14,22 @@ export async function addComment(body: API.CommentAddRequest, options?: { [key: 
   })
 }
 
+/** 此处后端没有提供注释 POST /comment/delete */
+export async function deleteComment(body: API.DeleteRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/comment/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /comment/delete/${param0} */
-export async function deleteComment(
+export async function deleteComment1(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.deleteCommentParams,
+  params: API.deleteComment1Params,
   options?: { [key: string]: any }
 ) {
   const { commentId: param0, ...queryParams } = params
@@ -62,6 +74,21 @@ export async function getPatternComments(
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponsePageResultCommentVO>('/comment/list', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 此处后端没有提供注释 POST /comment/list/page/vo */
+export async function listAdminCommentVoByPage(
+  body: API.CommentQueryRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePageAdminCommentVO>('/comment/list/page/vo', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

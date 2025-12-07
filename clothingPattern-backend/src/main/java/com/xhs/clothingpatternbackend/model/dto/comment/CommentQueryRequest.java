@@ -1,7 +1,6 @@
 package com.xhs.clothingpatternbackend.model.dto.comment;
 
 import com.xhs.clothingpatternbackend.common.PageRequest;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,10 +13,13 @@ import java.io.Serializable;
  */
 @Data
 public class CommentQueryRequest extends PageRequest implements Serializable {
-    @NotNull(message = "图案ID不能为空")
     private Long patternId;
 
     private Long parentId; // 查询指定父评论的回复
+
+    private String userName; // 按用户名搜索
+
+    private String patternName; // 按图案名搜索
 
     private static final long serialVersionUID = 1L;
 }

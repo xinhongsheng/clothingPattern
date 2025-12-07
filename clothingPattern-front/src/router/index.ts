@@ -19,6 +19,7 @@ import ArticleEditPage from '@/pages/admin/ArticleEditPage.vue'
 import BannerManagePage from '@/pages/admin/BannerManagePage.vue'
 import UserProfilePage from '@/pages/user/UserProfilePage.vue'
 import DataAnalysisPageV2 from '@/pages/admin/DataAnalysisPageV2.vue'
+import CommentManagePage from '@/pages/admin/CommentManagePage.vue'
 
 
 
@@ -134,6 +135,11 @@ const router = createRouter({
       path: '/user/profile',
       name: '个人中心',
       component: UserProfilePage,
+    },
+    {
+      path: '/admin/comment/manage',
+      name: '评论管理',
+      component: CommentManagePage,
     },
   ],
 
