@@ -10,8 +10,6 @@ declare namespace API {
     patternId?: number
     content?: string
     createTime?: string
-    likeCount?: number
-    replyCount?: number
     userName?: string
     patternName?: string
   }
@@ -445,7 +443,7 @@ declare namespace API {
     id: number
   }
 
-  type deleteComment1Params = {
+  type deleteCommentByUserParams = {
     commentId: number
   }
 
@@ -549,10 +547,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    tempImageUrlList?: string[]
-    localImageUrlList?: string[]
-    origPromptList?: string[]
     sortList?: number[]
+    origPromptList?: string[]
+    localImageUrlList?: string[]
+    tempImageUrlList?: string[]
   }
 
   type likeArticleParams = {

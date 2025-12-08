@@ -24,6 +24,7 @@ import com.xhs.clothingpatternbackend.model.vo.PageResult;
 import com.xhs.clothingpatternbackend.service.CommentService;
 import com.xhs.clothingpatternbackend.mapper.CommentMapper;
 import com.xhs.clothingpatternbackend.utils.HttpUtils;
+import com.xhs.clothingpatternbackend.utils.SensitiveWordFilterUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
@@ -96,32 +97,39 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
             commentMapper.incrementReplyCount(rootId, 1);
         }
 
-        // 3. 敏感词过滤
-        String host = sensitiveWordFilteringConfig.getHost();
-        String path = sensitiveWordFilteringConfig.getPath();
-        String method = "GET";
-        String appcode = sensitiveWordFilteringConfig.getAppCode();
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Authorization", "APPCODE " + appcode);
-        Map<String, String> querys = new HashMap<String, String>();
-        // 使用 request.getContent() 而不是 comment.getContent()
-        querys.put("text", request.getContent());
+        // 3. 阿里云敏感词过滤
+//        String host = sensitiveWordFilteringConfig.getHost();
+//        String path = sensitiveWordFilteringConfig.getPath();
+//        String method = "GET";
+//        String appcode = sensitiveWordFilteringConfig.getAppCode();
+//        Map<String, String> headers = new HashMap<String, String>();
+//        headers.put("Authorization", "APPCODE " + appcode);
+//        Map<String, String> querys = new HashMap<String, String>();
+//        // 使用 request.getContent() 而不是 comment.getContent()
+//        querys.put("text", request.getContent());
         // 4. 创建评论
         Comment comment = new Comment();
-        try {
-            HttpResponse response = HttpUtils.doGet(host, path, method, headers, querys);
-            String responseBody = EntityUtils.toString(response.getEntity());
-            log.info("敏感词过滤响应: {}", responseBody);
-            String jsonString =responseBody; // 你的json字符串
-            JSONObject jsonObject = JSONObject.parseObject(jsonString);
-            // 先获取 appdata 对象，再获取字段
-            String resultReplace = jsonObject.getJSONObject("appdata").getString("resultReplace");
-            comment.setContent(resultReplace);
-        } catch (Exception e) {
-            log.error("敏感词过滤失败: {}", e.getMessage(), e);
-            throw new BusinessException(ErrorCode.OPERATION_ERROR, "敏感词过滤失败");
-        }
+//        try {
+//            HttpResponse response = HttpUtils.doGet(host, path, method, headers, querys);
+//            String responseBody = EntityUtils.toString(response.getEntity());
+//            log.info("敏感词过滤响应: {}", responseBody);
+//            String jsonString =responseBody; // 你的json字符串
+//            JSONObject jsonObject = JSONObject.parseObject(jsonString);
+//            // 先获取 appdata 对象，再获取字段
+//            String resultReplace = jsonObject.getJSONObject("appdata").getString("resultReplace");
+//            comment.setContent(resultReplace);
+//        } catch (Exception e) {
+//            log.error("敏感词过滤失败: {}", e.getMessage(), e);
+//            throw new BusinessException(ErrorCode.OPERATION_ERROR, "敏感词过滤失败");
+//        }
 
+        //本地DFA敏感词过滤
+
+        SensitiveWordFilterUtils filter = SensitiveWordFilterUtils.getInstance();
+        String filteredContent = filter.filter(request.getContent());
+
+        comment.setContent(filteredContent);
+        System.out.println("过滤后的内容：" + filteredContent);
 
         comment.setUserId(userId);
         comment.setPatternId(request.getPatternId());

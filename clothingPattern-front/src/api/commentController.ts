@@ -14,9 +14,9 @@ export async function addComment(body: API.CommentAddRequest, options?: { [key: 
   })
 }
 
-/** 此处后端没有提供注释 POST /comment/delete */
+/** 此处后端没有提供注释 POST /comment/admin/delete */
 export async function deleteComment(body: API.DeleteRequest, options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean>('/comment/delete', {
+  return request<API.BaseResponseBoolean>('/comment/admin/delete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -27,9 +27,9 @@ export async function deleteComment(body: API.DeleteRequest, options?: { [key: s
 }
 
 /** 此处后端没有提供注释 POST /comment/delete/${param0} */
-export async function deleteComment1(
+export async function deleteCommentByUser(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.deleteComment1Params,
+  params: API.deleteCommentByUserParams,
   options?: { [key: string]: any }
 ) {
   const { commentId: param0, ...queryParams } = params

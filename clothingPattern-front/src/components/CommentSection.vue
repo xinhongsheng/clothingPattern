@@ -196,7 +196,7 @@
     addComment,
     getPatternComments,
     toggleCommentLike,
-    deleteComment,
+    deleteCommentByUser,
     getCommentStatistics,
     getCommentReplies
   } from '@/api/commentController'
@@ -364,7 +364,7 @@ const expandedComments = ref<Set<number>>(new Set()) // 记录已展开的评论
       okType: 'danger',
       onOk: async () => {
         try {
-          const res = await deleteComment({ commentId })
+          const res = await deleteCommentByUser({ commentId })
           if (res.data.code === 0) {
             message.success('删除成功')
             // 重新加载评论列表和统计信息

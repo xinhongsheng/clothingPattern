@@ -86,7 +86,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons-vue'
-import { listAdminCommentVoByPage, deleteComment } from '@/api/commentController'
+import { listAdminCommentVoByPage, deleteCommentByUser } from '@/api/commentController'
 import dayjs from 'dayjs'
 
 // 数据
@@ -221,7 +221,7 @@ const handleDelete = async (id: number) => {
     return
   }
   try {
-    const res = await deleteComment({ id })
+    const res = await deleteCommentByUser({ commentId: id })
     if (res.data.code === 0) {
       message.success('删除成功')
       // 刷新数据
