@@ -14,6 +14,7 @@ import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
+import com.xhs.clothingpatternbackend.sdk.djl.EmbeddingService;
 import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.PromptTranslateService;
@@ -52,6 +53,9 @@ public class MJController {
     
     @Resource
     private PromptTranslateService promptTranslateService;
+
+    @Resource
+    private EmbeddingService embeddingService;
     
     /**
      * 生成图片（Imagine）
@@ -80,7 +84,8 @@ public class MJController {
 
             // 使用优化后的 prompt
             request.setPrompt(optimizedPrompt);
-
+            // 利用 Java 本地 AI 计算向量
+            float[] currentVector = embeddingService.vectorize(optimizedPrompt);
             // 调用Midjourney API
             MJImagineVO response = mjGenImage.imagine(request);
 
