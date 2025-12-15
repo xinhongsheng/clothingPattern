@@ -5,7 +5,7 @@
         <BulbFilled class="logo-icon" />
         <span>Fashion AI</span>
       </div>
-      <a-button type="text" ghost @click="drawerVisible = true">
+      <a-button type="text" @click="drawerVisible = true">
         <MenuOutlined style="font-size: 20px" />
       </a-button>
     </div>
@@ -54,7 +54,7 @@
     </div>
 
     <a-drawer
-      v-model:visible="drawerVisible"
+      v-model:open="drawerVisible"
       placement="left"
       :closable="false"
       width="240px"
@@ -81,7 +81,7 @@
           <span class="role-icon">{{ getRoleIcon(currentRole) }}</span>
           正在与 <strong>{{ getRoleName(currentRole) }}</strong> 对话
         </div>
-        <a-button type="text" size="small" ghost @click="clearChat" title="清空对话">
+        <a-button type="text" size="small" @click="clearChat" title="清空对话">
           <DeleteOutlined />
         </a-button>
       </div>

@@ -1,11 +1,5 @@
 <template>
   <div class="mj-pattern-generation-page">
-    <!-- 页面标题区域 -->
-    <div class="page-header">
-      <h1>✨ AI 服装图案生成</h1>
-      <p class="subtitle">使用 Ai 技术，让创意无限可能</p>
-    </div>
-
     <!-- 未登录提示 -->
     <a-alert
       v-if="!isUserLoggedIn"
@@ -21,561 +15,289 @@
       </template>
     </a-alert>
 
-    <!-- 主内容区域 -->
-    <a-card class="generation-card" :bordered="false">
-      <!-- 步骤1:输入提示词并生成 -->
-      <div v-if="currentStep === 1" class="step-content">
-        <h2 class="section-title">📝 步骤 1:描述你的创意</h2>
-
-        <!-- 功能特性展示 -->
-        <div class="features-showcase">
-          <div class="feature-item">
-            <div class="feature-icon">🎨</div>
-            <div class="feature-text">
-              <strong>专业级AI生成</strong>
-              <span>AI 技术支持</span>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">⚡</div>
-            <div class="feature-text">
-              <strong>快速出图</strong>
-              <span>1-2分钟生成4张候选</span>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">🔄</div>
-            <div class="feature-text">
-              <strong>无限迭代</strong>
-              <span>放大、变体、重新生成</span>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">💎</div>
-            <div class="feature-text">
-              <strong>高清输出</strong>
-              <span>专业服装图案品质</span>
-            </div>
-          </div>
-        </div>
-
-        <a-form :model="formState" layout="vertical" @finish="handleGenerate">
-          <!-- 提示词输入 -->
-          <a-form-item
-            label="图案描述"
-            name="prompt"
-            :rules="[{ required: true, message: '请输入图案描述' }]"
-          >
-            <a-textarea
-              v-model:value="formState.prompt"
-              placeholder="例如：可爱的小猫图案、复古花卉图案、简约几何线条等&#10;&#10;支持中文输入，系统会自动翻译并优化为专业的服装图案描述"
-              :rows="4"
-              size="large"
-              :maxlength="200"
-              show-count
-            />
-            <div class="prompt-actions">
-              <div class="tip-text">💡 提示:支持中文输入,AI 会自动翻译并添加服装专业术语</div>
+    <!-- 主内容区域 - 左右分栏布局 -->
+    <div class="main-layout">
+      <!-- 左侧操作面板 -->
+      <div class="left-panel">
+        <!-- 输入描述区域 -->
+        <div class="panel-section">
+          <div class="section-header">请输入关键词描述</div>
+          <a-textarea
+            v-model:value="formState.prompt"
+            placeholder="请简要输入关键词描述，例如:卡通小熊，并使用自动扩写功能完成完整关键词扩写"
+            :rows="4"
+            :maxlength="1000"
+            class="prompt-textarea"
+          />
+          <div class="prompt-footer">
+            <span class="char-count">{{ formState.prompt?.length || 0 }} / 1000</span>
+            <div class="prompt-actions-inline">
+              <a-button type="text" size="small" @click="resetPrompt">
+                <template #icon><ReloadOutlined /></template>
+                重置
+              </a-button>
               <a-button
-                type="link"
+                type="text"
                 size="small"
                 :loading="expanding"
                 :disabled="expanding || !formState.prompt || formState.prompt.length < 2"
                 @click="handleExpandPrompt"
-                class="expand-btn"
+                class="expand-action-btn"
               >
-                <template #icon>
-                  <EditOutlined v-if="!expanding" />
-                </template>
-                {{ expanding ? '扩写中...' : '✨ AI扩写' }}
+                <template #icon><EditOutlined v-if="!expanding" /></template>
+                自动扩写
               </a-button>
-            </div>
-          </a-form-item>
-
-          <!-- 快捷提示词标签 -->
-          <div class="quick-prompts">
-            <div class="prompt-label">💫 快速灵感:</div>
-            <div class="prompt-tags">
-              <a-tag
-                v-for="tag in quickPrompts"
-                :key="tag"
-                color="blue"
-                class="prompt-tag"
-                @click="formState.prompt = tag"
-              >
-                {{ tag }}
-              </a-tag>
             </div>
           </div>
+        </div>
 
-          <!-- 风格、季节、受众选择 - 横向布局 -->
-          <a-row :gutter="[16, 24]">
-            <!-- 风格选择 -->
-            <a-col :xs="24" :sm="24" :md="8">
-              <a-form-item label="图案风格">
-                <a-select
-                  v-model:value="formState.style"
-                  placeholder="选择风格（可选）"
-                  size="large"
-                  allow-clear
-                >
-                  <a-select-option value="简约">简约</a-select-option>
-                  <a-select-option value="可爱">可爱</a-select-option>
-                  <a-select-option value="复古">复古</a-select-option>
-                  <a-select-option value="卡通">卡通</a-select-option>
-                  <a-select-option value="抽象">抽象</a-select-option>
-                  <a-select-option value="民族">民族</a-select-option>
-                  <a-select-option value="未来">未来</a-select-option>
-                  <a-select-option value="写实">写实</a-select-option>
-                  <a-select-option value="手绘">手绘</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
+        <!-- 风格引擎区域 -->
+        <div class="panel-section">
+          <div class="section-header style-header">
+            风格引擎：
+          </div>
 
-            <!-- 适用季节 -->
-            <a-col :xs="24" :sm="24" :md="8">
-              <a-form-item label="适用季节">
-                <a-select
-                  v-model:value="formState.season"
-                  placeholder="选择季节（可选）"
-                  size="large"
-                  allow-clear
-                >
-                  <a-select-option value="春季">春季</a-select-option>
-                  <a-select-option value="夏季">夏季</a-select-option>
-                  <a-select-option value="秋季">秋季</a-select-option>
-                  <a-select-option value="冬季">冬季</a-select-option>
-                  <a-select-option value="四季">四季通用</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-
-            <!-- 目标受众 -->
-            <a-col :xs="24" :sm="24" :md="8">
-              <a-form-item label="目标受众">
-                <a-select
-                  v-model:value="formState.targetAudience"
-                  placeholder="选择受众（可选）"
-                  size="large"
-                  allow-clear
-                >
-                  <a-select-option value="儿童">儿童</a-select-option>
-                  <a-select-option value="青少年">青少年</a-select-option>
-                  <a-select-option value="成人">成人</a-select-option>
-                  <a-select-option value="中老年">中老年</a-select-option>
-                  <a-select-option value="通用">通用</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
-
-          <!-- 提交按钮 -->
-          <a-form-item>
-            <a-space direction="vertical" style="width: 100%" :size="12">
-              <a-button
-                type="primary"
-                html-type="submit"
-                size="large"
-                block
-                :loading="generating"
-                :disabled="generating"
-              >
-                <template #icon>
-                  <ThunderboltOutlined v-if="!generating" />
-                </template>
-                {{ generating ? '正在生成中,请耐心等待(约1-2分钟)...' : '开始生成图案' }}
-              </a-button>
-              
-              <!-- 智能推荐按钮 -->
-              <a-button
-                size="large"
-                block
-                :loading="recommending"
-                :disabled="recommending || !formState.prompt"
-                @click="fetchRecommendations"
-                class="recommend-btn"
-              >
-                <template #icon>
-                  <SearchOutlined v-if="!recommending" />
-                </template>
-                {{ recommending ? '正在查找相似图案...' : '🔍 先看看已有的相似图案' }}
-              </a-button>
-            </a-space>
-          </a-form-item>
-        </a-form>
-
-        <!-- 智能推荐结果 -->
-        <div v-if="recommendedPatterns.length > 0" class="recommend-section">
-          <h3 class="recommend-title">
-            🎯 发现 {{ recommendedPatterns.length }} 个相似图案
-            <span class="recommend-hint">点击查看详情，或继续生成新图案</span>
-          </h3>
-          <div class="recommend-grid">
+          <!-- 风格选择器 -->
+          <div class="style-grid">
             <div
-              v-for="pattern in recommendedPatterns"
+              v-for="style in styleEngines"
+              :key="style.id"
+              class="style-item"
+              :class="{ 'active': selectedStyleEngine?.id === style.id }"
+              @click="selectStyleEngine(style)"
+            >
+              <div class="style-icon">{{ style.icon }}</div>
+              <div class="style-name">{{ style.name }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 选择标签区域 -->
+        <div class="panel-section">
+          <div class="section-header">选择标签</div>
+          <div class="tags-group">
+            <div class="tag-row">
+              <span class="tag-label">季节：</span>
+              <div class="tag-options">
+                <span
+                  v-for="season in seasonOptions"
+                  :key="season"
+                  class="tag-option"
+                  :class="{ 'active': formState.season === season }"
+                  @click="toggleSeason(season)"
+                >
+                  {{ season }}
+                </span>
+              </div>
+            </div>
+            <div class="tag-row">
+              <span class="tag-label">受众：</span>
+              <div class="tag-options">
+                <span
+                  v-for="audience in audienceOptions"
+                  :key="audience"
+                  class="tag-option"
+                  :class="{ 'active': formState.targetAudience === audience }"
+                  @click="toggleAudience(audience)"
+                >
+                  {{ audience }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 查看相似图案 -->
+        <div class="panel-section" v-if="recommendedPatterns.length > 0">
+          <div class="section-header">相似图案推荐</div>
+          <div class="similar-patterns-mini">
+            <div
+              v-for="pattern in recommendedPatterns.slice(0, 4)"
               :key="pattern.id"
-              class="recommend-card"
+              class="similar-pattern-item"
               @click="viewPatternDetail(pattern)"
             >
-              <div class="recommend-image">
-                <a-image
-                  :src="pattern.thumbUrl || pattern.patternUrl"
-                  :preview="false"
-                  :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7ml6Dlm77niYc8L3RleHQ+PC9zdmc+'"
-                />
-              </div>
-              <div class="recommend-info">
-                <div class="recommend-name">{{ pattern.patternName || '未命名图案' }}</div>
-                <div class="recommend-meta">
-                  <a-tag v-if="pattern.style" color="blue" size="small">{{ pattern.style }}</a-tag>
-                  <a-tag v-if="pattern.season" color="green" size="small">{{ pattern.season }}</a-tag>
-                </div>
-              </div>
+              <img :src="pattern.thumbUrl || pattern.patternUrl" :alt="pattern.patternName" />
             </div>
           </div>
         </div>
 
-        <!-- 创意灵感展示 -->
-        <div class="inspiration-gallery" v-if="!generating">
-          <h3 class="gallery-title">🌟 创意灵感参考</h3>
-          <div class="gallery-grid">
-            <div v-for="(item, index) in inspirationExamples" :key="index" class="gallery-item">
-              <div class="gallery-image-placeholder">
-                <span class="placeholder-icon">{{ item.icon }}</span>
-              </div>
-              <div class="gallery-info">
-                <div class="gallery-name">{{ item.name }}</div>
-                <div class="gallery-desc">{{ item.desc }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 生成进度提示 -->
-        <div v-if="generating" class="generating-tips">
-          <a-spin size="large" />
-          <p class="tip-title">🎨 AI 正在创作中...</p>
-          <p class="tip-desc">会生成 4 张候选图案（2x2 网格）</p>
-          <p class="tip-desc">预计需要 1-2 分钟，请耐心等待</p>
+        <!-- 底部按钮 -->
+        <div class="panel-footer">
+          <a-button
+            type="primary"
+            size="large"
+            block
+            :loading="generating"
+            :disabled="generating || !formState.prompt"
+            @click="handleGenerate"
+            class="generate-btn"
+          >
+            <span class="btn-text">智能生成</span>
+          </a-button>
         </div>
       </div>
 
-      <!-- 步骤2：选择图片并执行操作 -->
-      <div v-if="currentStep === 2" class="step-content">
-        <h2 class="section-title">🎯 步骤 2：选择你喜欢的图案并进行操作</h2>
-        <!-- 显示生成的 2x2 网格图片 -->
-        <div class="grid-preview">
-          <div class="image-container">
-            <a-image
-              :src="mjResponse.imageUrl"
-              :preview="{
-                src: mjResponse.rawImageUrl,
-              }"
-              class="grid-image"
-            />
-            <!-- 图片hover效果层 -->
-            <div class="image-overlay">
-              <span class="zoom-hint">👆 点击放大预览</span>
+      <!-- 右侧结果展示区 -->
+      <div class="right-panel">
+        <!-- 生成中状态 -->
+        <div v-if="generating" class="result-loading">
+          <div class="loading-grid">
+            <div class="loading-item" v-for="i in 4" :key="i">
+              <a-spin size="large" />
             </div>
           </div>
-          <div class="grid-info">
-            <div class="info-header">📋 生成信息</div>
-            <p><strong>图案描述:</strong>{{ originalPrompt }}</p>
-            <p v-if="formState.style"><strong>风格:</strong>{{ formState.style }}</p>
-            <p v-if="formState.season"><strong>季节:</strong>{{ formState.season }}</p>
-            <p v-if="formState.targetAudience">
-              <strong>受众:</strong>{{ formState.targetAudience }}
-            </p>
-            <p class="tech-info"><strong>任务ID:</strong>{{ mjResponse.taskId }}</p>
-            <p class="tech-info"><strong>图片ID:</strong>{{ mjResponse.imageId }}</p>
-
-            <!-- 操作提示 -->
-            <div class="operation-tips">
-              <div class="tip-item">
-                <span class="tip-icon">💡</span>
-                <span class="tip-content">图片按 1-4 从左上到右下排列</span>
-              </div>
-              <div class="tip-item">
-                <span class="tip-icon">🔍</span>
-                <span class="tip-content">放大可生成高清单图</span>
-              </div>
-              <div class="tip-item">
-                <span class="tip-icon">🎨</span>
-                <span class="tip-content">变体可生成相似风格</span>
-              </div>
-            </div>
+          <div class="loading-text">
+            <p class="loading-title">🎨 AI 正在创作中...</p>
+            <p class="loading-desc">预计需要 1-2 分钟，请耐心等待</p>
           </div>
         </div>
 
-        <!-- 操作选择 -->
-        <div class="action-selection">
-          <a-row :gutter="[16, 16]">
-            <!-- Upsample 操作 -->
-            <a-col :span="24">
-              <div class="action-group">
-                <h4>🔍 放大（Upsample）- 生成高清大图</h4>
-                <a-space wrap>
-                  <a-button
-                    v-for="i in 4"
-                    :key="'upsample' + i"
-                    :type="selectedAction === 'upsample' + i ? 'primary' : 'default'"
-                    @click="selectAction('upsample' + i)"
-                    class="action-btn"
-                  >
-                    放大图片 {{ i }}
-                  </a-button>
-                </a-space>
-              </div>
-            </a-col>
+        <!-- 已生成结果 - 2x2 网格 -->
+        <div v-else-if="currentStep === 2 && mjResponse" class="result-grid">
+          <div class="result-images">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="result-image-item"
+              :class="{ 'selected': selectedImageIndex === i }"
+              @click="selectImage(i)"
+            >
+              <a-image
+                :src="getQuadrantImage(mjResponse.imageUrl, i)"
+                :preview="{ src: mjResponse.rawImageUrl }"
+                :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7lm77niYc8L3RleHQ+PC9zdmc+'"
+              />
+              <div class="image-index">{{ i }}</div>
+            </div>
+          </div>
 
-            <!-- Variation 操作 -->
-            <a-col :span="24">
-              <div class="action-group">
-                <h4>🎨 变体（Variation）- 生成相似风格的新图案</h4>
-                <a-space wrap>
-                  <a-button
-                    v-for="i in 4"
-                    :key="'variation' + i"
-                    :type="selectedAction === 'variation' + i ? 'primary' : 'default'"
-                    @click="selectAction('variation' + i)"
-                    class="action-btn"
-                  >
-                    变体图片 {{ i }}
-                  </a-button>
-                </a-space>
-              </div>
-            </a-col>
+          <!-- 操作按钮区域 -->
+          <div class="result-actions" v-if="selectedImageIndex">
+            <div class="action-row">
+              <a-button @click="handleUpsample(selectedImageIndex)" :loading="executing">
+                🔍 放大图片 {{ selectedImageIndex }}
+              </a-button>
+              <a-button @click="handleVariation(selectedImageIndex)" :loading="executing">
+                🎨 变体图片 {{ selectedImageIndex }}
+              </a-button>
+            </div>
+            <a-button @click="handleReroll" :loading="executing" block>
+              🔄 重新生成
+            </a-button>
+          </div>
+        </div>
 
-            <!-- Reroll 操作 -->
-            <a-col :span="24">
-              <div class="action-group">
-                <h4>🔄 重新生成（Reroll）- 生成全新的 4 张图案</h4>
-                <a-button
-                  :type="selectedAction === 'reroll' ? 'primary' : 'default'"
-                  @click="selectAction('reroll')"
-                  class="action-btn"
+        <!-- 放大/变体后的结果展示 -->
+        <div v-else-if="currentStep === 3 && finalResult" class="result-final">
+          <!-- 单图结果（放大后） -->
+          <div v-if="!isVariationResult" class="final-single">
+            <div class="final-image-container">
+              <a-image
+                :src="finalResult.imageUrl"
+                :preview="{ src: finalResult.rawImageUrl }"
+                class="final-image"
+              />
+            </div>
+            <div class="final-info">
+              <div class="info-text">✅ 已放大为高清图片</div>
+            </div>
+            
+            <!-- 保存表单 -->
+            <div class="save-section">
+              <a-input 
+                v-model:value="saveForm.patternName" 
+                placeholder="输入图案名称"
+                class="save-input"
+              />
+              <a-button 
+                type="primary" 
+                @click="saveToDatabase" 
+                :loading="saving"
+                :disabled="!saveForm.patternName"
+                class="save-btn"
+              >
+                💾 保存图案
+              </a-button>
+            </div>
+
+            <!-- 继续优化操作 -->
+            <div class="continue-actions">
+              <div class="action-title">继续优化</div>
+              <div class="action-row">
+                <a-button 
+                  v-for="i in 4" 
+                  :key="i" 
+                  @click="handleContinueVariation(i)" 
+                  :loading="executing"
                 >
-                  重新生成
+                  🎨 变体 {{ i }}
                 </a-button>
               </div>
-            </a-col>
-          </a-row>
+            </div>
 
-          <!-- 执行按钮 -->
-          <div class="action-buttons">
-            <a-button size="large" @click="backToStep1"> <LeftOutlined /> 返回重新生成 </a-button>
-            <a-button
-              type="primary"
-              size="large"
-              :loading="executing"
-              :disabled="!selectedAction || executing"
-              @click="executeAction"
-              class="primary-action-btn"
-            >
-              <template #icon>
-                <ThunderboltOutlined v-if="!executing" />
-              </template>
-              {{ executing ? '执行中...' : '执行操作' }}
+            <a-button @click="backToStep2" class="back-btn">
+              ← 返回重新选择
             </a-button>
           </div>
-        </div>
-      </div>
 
-      <!-- 步骤3：继续优化或保存 -->
-      <div v-if="currentStep === 3" class="step-content">
-        <h2 class="section-title"><CheckOutlined /> 步骤 3：继续优化或保存</h2>
-
-        <!-- 显示最终结果 -->
-        <div class="final-preview">
-          <div class="image-container">
-            <a-image
-              :src="finalResult.imageUrl"
-              :preview="{
-                src: finalResult.rawImageUrl,
-              }"
-              class="final-image"
-            />
-            <div class="image-overlay">
-              <span class="zoom-hint">👆 点击放大预览</span>
-            </div>
-          </div>
-          <div class="final-info">
-            <div class="info-header">✅ 操作结果</div>
-            <p><strong>执行操作:</strong>{{ getActionName(lastExecutedAction) }}</p>
-            <p><strong>图案描述:</strong>{{ originalPrompt }}</p>
-            <p v-if="formState.style"><strong>风格:</strong>{{ formState.style }}</p>
-            <p v-if="formState.season"><strong>季节:</strong>{{ formState.season }}</p>
-            <p v-if="formState.targetAudience">
-              <strong>受众:</strong>{{ formState.targetAudience }}
-            </p>
-
-            <!-- 操作提示 -->
-            <div class="operation-tips">
-              <div class="tip-item">
-                <span class="tip-icon">💡</span>
-                <span class="tip-content">图片按 1-4 从左上到右下排列</span>
-              </div>
-              <div class="tip-item" v-if="isVariationResult">
-                <span class="tip-icon">🔍</span>
-                <span class="tip-content">放大可生成高清单图，放大后可保存</span>
-              </div>
-              <div class="tip-item">
-                <span class="tip-icon">🎨</span>
-                <span class="tip-content">变体可生成相似风格的新图案</span>
-              </div>
-              <div class="tip-item" v-if="!isVariationResult">
-                <span class="tip-icon">💾</span>
-                <span class="tip-content">单图可直接保存或继续变体优化</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 操作选择区域 -->
-        <div class="action-selection">
-          <a-row :gutter="[16, 16]">
-            <!-- 变体结果：显示放大、变体、重新生成 -->
-            <template v-if="isVariationResult">
-              <!-- Upsample 操作 -->
-              <a-col :span="24">
-                <div class="action-group">
-                  <h4>🔍 放大（Upsample）- 生成高清大图</h4>
-                  <a-space wrap>
-                    <a-button
-                      v-for="i in 4"
-                      :key="'upsample' + i"
-                      :type="selectedAction === 'upsample' + i ? 'primary' : 'default'"
-                      @click="selectAction('upsample' + i)"
-                      class="action-btn"
-                    >
-                      放大图片 {{ i }}
-                    </a-button>
-                  </a-space>
-                </div>
-              </a-col>
-
-              <!-- Variation 操作 -->
-              <a-col :span="24">
-                <div class="action-group">
-                  <h4>🎨 变体（Variation）- 生成相似风格的新图案</h4>
-                  <a-space wrap>
-                    <a-button
-                      v-for="i in 4"
-                      :key="'variation' + i"
-                      :type="selectedAction === 'variation' + i ? 'primary' : 'default'"
-                      @click="selectAction('variation' + i)"
-                      class="action-btn"
-                    >
-                      变体图片 {{ i }}
-                    </a-button>
-                  </a-space>
-                </div>
-              </a-col>
-
-              <!-- Reroll 操作 -->
-              <a-col :span="24">
-                <div class="action-group">
-                  <h4>🔄 重新生成（Reroll）- 生成全新的 4 张图案</h4>
-                  <a-button
-                    :type="selectedAction === 'reroll' ? 'primary' : 'default'"
-                    @click="selectAction('reroll')"
-                    class="action-btn"
-                  >
-                    重新生成
-                  </a-button>
-                </div>
-              </a-col>
-            </template>
-
-            <!-- 放大结果：显示变体和保存 -->
-            <template v-else>
-              <!-- Variation 操作 -->
-              <a-col :span="24">
-                <div class="action-group">
-                  <h4>🎨 变体（Variation）- 基于当前图片生成4张相似风格</h4>
-                  <a-space wrap>
-                    <a-button
-                      v-for="i in 4"
-                      :key="'variation' + i"
-                      :type="selectedAction === 'variation' + i ? 'primary' : 'default'"
-                      @click="selectAction('variation' + i)"
-                      class="action-btn"
-                    >
-                      变体方案 {{ i }}
-                    </a-button>
-                  </a-space>
-                  <div class="operation-note">
-                    💡 提示：对于放大后的单图，变体操作会生成4张不同角度的相似图案
-                  </div>
-                </div>
-              </a-col>
-
-              <!-- 保存操作 -->
-              <a-col :span="24">
-                <div class="action-group save-group">
-                  <h4>💾 保存图案 - 将高清图保存到我的创意</h4>
-                  <a-form :model="saveForm" layout="vertical" class="save-form">
-                    <a-form-item
-                      label="图案名称"
-                      name="patternName"
-                      :rules="[{ required: true, message: '请输入图案名称' }]"
-                    >
-                      <a-input
-                        v-model:value="saveForm.patternName"
-                        placeholder="为你的图案起个名字"
-                        size="large"
-                        :maxlength="50"
-                        show-count
-                      />
-                    </a-form-item>
-                  </a-form>
-                </div>
-              </a-col>
-            </template>
-          </a-row>
-
-          <!-- 操作按钮 -->
-          <div class="action-buttons">
-            <a-button size="large" @click="backToStep1"> 
-              <LeftOutlined /> 重新开始 
-            </a-button>
-            
-            <!-- 如果是放大结果，显示保存按钮 -->
-            <template v-if="!isVariationResult">
-              <a-button
-                type="primary"
-                size="large"
-                :loading="saving"
-                :disabled="!saveForm.patternName || saving"
-                @click="saveToDatabase"
-                class="primary-action-btn"
+          <!-- 四图结果（变体/重生成后） -->
+          <div v-else class="final-grid">
+            <div class="result-images">
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="result-image-item"
+                :class="{ 'selected': selectedImageIndex === i }"
+                @click="selectImage(i)"
               >
-                <template #icon>
-                  <SaveOutlined v-if="!saving" />
-                </template>
-                {{ saving ? '保存中...' : '保存图案' }}
+                <a-image
+                  :src="getQuadrantImage(finalResult.imageUrl, i)"
+                  :preview="{ src: finalResult.rawImageUrl }"
+                  :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7lm77niYc8L3RleHQ+PC9zdmc+'"
+                />
+                <div class="image-index">{{ i }}</div>
+              </div>
+            </div>
+
+            <!-- 操作按钮区域 -->
+            <div class="result-actions" v-if="selectedImageIndex">
+              <div class="action-row">
+                <a-button @click="handleContinueUpsample(selectedImageIndex)" :loading="executing">
+                  🔍 放大图片 {{ selectedImageIndex }}
+                </a-button>
+                <a-button @click="handleContinueVariation(selectedImageIndex)" :loading="executing">
+                  🎨 变体图片 {{ selectedImageIndex }}
+                </a-button>
+              </div>
+              <a-button @click="handleContinueReroll" :loading="executing" block>
+                🔄 重新生成
               </a-button>
-            </template>
-            
-            <!-- 继续操作按钮（变体结果或已选择操作时显示） -->
-            <a-button
-              v-if="isVariationResult || selectedAction"
-              type="primary"
-              size="large"
-              :loading="executing"
-              :disabled="!selectedAction || executing"
-              @click="executeContinueAction"
-              class="primary-action-btn"
-            >
-              <template #icon>
-                <ThunderboltOutlined v-if="!executing" />
-              </template>
-              {{ executing ? '执行中...' : '执行操作' }}
+            </div>
+
+            <a-button @click="backToStep2" class="back-btn">
+              ← 返回重新选择
             </a-button>
           </div>
         </div>
+
+        <!-- 空状态 -->
+        <div v-else class="result-empty">
+          <div class="empty-preview">
+            <div class="preview-grid">
+              <div class="preview-item" v-for="i in 4" :key="i">
+                <div class="preview-placeholder"></div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-text">
+            <h3>您尚未生成作品</h3>
+            <p>在左侧操作栏开始您的款式生成吧~</p>
+          </div>
+        </div>
       </div>
-    </a-card>
+    </div>
+
   </div>
 </template>
 
@@ -583,12 +305,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
-  ThunderboltOutlined,
-  CheckOutlined,
-  LeftOutlined,
-  SaveOutlined,
-  SearchOutlined,
   EditOutlined,
+  ReloadOutlined,
+  CloseOutlined,
 } from '@ant-design/icons-vue'
 import { imagine, executeAction as mjExecuteAction, savePattern, recommendPatterns, expandPrompt } from '@/api/midjourneyjiekou'
 import { useRouter } from 'vue-router'
@@ -607,7 +326,7 @@ onMounted(async () => {
   await loginUserStore.fetchLoginUser()
 })
 
-// 当前步骤：1=输入提示词，2=选择操作，3=确认保存
+// 当前步骤：1=输入提示词，2=已生成图片
 const currentStep = ref(1)
 
 // 表单状态
@@ -631,7 +350,8 @@ const recommending = ref(false)
 const expanding = ref(false)
 
 // 推荐结果
-const recommendedPatterns = ref<any[]>([])
+const recommendedPatterns = ref<any[]>([]
+)
 
 // MJ 响应数据
 const mjResponse = ref<any>(null)
@@ -644,6 +364,128 @@ const selectedAction = ref<string | null>(null)
 const lastExecutedAction = ref<string>('')
 // 判断当前结果是否为变体结果（4张图）
 const isVariationResult = ref(true)
+
+// 新布局需要的变量
+const selectedImageIndex = ref<number | null>(null)
+const showStyleSelector = ref(false)
+const selectedStyleEngine = ref<any>(null)
+
+// 季节选项
+const seasonOptions = ['春季', '夏季', '秋季', '冬季', '四季']
+
+// 受众选项
+const audienceOptions = ['儿童', '青少年', '成人', '中老年', '通用']
+
+// 风格引擎选项
+const styleEngines = ref([
+  { id: 1, name: '简约', icon: '✨' },
+  { id: 2, name: '可爱', icon: '🐻' },
+  { id: 3, name: '复古', icon: '🌼' },
+  { id: 4, name: '卡通', icon: '🌈' },
+  { id: 5, name: '抽象', icon: '🎨' },
+  { id: 6, name: '民族', icon: '🎭' },
+  { id: 7, name: '未来', icon: '🚀' },
+  { id: 8, name: '写实', icon: '🌿' },
+  { id: 9, name: '手绘', icon: '✏️' },
+])
+
+// 选择风格引擎
+const selectStyleEngine = (style: any) => {
+  if (selectedStyleEngine.value?.id === style.id) {
+    selectedStyleEngine.value = null
+    formState.style = undefined
+  } else {
+    selectedStyleEngine.value = style
+    formState.style = style.name
+  }
+}
+
+// 清除风格引擎
+const clearStyleEngine = () => {
+  selectedStyleEngine.value = null
+  formState.style = undefined
+}
+
+// 切换季节选择
+const toggleSeason = (season: string) => {
+  if (formState.season === season) {
+    formState.season = undefined
+  } else {
+    formState.season = season
+  }
+}
+
+// 切换受众选择
+const toggleAudience = (audience: string) => {
+  if (formState.targetAudience === audience) {
+    formState.targetAudience = undefined
+  } else {
+    formState.targetAudience = audience
+  }
+}
+
+// 重置提示词
+const resetPrompt = () => {
+  formState.prompt = ''
+}
+
+// 选择图片
+const selectImage = (index: number) => {
+  if (selectedImageIndex.value === index) {
+    selectedImageIndex.value = null
+  } else {
+    selectedImageIndex.value = index
+  }
+}
+
+// 获取四象限图片（模拟2x2网格中的单张图片）
+const getQuadrantImage = (imageUrl: string, index: number) => {
+  // 实际项目中这里可能需要处理图片裁剪，这里直接返回原图
+  return imageUrl
+}
+
+// 放大图片操作
+const handleUpsample = async (index: number) => {
+  selectedAction.value = `upsample${index}`
+  await executeAction()
+}
+
+// 变体图片操作
+const handleVariation = async (index: number) => {
+  selectedAction.value = `variation${index}`
+  await executeAction()
+}
+
+// 重新生成操作
+const handleReroll = async () => {
+  selectedAction.value = 'reroll'
+  await executeAction()
+}
+
+// 在步骤3继续放大
+const handleContinueUpsample = async (index: number) => {
+  selectedAction.value = `upsample${index}`
+  await executeContinueAction()
+}
+
+// 在步骤3继续变体
+const handleContinueVariation = async (index: number) => {
+  selectedAction.value = `variation${index}`
+  await executeContinueAction()
+}
+
+// 在步骤3重新生成
+const handleContinueReroll = async () => {
+  selectedAction.value = 'reroll'
+  await executeContinueAction()
+}
+
+// 返回步骤2
+const backToStep2 = () => {
+  currentStep.value = 2
+  selectedImageIndex.value = null
+  finalResult.value = null
+}
 
 // 快捷提示词
 const quickPrompts = ref([
@@ -758,7 +600,7 @@ const executeAction = async () => {
 
     if (res.data.code === 0 && res.data.data) {
       const newResult = res.data.data
-      
+
       // 清理可能存在的URL格式问题
       if (newResult.imageUrl) {
         newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
@@ -766,7 +608,7 @@ const executeAction = async () => {
       if (newResult.rawImageUrl) {
         newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
       }
-      
+
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
 
@@ -781,7 +623,7 @@ const executeAction = async () => {
 
       // 重置选择
       selectedAction.value = null
-      
+
       currentStep.value = 3
       message.success({
         content: '操作执行成功！可以保存或继续优化',
@@ -826,7 +668,7 @@ const executeContinueAction = async () => {
     if (res.data.code === 0 && res.data.data) {
       // 更新最终结果
       const newResult = res.data.data
-      
+
       // 清理可能存在的URL格式问题
       if (newResult.imageUrl) {
         // 移除URL末尾可能存在的 :数字 格式
@@ -835,7 +677,7 @@ const executeContinueAction = async () => {
       if (newResult.rawImageUrl) {
         newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
       }
-      
+
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
 
@@ -850,12 +692,12 @@ const executeContinueAction = async () => {
 
       // 重置选择
       selectedAction.value = null
-      
+
       // 打印调试信息
       console.log('继续操作成功，新结果：', finalResult.value)
       console.log('图片URL:', finalResult.value.imageUrl)
       console.log('原始URL:', finalResult.value.rawImageUrl)
-      
+
       message.success({
         content: '操作执行成功！可以继续优化或保存',
         key: 'executing',
@@ -935,11 +777,6 @@ const backToStep1 = () => {
   selectedAction.value = null
 }
 
-// 返回步骤2
-const backToStep2 = () => {
-  currentStep.value = 2
-}
-
 // 获取操作名称
 const getActionName = (action: string) => {
   const actionMap: Record<string, string> = {
@@ -965,7 +802,7 @@ const handleExpandPrompt = async () => {
 
   try {
     expanding.value = true
-    
+
     message.loading({
       content: 'AI 正在扩写中...',
       key: 'expanding',
@@ -1032,1148 +869,695 @@ const viewPatternDetail = (pattern: any) => {
 <style scoped>
 /* 全局基础样式 */
 .mj-pattern-generation-page {
-  padding: 32px 24px;
-  min-height: 100vh;
-  background-image: url('@/assets/backgroundImage/gen-bg.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #1a1a2e;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-}
-
-/* 页面标题 */
-.page-header {
-  text-align: center;
-  margin-bottom: 32px;
-  color: #ffffff;
-  animation: fadeInDown 0.6s ease-out;
-}
-
-.page-header h1 {
-  font-size: clamp(28px, 5vw, 42px);
-  font-weight: 700;
-  margin: 0 0 12px;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.5px;
-}
-
-.page-header .subtitle {
-  font-size: clamp(14px, 2.5vw, 18px);
-  margin: 0;
-  opacity: 0.9;
-  max-width: 600px;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* 未登录提示 */
 .login-alert {
-  margin-bottom: 24px;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(250, 173, 20, 0.2);
-  animation: fadeInDown 0.6s ease-out;
+  margin: 16px;
+  border-radius: 8px;
 }
 
-:deep(.login-alert .ant-alert-message) {
-  font-size: 16px;
-  font-weight: 600;
-  color: #d46b08;
-}
-
-:deep(.login-alert .ant-alert-description) {
-  font-size: 14px;
-  color: #ad6800;
-  margin-top: 4px;
-}
-
-/* 步骤指示器 */
-.step-indicator {
+/* 主布局 - 左右分栏 */
+.main-layout {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 36px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  z-index: 1;
-}
-
-.step-number {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #4a5568;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 16px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
-}
-
-.step-label {
-  margin-top: 8px;
-  font-size: 14px;
-  color: #a0aec0;
-  transition: all 0.3s;
-}
-
-.step-divider {
-  flex: 1;
-  height: 3px;
-  background-color: #4a5568;
-  margin: 0 16px;
-  transition: all 0.3s;
-}
-
-/* 步骤状态样式 */
-.step-item.active .step-number {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-  transform: scale(1.1);
-}
-
-.step-item.active .step-label {
-  color: #ffffff;
-  font-weight: 500;
-}
-
-.step-item.completed .step-number {
-  background-color: #38b2ac;
-  border-color: #4fd1c5;
-  box-shadow: 0 0 15px rgba(62, 187, 182, 0.4);
-}
-
-.step-item.completed .step-label {
-  color: #38b2ac;
-}
-
-.step-divider.completed {
-  background-color: #38b2ac;
-}
-
-/* 主卡片样式 */
-.generation-card {
-  max-width: 100%;
-  margin: 0 auto;
-  border-radius: 20px;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.25);
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.5);
+  height: 100vh;
   overflow: hidden;
-  animation: fadeInUp 0.6s ease-out;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-:deep(.ant-card-body) {
-  padding: clamp(20px, 4vw, 40px);
-  background-color: transparent;
-}
-
-/* 步骤内容样式 */
-.step-content {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 功能特性展示 */
-.features-showcase {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: clamp(16px, 2vw, 20px);
-  margin-bottom: clamp(28px, 4vw, 36px);
-  padding: clamp(18px, 3vw, 24px);
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
-  border-radius: 16px;
-  border: 1px solid #d6e4ff;
-}
-
-.feature-item {
+/* 左侧操作面板 */
+.left-panel {
+  width: 400px;
+  min-width: 400px;
+  background-color: #252540;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 12px;
-  padding: clamp(16px, 2.5vw, 20px);
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
+  border-right: 1px solid #3a3a5c;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.feature-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+/* 左侧滚动条美化 */
+.left-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-panel::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.left-panel::-webkit-scrollbar-thumb {
+  background: #3a3a5c;
+  border-radius: 3px;
+}
+
+.left-panel::-webkit-scrollbar-thumb:hover {
+  background: #4a4a6c;
+}
+
+/* 面板区块 */
+.panel-section {
+  padding: 20px;
+  border-bottom: 1px solid #3a3a5c;
+}
+
+/* 区块标题 */
+.section-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.section-header.style-header {
+  color: #ff6b6b;
+}
+
+/* 提示词输入框 */
+.prompt-textarea {
+  background-color: #1a1a2e !important;
+  border: 1px solid #3a3a5c !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 14px;
+  resize: none;
+}
+
+.prompt-textarea::placeholder {
+  color: #666680 !important;
+}
+
+.prompt-textarea:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* 提示词底部 */
+.prompt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #666680;
+}
+
+.prompt-actions-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-actions-inline :deep(.ant-btn) {
+  color: #888;
+  font-size: 13px;
+}
+
+.prompt-actions-inline :deep(.ant-btn:hover) {
+  color: #fff;
+}
+
+.expand-action-btn {
+  color: #667eea !important;
+}
+
+/* 风格网格 */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.style-item {
+  cursor: pointer;
+  text-align: center;
+  padding: 12px 8px;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5c;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.style-item:hover {
+  transform: translateY(-2px);
   border-color: #667eea;
 }
 
-.feature-icon {
-  font-size: clamp(28px, 4vw, 36px);
-  flex-shrink: 0;
-  line-height: 1;
+.style-item.active {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
 }
 
-.feature-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.feature-text strong {
-  font-size: clamp(15px, 2vw, 16px);
-  color: #1a202c;
-  font-weight: 600;
-}
-
-.feature-text span {
-  font-size: clamp(12px, 1.8vw, 13px);
-  color: #718096;
-  line-height: 1.4;
-}
-
-@media (max-width: 1024px) {
-  .features-showcase {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .features-showcase {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 14px;
-  }
-}
-
-@media (max-width: 480px) {
-  .features-showcase {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* 快捷提示词 */
-.quick-prompts {
-  margin-bottom: clamp(20px, 3vw, 24px);
-  padding: clamp(14px, 2.5vw, 18px);
-  background: linear-gradient(135deg, #fff9f0 0%, #fffaf3 100%);
-  border-radius: 12px;
-  border: 1px solid #ffe7ba;
-  border-left: 4px solid #fa8c16;
-}
-
-.prompt-label {
-  font-size: clamp(14px, 2vw, 15px);
-  font-weight: 600;
-  color: #d46b08;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.prompt-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.prompt-tag {
-  cursor: pointer;
-  font-size: clamp(12px, 1.8vw, 13px);
-  padding: 6px 14px;
-  border-radius: 20px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid currentColor;
-  user-select: none;
-}
-
-.prompt-tag:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
-}
-
-.prompt-tag:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* 创意灵感画廊 */
-.inspiration-gallery {
-  margin-top: clamp(32px, 4vw, 40px);
-  padding: clamp(24px, 3vw, 32px);
-  background: linear-gradient(135deg, #f9f0ff 0%, #f5f5ff 100%);
-  border-radius: 16px;
-  border: 1px solid #d3adf7;
-}
-
-.gallery-title {
-  font-size: clamp(16px, 2.5vw, 18px);
-  font-weight: 600;
-  color: #531dab;
-  margin-bottom: clamp(16px, 2.5vw, 20px);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: clamp(16px, 2vw, 20px);
-}
-
-@media (max-width: 1200px) {
-  .gallery-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .gallery-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.gallery-item {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  padding: clamp(12px, 2vw, 16px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #efdbff;
-  cursor: pointer;
-  text-align: center;
-}
-
-.gallery-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(83, 29, 171, 0.15);
-  border-color: #9254de;
-}
-
-.gallery-image-placeholder {
-  width: 100%;
-  aspect-ratio: 1;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-  border: 2px dashed #d6e4ff;
-}
-
-.placeholder-icon {
-  font-size: clamp(40px, 6vw, 56px);
-  line-height: 1;
-}
-
-.gallery-info {
-  text-align: center;
-}
-
-.gallery-name {
-  font-size: clamp(13px, 2vw, 14px);
-  font-weight: 600;
-  color: #1a202c;
+.style-icon {
+  font-size: 24px;
   margin-bottom: 4px;
 }
 
-.gallery-desc {
-  font-size: clamp(11px, 1.6vw, 12px);
-  color: #718096;
-  line-height: 1.4;
+.style-name {
+  font-size: 12px;
+  color: #888;
 }
 
-.section-title {
-  font-size: clamp(20px, 3.5vw, 26px);
-  font-weight: 600;
-  margin-bottom: clamp(20px, 3vw, 32px);
-  color: #1a202c;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #f0f2f5;
-  position: relative;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  border-radius: 2px;
-}
-
-.section-title .anticon {
-  color: #667eea;
-  font-size: clamp(24px, 4vw, 28px);
-}
-
-/* 表单元素样式优化 */
-:deep(.ant-form-item) {
-  margin-bottom: 28px;
-}
-
-:deep(.ant-form-item-label > label) {
-  font-size: 16px;
-  font-weight: 500;
-  color: #2d3748;
-  margin-bottom: 10px;
-}
-
-:deep(.ant-input-lg),
-:deep(.ant-select-lg .ant-select-selector),
-:deep(.ant-input-textarea-lg) {
-  border-radius: 12px !important;
-  font-size: clamp(15px, 2vw, 16px);
-  padding: 12px 16px;
-  border-color: #e2e8f0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-:deep(.ant-input-lg:focus),
-:deep(.ant-select-lg.ant-select-focused .ant-select-selector),
-:deep(.ant-input-textarea-lg:focus) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
-  outline: none;
-  transform: translateY(-1px);
-}
-
-:deep(.ant-input-textarea-lg) {
-  min-height: 140px !important;
-  resize: vertical;
-}
-
-:deep(.ant-input-count) {
-  font-size: clamp(11px, 1.5vw, 12px);
-  color: #a0aec0;
-}
-
-/* 提示文字 */
-.tip-text {
-  margin-top: 8px;
-  font-size: clamp(12px, 1.8vw, 13px);
-  color: #718096;
-  line-height: 1.6;
-  background-color: #f7fafc;
-  padding: 8px 12px;
-  border-radius: 8px;
-  display: block;
-  border-left: 3px solid #667eea;
-}
-
-/* 提示词操作区域 */
-.prompt-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.prompt-actions .tip-text {
-  margin-top: 0;
-  flex: 1;
-}
-
-/* AI扩写按钮 */
-.expand-btn {
-  font-weight: 500;
-  color: #667eea !important;
-  padding: 4px 12px;
-  height: auto;
-  border-radius: 6px;
-  transition: all 0.3s;
-  flex-shrink: 0;
-}
-
-.expand-btn:hover:not(:disabled) {
-  background-color: rgba(102, 126, 234, 0.1) !important;
-  color: #5a67d8 !important;
-}
-
-.expand-btn:disabled {
-  color: #a0aec0 !important;
-}
-
-/* 生成按钮样式 */
-/* 主按钮（Success 绿色系） */
-:deep(.ant-btn-primary) {
-  /* 成功色渐变：浅绿 → 深绿（匹配 Ant Design Success 色值） */
-  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
-  border: none;
-  border-radius: 12px !important;
-  font-size: 16px;
-  font-weight: 500;
-  height: 56px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* 阴影同步改为绿色系，保持质感 */
-  box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
-}
-
-/* 悬浮状态（略深的绿色） */
-:deep(.ant-btn-primary:hover) {
-  background: linear-gradient(135deg, #84d850 0%, #5bcf22 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(82, 196, 26, 0.4);
-}
-
-/* 点击激活状态 */
-:deep(.ant-btn-primary:active) {
-  background: linear-gradient(135deg, #52c41a 0%, #41a30f 100%);
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(82, 196, 26, 0.3);
-}
-
-/* 禁用状态（生成中时的按钮，浅灰绿） */
-:deep(.ant-btn-primary:disabled) {
-  background: linear-gradient(135deg, #b7eb8f 0%, #95de64 100%);
-  transform: none;
-  box-shadow: none;
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* 生成进度提示 */
-.generating-tips {
-  text-align: center;
-  padding: clamp(40px, 6vw, 60px) clamp(16px, 3vw, 20px);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 16px;
-  margin-top: clamp(20px, 3vw, 24px);
-  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.1);
-}
-
-.generating-tips .ant-spin {
-  font-size: clamp(36px, 6vw, 48px);
+.style-item.active .style-name {
   color: #667eea;
 }
 
-.tip-title {
-  margin-top: clamp(18px, 3vw, 24px);
-  font-size: clamp(18px, 3vw, 22px);
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 12px;
-}
-
-.tip-desc {
-  margin-top: 8px;
-  font-size: clamp(14px, 2vw, 15px);
-  color: #718096;
-  line-height: 1.8;
-}
-
-/* 图片预览区域 */
-.grid-preview,
-.final-preview {
-  margin-bottom: clamp(24px, 4vw, 36px);
-  display: flex;
-  flex-direction: row;
-  gap: clamp(16px, 2.5vw, 24px);
-  align-items: flex-start;
-}
-
-@media (max-width: 968px) {
-  .grid-preview,
-  .final-preview {
-    flex-direction: column;
-  }
-}
-
-.image-container {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex: 0 0 58%;
-  max-width: 58%;
-}
-
-@media (max-width: 968px) {
-  .image-container {
-    flex: 0 0 100%;
-    max-width: 100%;
-  }
-}
-
-.image-container:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
-  transform: translateY(-2px);
-}
-
-.grid-image,
-.final-image {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 16px;
-  transition: all 0.5s;
-}
-
-.image-container:hover .grid-image,
-.image-container:hover .final-image {
-  transform: scale(1.02);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  display: flex;
-  align-items: flex-end;
-  padding: 20px;
-  pointer-events: none;
-}
-
-.image-container:hover .image-overlay {
-  opacity: 1;
-}
-
-.zoom-hint {
-  color: #ffffff;
-  font-size: 14px;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 6px 12px;
-  border-radius: 20px;
-  backdrop-filter: blur(4px);
-}
-
-/* 信息卡片样式 */
-.grid-info,
-.final-info {
-  padding: clamp(18px, 3vw, 24px);
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 16px;
-  border: 1px solid #e8eaf6;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  flex: 0 0 42%;
-  max-width: 42%;
+/* 标签选择 */
+.tags-group {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  min-height: 200px;
-}
-
-@media (max-width: 968px) {
-  .grid-info,
-  .final-info {
-    flex: 0 0 100%;
-    max-width: 100%;
-    min-height: auto;
-  }
-}
-
-.info-header {
-  font-size: clamp(15px, 2.2vw, 17px);
-  font-weight: 600;
-  color: #667eea;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e8eaf6;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.grid-info p,
-.final-info p {
-  margin: 10px 0;
-  font-size: clamp(14px, 2vw, 15px);
-  color: #2d3748;
-  line-height: 1.6;
-  word-break: break-word;
-}
-
-.grid-info p strong,
-.final-info p strong {
-  color: #1a202c;
-  margin-right: 8px;
-  font-weight: 600;
-}
-
-.grid-info p.tech-info,
-.final-info p.tech-info {
-  font-size: clamp(12px, 1.8vw, 13px);
-  color: #718096;
-}
-
-/* 操作提示 */
-.operation-tips {
-  margin-top: 16px;
-  padding: 14px;
-  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
-  border-radius: 10px;
-  border-left: 3px solid #1890ff;
-}
-
-.operation-tips .tip-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-  font-size: clamp(12px, 1.8vw, 13px);
-  color: #2d3748;
-}
-
-.operation-tips .tip-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.operation-tips .tip-content {
-  line-height: 1.5;
-}
-
-/* 下一步提示 */
-.next-step-tips {
-  margin-top: 16px;
-  padding: 14px;
-  background: linear-gradient(135deg, #f6ffed 0%, #f0fff4 100%);
-  border-radius: 10px;
-  border-left: 3px solid #52c41a;
-}
-
-.next-step-tips .tip-highlight {
-  margin: 8px 0;
-  font-size: clamp(12px, 1.8vw, 13px);
-  color: #389e0d;
-  line-height: 1.6;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* 操作选择区域 */
-.action-selection {
-  margin-top: 8px;
-}
-
-.action-selection h3 {
-  font-size: clamp(16px, 2.5vw, 18px);
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.action-group {
-  padding: clamp(18px, 3vw, 24px);
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 16px;
-  margin-bottom: clamp(16px, 2.5vw, 20px);
-  border: 1px solid #e8eaf6;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.action-group:hover {
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.1);
-  border-color: #c5cae9;
-  transform: translateY(-2px);
-}
-
-.action-group h4 {
-  margin: 0 0 clamp(12px, 2vw, 16px) 0;
-  font-size: clamp(14px, 2vw, 16px);
-  font-weight: 600;
-  color: #2d3748;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 操作按钮样式 */
-.action-btn {
-  border-radius: 8px !important;
-  font-size: clamp(13px, 1.8vw, 14px) !important;
-  padding: 10px 18px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  min-height: 40px !important;
-}
-
-@media (max-width: 576px) {
-  .action-btn {
-    width: 100% !important;
-  }
-}
-
-:deep(.action-btn.ant-btn-primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border: none !important;
-}
-
-:deep(.action-btn.ant-btn-primary:hover) {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
-}
-
-:deep(.action-btn.ant-btn-default) {
-  border-color: #e2e8f0 !important;
-  color: #4a5568 !important;
-}
-
-:deep(.action-btn.ant-btn-default:hover) {
-  border-color: #667eea !important;
-  color: #667eea !important;
-  background-color: #f0f5ff !important;
-}
-
-/* 底部操作按钮组 */
-.action-buttons {
-  margin-top: clamp(24px, 4vw, 32px);
-  display: flex;
-  gap: clamp(12px, 2vw, 16px);
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-  .action-buttons {
-    justify-content: stretch;
-  }
-}
-
-:deep(.action-buttons .ant-btn) {
-  border-radius: 12px !important;
-  font-size: clamp(14px, 2vw, 16px) !important;
-  font-weight: 500 !important;
-  height: clamp(48px, 6vw, 52px) !important;
-  padding: 0 clamp(18px, 3vw, 24px) !important;
-  min-width: 140px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-@media (max-width: 768px) {
-  :deep(.action-buttons .ant-btn) {
-    flex: 1;
-    min-width: auto !important;
-  }
-}
-
-.primary-action-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-}
-
-.primary-action-btn:hover {
-  background: linear-gradient(135deg, #7486e0 0%, #8561b2 100%) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-}
-
-.secondary-action-btn {
-  background-color: #edf2f7 !important;
-  color: #2d3748 !important;
-  border: 1px solid #dee2e6 !important;
-}
-
-.secondary-action-btn:hover {
-  background-color: #e2e8f0 !important;
-  color: #1a202c !important;
-  border-color: #cbd5e0 !important;
-}
-
-/* 响应式优化 */
-@media (max-width: 1024px) {
-  .mj-pattern-generation-page {
-    padding: 32px 20px;
-  }
-
-  .generation-card {
-    border-radius: 16px;
-  }
-}
-
-@media (max-width: 768px) {
-  .mj-pattern-generation-page {
-    padding: 24px 16px;
-  }
-
-  .generation-card {
-    border-radius: 12px;
-  }
-
-  .generating-tips {
-    padding: 32px 16px;
-  }
-
-  :deep(.ant-form-item) {
-    margin-bottom: 20px;
-  }
-
-  :deep(.ant-form-item-label > label) {
-    font-size: 15px;
-  }
-
-  :deep(.ant-input-lg),
-  :deep(.ant-select-lg .ant-select-selector),
-  :deep(.ant-input-textarea-lg) {
-    font-size: 15px;
-    padding: 10px 14px;
-  }
-
-  :deep(.ant-space-wrap) {
-    gap: 8px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .mj-pattern-generation-page {
-    padding: 20px 12px;
-  }
-
-  .page-header {
-    margin-bottom: 20px;
-  }
-
-  .generation-card {
-    border-radius: 8px;
-  }
-
-  .generating-tips {
-    padding: 24px 12px;
-  }
-
-  .tip-title {
-    font-size: 16px;
-  }
-
-  .tip-desc {
-    font-size: 13px;
-  }
-
-  :deep(.ant-space) {
-    width: 100%;
-  }
-
-  :deep(.ant-space-wrap) {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100%;
-  }
-
-  .image-container {
-    border-radius: 12px;
-  }
-
-  .action-group {
-    border-radius: 12px;
-  }
-}
-
-/* 加载状态优化 */
-:deep(.ant-spin-dot-item) {
-  background-color: #667eea !important;
-}
-
-:deep(.ant-btn-loading .anticon-loading) {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* 保存区域样式 */
-.save-group {
-  background: linear-gradient(135deg, #f6ffed 0%, #f0fff4 100%);
-  border-color: #b7eb8f;
-}
-
-.save-group h4 {
-  color: #389e0d;
-}
-
-.save-form {
-  margin-top: 8px;
-}
-
-/* 操作注释样式 */
-.operation-note {
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #f0f5ff;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #1d39c4;
-  border-left: 3px solid #597ef7;
-}
-
-@media (max-width: 768px) {
-  .save-form :deep(.ant-form-item) {
-    margin-bottom: 16px;
-  }
-}
-
-/* 智能推荐按钮样式 */
-.recommend-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-}
-
-.recommend-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-  color: white;
-}
-
-.recommend-btn:disabled {
-  background: #e8e8e8;
-  color: #999;
-}
-
-/* 智能推荐区域样式 */
-.recommend-section {
-  margin-top: 32px;
-  padding: 24px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
-}
-
-.recommend-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0 0 20px;
-  display: flex;
-  align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
-.recommend-hint {
+.tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-label {
   font-size: 13px;
-  font-weight: 400;
-  color: #666;
+  color: #888;
+  min-width: 45px;
 }
 
-.recommend-grid {
+.tag-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-option {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #888;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5c;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tag-option:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.tag-option.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: #fff;
+}
+
+/* 相似图案迷你列表 */
+.similar-patterns-mini {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.recommend-card {
-  background: white;
-  border-radius: 12px;
+.similar-pattern-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.recommend-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+.similar-pattern-item:hover {
+  transform: scale(1.05);
 }
 
-.recommend-image {
-  width: 100%;
-  aspect-ratio: 1;
-  overflow: hidden;
-  background: #f5f5f5;
-}
-
-.recommend-image :deep(.ant-image) {
-  width: 100%;
-  height: 100%;
-}
-
-.recommend-image :deep(.ant-image img) {
+.similar-pattern-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.recommend-info {
-  padding: 12px;
+/* 底部按钮区域 */
+.panel-footer {
+  padding: 20px;
+  margin-top: auto;
+  background: #252540;
 }
 
-.recommend-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recommend-meta {
+.generate-btn {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 50px;
+  font-size: 18px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  border-radius: 25px !important;
 }
 
-.recommend-meta :deep(.ant-tag) {
+.generate-btn:hover {
+  background: linear-gradient(135deg, #7b8ff0 0%, #8a5db5 100%) !important;
+}
+
+.btn-text {
+  font-size: 18px;
+}
+
+.btn-coin {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+/* 右侧结果区域 */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background-color: #1a1a2e;
+  height: 100vh;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+}
+
+/* 加载状态 */
+.result-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.loading-item {
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-text {
+  text-align: center;
+}
+
+.loading-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.loading-desc {
+  font-size: 14px;
+  color: #888;
   margin: 0;
-  font-size: 11px;
 }
 
-@media (max-width: 768px) {
-  .recommend-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+/* 结果网格 */
+.result-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.result-images {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.result-image-item {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 3px solid transparent;
+}
+
+.result-image-item:hover {
+  transform: scale(1.02);
+}
+
+.result-image-item.selected {
+  border-color: #667eea;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+}
+
+.result-image-item :deep(.ant-image) {
+  width: 200px;
+  height: 200px;
+}
+
+.result-image-item :deep(.ant-image img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-index {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+}
+
+/* 操作按钮 */
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.action-row {
+  display: flex;
+  gap: 12px;
+}
+
+.action-row :deep(.ant-btn) {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.action-row :deep(.ant-btn:hover) {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+.result-actions > :deep(.ant-btn) {
+  height: 42px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.result-actions > :deep(.ant-btn:hover) {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+/* 空状态 */
+.result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.empty-preview {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.preview-item {
+  width: 200px;
+  height: 200px;
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  border-radius: 16px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.empty-text {
+  text-align: center;
+}
+
+.empty-text h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.empty-text p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* 放大后结果展示 */
+.result-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.final-single {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.final-image-container {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.final-image-container :deep(.ant-image) {
+  max-width: 400px;
+  max-height: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.final-image-container :deep(.ant-image img) {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.final-info {
+  text-align: center;
+}
+
+.info-text {
+  font-size: 16px;
+  color: #52c41a;
+  font-weight: 500;
+}
+
+/* 保存表单 */
+.save-section {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.save-input {
+  flex: 1;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+}
+
+.save-input:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+.save-input::placeholder {
+  color: #888 !important;
+}
+
+.save-btn {
+  height: 42px;
+  border-radius: 8px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  font-weight: 500;
+}
+
+.save-btn:hover {
+  background: linear-gradient(135deg, #7b8ff0 0%, #8a5db5 100%) !important;
+}
+
+/* 继续优化操作 */
+.continue-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.action-title {
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.continue-actions .action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.continue-actions .action-row :deep(.ant-btn) {
+  flex: 0 0 auto;
+  min-width: 80px;
+  height: 36px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.continue-actions .action-row :deep(.ant-btn:hover) {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+.back-btn {
+  height: 36px;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #888 !important;
+}
+
+.back-btn:hover {
+  border-color: #667eea !important;
+  color: #667eea !important;
+}
+
+.final-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .left-panel {
+    width: 360px;
+    min-width: 360px;
   }
-  
-  .recommend-section {
-    padding: 16px;
+
+  .result-image-item :deep(.ant-image) {
+    width: 180px;
+    height: 180px;
+  }
+
+  .preview-item {
+    width: 180px;
+    height: 180px;
+  }
+
+  .loading-item {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 992px) {
+  .main-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .left-panel {
+    width: 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #3a3a5c;
+    height: auto;
+    overflow: visible;
+  }
+
+  .right-panel {
+    min-height: 60vh;
+    height: auto;
+    position: relative;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 576px) {
+  .style-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .result-image-item :deep(.ant-image) {
+    width: 140px;
+    height: 140px;
+  }
+
+  .preview-item {
+    width: 140px;
+    height: 140px;
+  }
+
+  .loading-item {
+    width: 140px;
+    height: 140px;
   }
 }
 </style>
