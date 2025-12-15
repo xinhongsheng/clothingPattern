@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xhs.clothingpatternbackend.mapper.PatternVectorMapper">
+
+    <resultMap id="BaseResultMap" type="com.xhs.clothingpatternbackend.model.entity.PatternVector">
+            <id property="patternId" column="patternId" />
+            <result property="vectorData" column="vectorData" />
+            <result property="createTime" column="createTime" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        patternId,vectorData,createTime
+    </sql>
+</mapper>
