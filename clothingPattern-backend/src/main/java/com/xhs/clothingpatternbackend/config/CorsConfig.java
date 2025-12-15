@@ -18,8 +18,8 @@ public class CorsConfig implements WebMvcConfigurer {
         // 1. 配置需要跨域的接口路径（/** 表示所有接口，可按需缩小范围如 /api/**）
         registry.addMapping("/**")
                 // 2. 允许的前端域名（精准匹配，支持多个域名用逗号分隔）
-//                .allowedOriginPatterns("http://bs.xinxiangyang.work")
-                .allowedOriginPatterns("*")
+                .allowedOriginPatterns("http://bs.xinxiangyang.work")
+//                .allowedOriginPatterns("*")
                 // 3. 允许发送Cookie（前后端需一致开启，前端axios需设withCredentials: true）
                 .allowCredentials(true)
                 // 4. 允许的HTTP方法（覆盖常用方法，OPTIONS用于预检请求必须包含）

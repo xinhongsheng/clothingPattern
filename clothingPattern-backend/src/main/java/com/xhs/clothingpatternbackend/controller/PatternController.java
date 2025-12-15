@@ -18,6 +18,7 @@ import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
+import com.xhs.clothingpatternbackend.service.PatternVectorService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,8 +45,10 @@ public class PatternController {
     @Resource
     private UserService userService;
 
-    @Autowired
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private PatternVectorService patternVectorService;
 
     // 改为公共静态变量，方便其他服务清空缓存
     public static final Cache<String, String> LOCAL_CACHE =
@@ -279,6 +282,8 @@ public class PatternController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         // 清空图案列表缓存
         clearPatternListCache();
+        // 删除向量
+        patternVectorService.removeById(id);
         return ResultUtils.success(true);
     }
 

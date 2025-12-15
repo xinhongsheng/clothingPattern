@@ -79,9 +79,9 @@ export async function submitTask(
 export async function uploadImage(body: {}, options?: { [key: string]: any }) {
   return request<API.BaseResponseString>('/image-fusion/upload', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    // headers: {
+    //   'Content-Type': 'application/json',
+    // },
     data: body,
     ...(options || {}),
   })
