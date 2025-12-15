@@ -1,14 +1,18 @@
 package com.xhs.clothingpatternbackend.controller;
 
 import com.alibaba.fastjson2.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
+import com.xhs.clothingpatternbackend.mapper.PatternMapper;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJActionRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJBlendRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJImagineRequest;
+import com.xhs.clothingpatternbackend.model.entity.PatternVector;
 import com.xhs.clothingpatternbackend.model.vo.MJImagineVO;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
@@ -17,8 +21,10 @@ import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
 import com.xhs.clothingpatternbackend.sdk.djl.EmbeddingService;
 import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
 import com.xhs.clothingpatternbackend.service.PatternService;
+import com.xhs.clothingpatternbackend.service.PatternVectorService;
 import com.xhs.clothingpatternbackend.service.PromptTranslateService;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.utils.VectorUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -26,9 +32,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @Author: 小辛同学
@@ -56,6 +65,18 @@ public class MJController {
 
     @Resource
     private EmbeddingService embeddingService;
+
+    @Resource
+    private ObjectMapper objectMapper; // Jackson 工具，用于 String 转 float[]
+    
+    @Resource
+    private PatternVectorService patternVectorService;
+    
+    @Resource
+    private PatternMapper patternMapper;
+    
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
     
     /**
      * 生成图片（Imagine）
@@ -84,8 +105,7 @@ public class MJController {
 
             // 使用优化后的 prompt
             request.setPrompt(optimizedPrompt);
-            // 利用 Java 本地 AI 计算向量
-            float[] currentVector = embeddingService.vectorize(optimizedPrompt);
+            
             // 调用Midjourney API
             MJImagineVO response = mjGenImage.imagine(request);
 
@@ -198,10 +218,25 @@ public class MJController {
             // 保存到数据库
             boolean saved = patternService.save(pattern);
             ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
-            
-            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}", 
+            //保存向量数据
+            float[] vector = embeddingService.vectorize(request.getPrompt());
+            // 3. 保存向量到 pattern_vector 表
+            PatternVector pv = new PatternVector();
+            pv.setPatternId(pattern.getId());
+            try {
+                // 将 float[] 转为 JSON 字符串存储
+                pv.setVectorData(objectMapper.writeValueAsString(vector));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}",
                     pattern.getId(), loginUser.getId(), style, season, targetAudience);
-            
+
+            patternVectorService.save(pv);
+
+            // 清空图案列表缓存，确保前端能立即看到新图案
+            clearPatternListCache();
+
             return ResultUtils.success(pattern.getId());
         } catch (Exception e) {
             log.error("保存MJ图片失败", e);
@@ -243,14 +278,129 @@ public class MJController {
     }
     
     /**
-     * 测试接口
+     * 基于提示词的智能图案推荐
+     * 使用向量相似度算法查找最相似的图案
      *
-     * @return 测试结果
+     * @param prompt 用户输入的提示词
+     * @return 推荐的图案列表（Top 10）
      */
-    @GetMapping("/test")
-    @Operation(summary = "测试接口")
-    public BaseResponse<String> test() {
-        return ResultUtils.success("Midjourney API服务正常");
+    @GetMapping("/recommend")
+    @Operation(summary = "智能图案推荐")
+    public BaseResponse<List<Pattern>> recommendPatterns(@RequestParam("prompt") String prompt) {
+        // 参数校验
+        ThrowUtils.throwIf(StringUtils.isBlank(prompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        
+        try {
+            // 1. 利用 Java 本地 AI 计算当前提示词的向量
+            float[] currentVector = embeddingService.vectorize(prompt);
+            
+            // 向量为空则无法推荐
+            if (currentVector == null || currentVector.length == 0) {
+                log.warn("向量化失败，无法进行推荐");
+                return ResultUtils.success(new ArrayList<>());
+            }
+            
+            // 2. 查出库里所有的向量数据 (只查 pattern_vector 表，速度快)
+            List<PatternVector> allVectors = patternVectorService.list();
+            
+            // 如果库里没有向量数据，返回空列表
+            if (allVectors == null || allVectors.isEmpty()) {
+                log.info("向量库为空，无法推荐");
+                return ResultUtils.success(new ArrayList<>());
+            }
+            
+            // 3. 在内存中计算相似度，并找出 Top 10 的 ID
+            List<Long> topPatternIds = allVectors.stream()
+                    .map(pv -> {
+                        try {
+                            // 将 JSON 字符串 "[0.1, ...]" 转为 float[]
+                            float[] dbVector = objectMapper.readValue(
+                                    pv.getVectorData().toString(), float[].class);
+                            double score = VectorUtils.cosineSimilarity(currentVector, dbVector);
+                            return new AbstractMap.SimpleEntry<>(pv.getPatternId(), score);
+                        } catch (JsonProcessingException e) {
+                            log.warn("向量数据解析失败，patternId: {}", pv.getPatternId());
+                            return null;
+                        } catch (IllegalArgumentException e) {
+                            log.warn("向量维度不匹配，patternId: {}", pv.getPatternId());
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .filter(entry -> entry.getValue() > 0.3) // 过滤相似度过低的结果
+                    .sorted((a, b) -> Double.compare(b.getValue(), a.getValue())) // 按相似度降序
+                    .limit(10) // 取前10个
+                    .map(Map.Entry::getKey) // 只取 ID
+                    .collect(Collectors.toList());
+            
+            // 4. 如果没有推荐结果，直接返回空
+            if (topPatternIds.isEmpty()) {
+                log.info("未找到相似图案，提示词: {}", prompt);
+                return ResultUtils.success(new ArrayList<>());
+            }
+            
+            // 5. 根据 ID 去 pattern 主表查详细信息
+            List<Pattern> patterns = patternMapper.selectBatchIds(topPatternIds);
+            
+            // 6. 按照原始的相似度排序顺序返回（因为 selectBatchIds 不保证顺序）
+            Map<Long, Pattern> patternMap = patterns.stream()
+                    .collect(Collectors.toMap(Pattern::getId, p -> p));
+            List<Pattern> sortedPatterns = topPatternIds.stream()
+                    .map(patternMap::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            
+            log.info("推荐成功，提示词: {}, 推荐数量: {}", prompt, sortedPatterns.size());
+            return ResultUtils.success(sortedPatterns);
+            
+        } catch (Exception e) {
+            log.error("图案推荐失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "推荐失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * AI 扩写提示词
+     * 将用户输入的简短描述扩展为丰富、专业的服装图案描述
+     *
+     * @param prompt 用户输入的简短描述
+     * @return 扩写后的详细描述
+     */
+    @GetMapping("/expand")
+    @Operation(summary = "AI扩写提示词")
+    public BaseResponse<String> expandPrompt(@RequestParam("prompt") String prompt) {
+        // 参数校验
+        ThrowUtils.throwIf(StringUtils.isBlank(prompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+        ThrowUtils.throwIf(prompt.length() < 2, ErrorCode.PARAMS_ERROR, "提示词至少需要2个字");
+        
+        try {
+            // 调用 AI 扩写服务
+            String expandedPrompt = promptTranslateService.expandPrompt(prompt);
+            
+            return ResultUtils.success(expandedPrompt);
+        } catch (Exception e) {
+            log.error("AI扩写失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "扩写失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 清空图案列表缓存
+     */
+    private void clearPatternListCache() {
+        try {
+            // 清空本地 Caffeine 缓存（使用 PatternController 的静态缓存）
+            PatternController.LOCAL_CACHE.invalidateAll();
+
+            // 清空 Redis 中的图案列表缓存
+            java.util.Set<String> keys = stringRedisTemplate.keys("xhs_pattern:listPictureVOByPage:*");
+            if (keys != null && !keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+            }
+            log.info("图案缓存已清除");
+        } catch (Exception e) {
+            log.warn("缓存清理失败，不影响主流程", e);
+        }
     }
 }
 

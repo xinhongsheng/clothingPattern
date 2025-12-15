@@ -74,7 +74,22 @@
               :maxlength="200"
               show-count
             />
-            <div class="tip-text">💡 提示:支持中文输入,AI 会自动翻译并添加服装专业术语</div>
+            <div class="prompt-actions">
+              <div class="tip-text">💡 提示:支持中文输入,AI 会自动翻译并添加服装专业术语</div>
+              <a-button
+                type="link"
+                size="small"
+                :loading="expanding"
+                :disabled="expanding || !formState.prompt || formState.prompt.length < 2"
+                @click="handleExpandPrompt"
+                class="expand-btn"
+              >
+                <template #icon>
+                  <EditOutlined v-if="!expanding" />
+                </template>
+                {{ expanding ? '扩写中...' : '✨ AI扩写' }}
+              </a-button>
+            </div>
           </a-form-item>
 
           <!-- 快捷提示词标签 -->
@@ -156,21 +171,69 @@
 
           <!-- 提交按钮 -->
           <a-form-item>
-            <a-button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="generating"
-              :disabled="generating"
-            >
-              <template #icon>
-                <ThunderboltOutlined v-if="!generating" />
-              </template>
-              {{ generating ? '正在生成中,请耐心等待(约1-2分钟)...' : '开始生成图案' }}
-            </a-button>
+            <a-space direction="vertical" style="width: 100%" :size="12">
+              <a-button
+                type="primary"
+                html-type="submit"
+                size="large"
+                block
+                :loading="generating"
+                :disabled="generating"
+              >
+                <template #icon>
+                  <ThunderboltOutlined v-if="!generating" />
+                </template>
+                {{ generating ? '正在生成中,请耐心等待(约1-2分钟)...' : '开始生成图案' }}
+              </a-button>
+              
+              <!-- 智能推荐按钮 -->
+              <a-button
+                size="large"
+                block
+                :loading="recommending"
+                :disabled="recommending || !formState.prompt"
+                @click="fetchRecommendations"
+                class="recommend-btn"
+              >
+                <template #icon>
+                  <SearchOutlined v-if="!recommending" />
+                </template>
+                {{ recommending ? '正在查找相似图案...' : '🔍 先看看已有的相似图案' }}
+              </a-button>
+            </a-space>
           </a-form-item>
         </a-form>
+
+        <!-- 智能推荐结果 -->
+        <div v-if="recommendedPatterns.length > 0" class="recommend-section">
+          <h3 class="recommend-title">
+            🎯 发现 {{ recommendedPatterns.length }} 个相似图案
+            <span class="recommend-hint">点击查看详情，或继续生成新图案</span>
+          </h3>
+          <div class="recommend-grid">
+            <div
+              v-for="pattern in recommendedPatterns"
+              :key="pattern.id"
+              class="recommend-card"
+              @click="viewPatternDetail(pattern)"
+            >
+              <div class="recommend-image">
+                <a-image
+                  :src="pattern.thumbUrl || pattern.patternUrl"
+                  :preview="false"
+                  :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7ml6Dlm77niYc8L3RleHQ+PC9zdmc+'"
+                />
+              </div>
+              <div class="recommend-info">
+                <div class="recommend-name">{{ pattern.patternName || '未命名图案' }}</div>
+                <div class="recommend-meta">
+                  <a-tag v-if="pattern.style" color="blue" size="small">{{ pattern.style }}</a-tag>
+                  <a-tag v-if="pattern.season" color="green" size="small">{{ pattern.season }}</a-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- 创意灵感展示 -->
         <div class="inspiration-gallery" v-if="!generating">
@@ -524,8 +587,10 @@ import {
   CheckOutlined,
   LeftOutlined,
   SaveOutlined,
+  SearchOutlined,
+  EditOutlined,
 } from '@ant-design/icons-vue'
-import { imagine, executeAction as mjExecuteAction, savePattern } from '@/api/midjourneyjiekou'
+import { imagine, executeAction as mjExecuteAction, savePattern, recommendPatterns, expandPrompt } from '@/api/midjourneyjiekou'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 
@@ -562,6 +627,11 @@ const saveForm = reactive({
 const generating = ref(false)
 const executing = ref(false)
 const saving = ref(false)
+const recommending = ref(false)
+const expanding = ref(false)
+
+// 推荐结果
+const recommendedPatterns = ref<any[]>([])
 
 // MJ 响应数据
 const mjResponse = ref<any>(null)
@@ -884,6 +954,78 @@ const getActionName = (action: string) => {
     reroll: '重新生成',
   }
   return actionMap[action] || action
+}
+
+// AI 扩写提示词
+const handleExpandPrompt = async () => {
+  if (!formState.prompt || formState.prompt.trim().length < 2) {
+    message.warning('请先输入至少 2 个字的描述')
+    return
+  }
+
+  try {
+    expanding.value = true
+    
+    message.loading({
+      content: 'AI 正在扩写中...',
+      key: 'expanding',
+      duration: 0,
+    })
+
+    const res = await expandPrompt({ prompt: formState.prompt })
+
+    if (res.data.code === 0 && res.data.data) {
+      formState.prompt = res.data.data
+      message.success({
+        content: '扩写成功！已更新为更详细的描述',
+        key: 'expanding',
+      })
+    } else {
+      throw new Error(res.data.message || '扩写失败')
+    }
+  } catch (error: any) {
+    console.error('AI扩写失败:', error)
+    message.error({
+      content: error.message || '扩写失败，请重试',
+      key: 'expanding',
+    })
+  } finally {
+    expanding.value = false
+  }
+}
+
+// 获取智能推荐
+const fetchRecommendations = async () => {
+  if (!formState.prompt || formState.prompt.trim().length < 2) {
+    message.warning('请先输入至少 2 个字的描述')
+    return
+  }
+
+  try {
+    recommending.value = true
+    recommendedPatterns.value = []
+
+    const res = await recommendPatterns({ prompt: formState.prompt })
+
+    if (res.data.code === 0 && res.data.data) {
+      recommendedPatterns.value = res.data.data
+      if (res.data.data.length === 0) {
+        message.info('暂无相似图案，试试 AI 生成全新设计吧！')
+      } else {
+        message.success(`找到 ${res.data.data.length} 个相似图案`)
+      }
+    }
+  } catch (error: any) {
+    console.error('获取推荐失败:', error)
+    message.error('获取推荐失败')
+  } finally {
+    recommending.value = false
+  }
+}
+
+// 查看推荐图案详情
+const viewPatternDetail = (pattern: any) => {
+  router.push(`/pattern/detail/${pattern.id}`)
 }
 </script>
 
@@ -1368,6 +1510,40 @@ const getActionName = (action: string) => {
   border-radius: 8px;
   display: block;
   border-left: 3px solid #667eea;
+}
+
+/* 提示词操作区域 */
+.prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.prompt-actions .tip-text {
+  margin-top: 0;
+  flex: 1;
+}
+
+/* AI扩写按钮 */
+.expand-btn {
+  font-weight: 500;
+  color: #667eea !important;
+  padding: 4px 12px;
+  height: auto;
+  border-radius: 6px;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.expand-btn:hover:not(:disabled) {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  color: #5a67d8 !important;
+}
+
+.expand-btn:disabled {
+  color: #a0aec0 !important;
 }
 
 /* 生成按钮样式 */
@@ -1880,6 +2056,124 @@ const getActionName = (action: string) => {
 @media (max-width: 768px) {
   .save-form :deep(.ant-form-item) {
     margin-bottom: 16px;
+  }
+}
+
+/* 智能推荐按钮样式 */
+.recommend-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+}
+
+.recommend-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  color: white;
+}
+
+.recommend-btn:disabled {
+  background: #e8e8e8;
+  color: #999;
+}
+
+/* 智能推荐区域样式 */
+.recommend-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.recommend-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.recommend-hint {
+  font-size: 13px;
+  font-weight: 400;
+  color: #666;
+}
+
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.recommend-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.recommend-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.recommend-image {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.recommend-image :deep(.ant-image) {
+  width: 100%;
+  height: 100%;
+}
+
+.recommend-image :deep(.ant-image img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recommend-info {
+  padding: 12px;
+}
+
+.recommend-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommend-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.recommend-meta :deep(.ant-tag) {
+  margin: 0;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .recommend-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .recommend-section {
+    padding: 16px;
   }
 }
 </style>

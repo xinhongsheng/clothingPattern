@@ -235,6 +235,18 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponseListPattern = {
+    code?: number
+    data?: Pattern[]
+    message?: string
+  }
+
+  type BaseResponseListPatternVO = {
+    code?: number
+    data?: PatternVO[]
+    message?: string
+  }
+
   type BaseResponseListQueryTaskHistoryResultVO = {
     code?: number
     data?: QueryTaskHistoryResultVO[]
@@ -451,6 +463,10 @@ declare namespace API {
     id?: number
   }
 
+  type expandPromptParams = {
+    prompt: string
+  }
+
   type getArticleDetailParams = {
     id: number
   }
@@ -547,10 +563,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    sortList?: number[]
-    origPromptList?: string[]
-    localImageUrlList?: string[]
     tempImageUrlList?: string[]
+    localImageUrlList?: string[]
+    origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {
@@ -847,6 +863,10 @@ declare namespace API {
     localImageUrl?: string
     submitTime?: string
     endTime?: string
+  }
+
+  type recommendPatternsParams = {
+    prompt: string
   }
 
   type Result = {

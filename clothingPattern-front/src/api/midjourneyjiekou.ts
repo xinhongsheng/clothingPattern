@@ -26,6 +26,21 @@ export async function blend(body: API.MJBlendRequest, options?: { [key: string]:
   })
 }
 
+/** AI扩写提示词 GET /mj/expand */
+export async function expandPrompt(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.expandPromptParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseString>('/mj/expand', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** 生成图片（不保存） POST /mj/imagine */
 export async function imagine(body: API.MJImagineRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseMJImagineVO>('/mj/imagine', {
@@ -38,6 +53,21 @@ export async function imagine(body: API.MJImagineRequest, options?: { [key: stri
   })
 }
 
+/** 智能图案推荐 GET /mj/recommend */
+export async function recommendPatterns(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recommendPatternsParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListPattern>('/mj/recommend', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** 保存图片到数据库 POST /mj/save */
 export async function savePattern(body: API.MJImagineVO, options?: { [key: string]: any }) {
   return request<API.BaseResponseLong>('/mj/save', {
@@ -46,14 +76,6 @@ export async function savePattern(body: API.MJImagineVO, options?: { [key: strin
       'Content-Type': 'application/json',
     },
     data: body,
-    ...(options || {}),
-  })
-}
-
-/** 测试接口 GET /mj/test */
-export async function test(options?: { [key: string]: any }) {
-  return request<API.BaseResponseString>('/mj/test', {
-    method: 'GET',
     ...(options || {}),
   })
 }

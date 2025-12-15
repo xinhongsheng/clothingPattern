@@ -195,7 +195,7 @@ import {
   HeartOutlined,
   HeartFilled
 } from '@ant-design/icons-vue'
-import { getPatternVoById, deletePattern, updatePattern } from '@/api/patternController'
+import { getPatternVoById, deletePattern, updatePattern, recordViewBehavior } from '@/api/patternController'
 import { toggleLike } from '@/api/likeController'
 import {
   AUDIT_STATUS_MAP,
@@ -241,6 +241,8 @@ const fetchPatternDetail = async () => {
     const res = await getPatternVoById({ id: id as any })
     if (res.data.code === 0 && res.data.data) {
       pattern.value = res.data.data
+      // 记录用户浏览行为（用于协同过滤推荐）
+      recordViewBehaviorAction(pattern.value.id!)
     } else {
       message.error('获取图案详情失败：' + res.data.message)
       router.push('/')
@@ -250,6 +252,20 @@ const fetchPatternDetail = async () => {
     router.push('/')
   } finally {
     loading.value = false
+  }
+}
+
+// 记录用户浏览行为
+const recordViewBehaviorAction = async (patternId: number) => {
+  // 只有登录用户才记录行为
+  if (!loginUserStore.loginUser?.id) {
+    return
+  }
+  try {
+    await recordViewBehavior({ patternId })
+  } catch (error) {
+    // 记录行为失败不影响主流程
+    console.error('记录浏览行为失败:', error)
   }
 }
 

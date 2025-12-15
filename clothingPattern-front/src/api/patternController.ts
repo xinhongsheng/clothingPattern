@@ -145,3 +145,33 @@ export async function updatePattern(
     ...(options || {}),
   })
 }
+
+/** 获取个性化推荐图案列表 GET /pattern/recommend */
+export async function getPatternRecommendations(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListPatternVO>('/pattern/recommend', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
+/** 记录用户浏览行为 POST /pattern/behavior/view */
+export async function recordViewBehavior(
+  params: { patternId: number },
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/pattern/behavior/view', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
+/** 手动触发推荐算法刷新（仅管理员） POST /pattern/recommend/refresh */
+export async function refreshRecommendations(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/pattern/recommend/refresh', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}

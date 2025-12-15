@@ -10,6 +10,7 @@ import com.xhs.clothingpatternbackend.model.entity.UserLike;
 import com.xhs.clothingpatternbackend.model.vo.LikeResultVO;
 import com.xhs.clothingpatternbackend.service.LikeService;
 import com.xhs.clothingpatternbackend.mapper.LikeMapper;
+import com.xhs.clothingpatternbackend.service.UserBehaviorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -42,6 +43,9 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private UserBehaviorService userBehaviorService;
 
 
     /**
@@ -117,6 +121,16 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
 //                new LikeOperation(userId, patternId, newStatus, LocalDateTime.now()));
 
         log.info("点赞操作完成: userId={}, patternId={}, newStatus={}, currentCount={}", userId, patternId, newStatus, currentCount);
+
+        // 10. 记录用户点赞行为（用于协同过滤推荐）
+        if (newStatus) {
+            try {
+                userBehaviorService.recordBehavior(userId, patternId, "LIKE");
+            } catch (Exception e) {
+                log.warn("记录用户点赞行为失败: {}", e.getMessage());
+            }
+        }
+
         return new LikeResultVO(newStatus, currentCount);
     }
 

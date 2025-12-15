@@ -194,5 +194,90 @@ public class PromptTranslateService {
         }
         return CLOTHING_PATTERN_PREFIX + prompt;
     }
+    
+    /**
+     * AI 扩写系统提示词
+     */
+    private static final String EXPAND_SYSTEM_PROMPT = """
+            你是一位专业的服装图案设计师，擅长将简单的创意描述扩展为丰富、专业、具有画面感的服装图案描述。
+            
+            扩写规则：
+            1. 保持用户原始创意的核心元素
+            2. 添加色彩描述（如：渐变、撞色、柔和色调等）
+            3. 添加图案细节（如：纹理、线条、层次感等）
+            4. 添加风格修饰（如：现代简约、复古优雅、可爱童趣等）
+            5. 添加适用场景（如：适合T恤、连衣裙、休闲装等）
+            6. 控制在50-80字以内，保持简洁精炼
+            7. 使用中文输出
+            
+            示例：
+            输入："猫咪图案"
+            输出："可爱的卡通猫咪图案，采用柔和的粉色和米白色搭配，简约线条勾勒出慵懒的猫咪姿态，点缀小爪印和星星元素，适合春夏季休闲T恤和卫衣"
+            
+            输入："花朵"
+            输出："浪漫法式复古花卉图案，玫瑰与雏菊交织，采用莫兰迪色系渐变，细腻的水彩晕染效果，优雅大气适合连衣裙和衬衫"
+            
+            请直接输出扩写后的描述，不要添加任何解释或前缀。
+            """;
+    
+    /**
+     * AI 扩写用户输入的简短描述
+     *
+     * @param shortPrompt 用户输入的简短描述
+     * @return 扩写后的详细描述
+     */
+    public String expandPrompt(String shortPrompt) {
+        if (StringUtils.isBlank(shortPrompt)) {
+            return "";
+        }
+        
+        try {
+            log.info("开始AI扩写，原始输入：{}", shortPrompt);
+            
+            Generation gen = new Generation();
+            
+            // 构建消息
+            Message systemMessage = Message.builder()
+                    .role(Role.SYSTEM.getValue())
+                    .content(EXPAND_SYSTEM_PROMPT)
+                    .build();
+            
+            Message userMessage = Message.builder()
+                    .role(Role.USER.getValue())
+                    .content(shortPrompt)
+                    .build();
+            
+            // 构建请求参数
+            GenerationParam param = GenerationParam.builder()
+                    .apiKey(tongYiConfig.getDashscopeApiKey())
+                    .model("qwen-plus")
+                    .messages(Arrays.asList(systemMessage, userMessage))
+                    .resultFormat(GenerationParam.ResultFormat.MESSAGE)
+                    .temperature(0.7f)  // 稍高的温度，让扩写更有创意
+                    .maxTokens(300)
+                    .build();
+            
+            // 调用 API
+            GenerationResult result = gen.call(param);
+            
+            // 提取扩写结果
+            String expandedText = result.getOutput().getChoices().get(0).getMessage().getContent();
+            
+            // 清理结果
+            expandedText = expandedText.trim()
+                    .replaceAll("^[\"']", "")  // 去除开头引号
+                    .replaceAll("[\"']$", "")  // 去除结尾引号
+                    .replaceAll("\\n", " ")     // 替换换行为空格
+                    .replaceAll("\\s+", " ");   // 合并多个空格
+            
+            log.info("AI扩写结果：{}", expandedText);
+            return expandedText;
+            
+        } catch (Exception e) {
+            log.error("AI扩写失败", e);
+            // 扩写失败返回原文
+            return shortPrompt;
+        }
+    }
 }
 

@@ -27,8 +27,8 @@ public class EmbeddingService {
         // 这里直接使用 HuggingFace 上非常成熟的小型语义模型
         Criteria<String, float[]> criteria = Criteria.builder()
                 .setTypes(String.class, float[].class)
-                .optModelUrls("djl://ai.djl.huggingface.pytorch/sentence-transformers/all-MiniLM-L6-v2")
-                .optEngine("PyTorch") // 或者使用 OnnxRuntime，取决于你下载的包
+                .optModelUrls("djl://ai.djl.huggingface.onnxruntime/sentence-transformers/all-MiniLM-L6-v2")
+                .optEngine("OnnxRuntime") // 使用 OnnxRuntime 引擎
                 .optTranslatorFactory(new TextEmbeddingTranslatorFactory())
                 .optProgress(new ProgressBar())
                 .build();

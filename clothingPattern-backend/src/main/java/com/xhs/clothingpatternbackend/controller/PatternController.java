@@ -18,8 +18,11 @@ import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
+import com.xhs.clothingpatternbackend.service.PatternSimilarityService;
 import com.xhs.clothingpatternbackend.service.PatternVectorService;
+import com.xhs.clothingpatternbackend.service.UserBehaviorService;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.task.CollaborativeFilteringTask;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
@@ -49,6 +52,15 @@ public class PatternController {
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private PatternVectorService patternVectorService;
+
+    @Resource
+    private PatternSimilarityService patternSimilarityService;
+
+    @Resource
+    private UserBehaviorService userBehaviorService;
+
+    @Resource
+    private CollaborativeFilteringTask collaborativeFilteringTask;
 
     // 改为公共静态变量，方便其他服务清空缓存
     public static final Cache<String, String> LOCAL_CACHE =
@@ -339,5 +351,75 @@ public class PatternController {
         } catch (Exception e) {
             // 缓存清理失败不影响主流程
         }
+    }
+
+    // ==================== 个性化推荐相关接口 ====================
+
+    /**
+     * 获取个性化推荐图案列表
+     * 如果用户已登录且有行为数据，返回基于协同过滤的推荐结果
+     * 否则返回热门图案（冷启动降级策略）
+     *
+     * @param request HTTP请求
+     * @return 推荐的图案列表
+     */
+    @GetMapping("/recommend")
+    public BaseResponse<List<PatternVO>> getRecommendations(HttpServletRequest request) {
+        // 获取当前登录用户ID（未登录用户为null）
+        Long loginUserId = null;
+        try {
+            User loginUser = userService.getLoginUser(request);
+            if (loginUser != null) {
+                loginUserId = loginUser.getId();
+            }
+        } catch (Exception e) {
+            // 未登录，保持loginUserId为null
+        }
+
+        // 获取推荐列表（默认10个）
+        List<PatternVO> recommendations = patternSimilarityService.getRecommendations(loginUserId, 10);
+        return ResultUtils.success(recommendations);
+    }
+
+    /**
+     * 记录用户浏览行为
+     * 当用户进入图案详情页时调用
+     *
+     * @param patternId 图案ID
+     * @param request HTTP请求
+     * @return 是否记录成功
+     */
+    @PostMapping("/behavior/view")
+    public BaseResponse<Boolean> recordViewBehavior(@RequestParam Long patternId, HttpServletRequest request) {
+        ThrowUtils.throwIf(patternId == null || patternId <= 0, ErrorCode.PARAMS_ERROR);
+
+        // 获取当前登录用户
+        Long loginUserId = null;
+        try {
+            User loginUser = userService.getLoginUser(request);
+            if (loginUser != null) {
+                loginUserId = loginUser.getId();
+            }
+        } catch (Exception e) {
+            // 未登录用户不记录行为
+            return ResultUtils.success(false);
+        }
+
+        if (loginUserId == null) {
+            return ResultUtils.success(false);
+        }
+
+        boolean result = userBehaviorService.recordBehavior(loginUserId, patternId, "VIEW");
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 手动触发推荐算法（仅管理员，用于测试）
+     */
+    @PostMapping("/recommend/refresh")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> refreshRecommendations() {
+        collaborativeFilteringTask.runManually();
+        return ResultUtils.success(true);
     }
 }
