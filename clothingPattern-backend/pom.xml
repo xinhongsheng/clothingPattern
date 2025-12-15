@@ -127,33 +127,23 @@
             <version>4.12.0</version>
         </dependency>
 
+        <!-- 亚马逊java深度学习 all-MiniLM-L6-v2 -->
+            <dependency>
+                <groupId>ai.djl</groupId>
+                <artifactId>api</artifactId>
+                <version>0.28.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ai.djl.onnxruntime</groupId>
+                <artifactId>onnxruntime-engine</artifactId>
+                <version>0.28.0</version>
+            </dependency>
+            <dependency>
+                <groupId>ai.djl.huggingface</groupId>
+                <artifactId>tokenizers</artifactId>
+                <version>0.28.0</version>
+            </dependency>
 
-        <!-- 阿里云敏感词过滤-->
-<!--        <dependency>-->
-<!--            <groupId>com.alibaba</groupId>-->
-<!--            <artifactId>fastjson</artifactId>-->
-<!--            <version>1.2.15</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.httpcomponents</groupId>-->
-<!--            <artifactId>httpclient</artifactId>-->
-<!--            <version>4.5.13</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.httpcomponents</groupId>-->
-<!--            <artifactId>httpcore</artifactId>-->
-<!--            <version>4.2.1</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>commons-lang</groupId>-->
-<!--            <artifactId>commons-lang</artifactId>-->
-<!--            <version>2.6</version>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.eclipse.jetty</groupId>-->
-<!--            <artifactId>jetty-util</artifactId>-->
-<!--            <version>9.3.7.v20160115</version>-->
-<!--        </dependency>-->
 
     </dependencies>
     <dependencyManagement>
