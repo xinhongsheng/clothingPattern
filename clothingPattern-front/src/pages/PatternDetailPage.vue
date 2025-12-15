@@ -275,9 +275,44 @@ const goBack = () => {
 }
 
 // 下载图案
-const downloadPattern = () => {
-  if (pattern.value?.patternUrl) {
-    window.open(pattern.value.patternUrl, '_blank')
+const downloadPattern = async () => {
+  if (!pattern.value?.patternUrl) {
+    message.error('图案地址不存在')
+    return
+  }
+
+  try {
+    message.loading({ content: '正在下载...', key: 'download' })
+    
+    // 获取图片 Blob
+    const response = await fetch(pattern.value.patternUrl)
+    if (!response.ok) {
+      throw new Error('图片获取失败')
+    }
+    const blob = await response.blob()
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    
+    // 生成文件名
+    const fileName = pattern.value.patternName 
+      ? `${pattern.value.patternName}.png`
+      : `pattern-${pattern.value.id}-${Date.now()}.png`
+    link.download = fileName
+    
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // 释放 Blob URL
+    window.URL.revokeObjectURL(url)
+    
+    message.success({ content: '下载成功', key: 'download' })
+  } catch (error: any) {
+    console.error('下载失败:', error)
+    message.error({ content: '下载失败，请稍后重试', key: 'download' })
   }
 }
 
