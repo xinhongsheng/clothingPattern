@@ -1,207 +1,222 @@
 <template>
   <div class="tryon-page">
-    <div class="page-header">
-      <h1>👗 AI 智能试衣</h1>
-      <p class="subtitle">上传人物与服装图片，AI 为你生成试穿效果</p>
-      <div class="header-actions">
-        <a-button type="default" @click="showGuideModal = true">
-          <template #icon><question-circle-outlined /></template>
-          使用指南
-        </a-button>
-        <a-button type="default" @click="handleOpenHistoryDrawer">
-          <template #icon><history-outlined /></template>
-          历史记录
-        </a-button>
+    <!-- 主布局 - 左右分栏 -->
+    <div class="main-layout">
+      <!-- 左侧操作面板 -->
+      <div class="left-panel">
+        <!-- 页面标题 -->
+        <div class="panel-header">
+          <h1 class="panel-title">👗 AI 智能试衣</h1>
+          <div class="header-btns">
+            <a-button type="text" class="header-btn" @click="showGuideModal = true">
+              <question-circle-outlined /> 指南
+            </a-button>
+            <a-button type="text" class="header-btn" @click="handleOpenHistoryDrawer">
+              <history-outlined /> 历史
+            </a-button>
+          </div>
+        </div>
+
+        <!-- 预设模特选择 -->
+        <div class="panel-section">
+          <div class="section-header">
+            <span>选择预设模特</span>
+          </div>
+          <div class="preset-models">
+            <div
+              v-for="model in presetModels"
+              :key="model.key"
+              :class="['preset-item', { active: selectedPresetKey === model.key }]"
+              @click="handleSelectPreset(model)"
+            >
+              <img :src="model.assetUrl" :alt="model.name" />
+              <span class="preset-name">{{ model.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上传人物照片 -->
+        <div class="panel-section">
+          <div class="section-header">
+            <span>人物照片</span>
+            <span class="section-tip">或上传自定义照片</span>
+          </div>
+          <div class="upload-box">
+            <a-upload
+              v-if="!personImageUrl && !selectedPresetPreviewUrl"
+              :show-upload-list="false"
+              :before-upload="(file) => handleUpload('person', file)"
+              accept="image/*"
+            >
+              <div class="upload-content">
+                <div class="upload-icon">
+                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
+                  </svg>
+                </div>
+                <div class="upload-text">上传人物照片</div>
+                <div class="upload-tip">建议正面全身照，JPG/PNG ≤10MB</div>
+              </div>
+            </a-upload>
+            <div v-else class="uploaded-preview">
+              <a-image :src="personImageUrl || selectedPresetPreviewUrl" :preview="{ src: personImageUrl || selectedPresetPreviewUrl }" />
+              <div class="preview-actions">
+                <a-button size="small" @click="clearImage('person')">重新选择</a-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上传上衣图片 -->
+        <div class="panel-section">
+          <div class="section-header">上传上衣</div>
+          <div class="upload-box small">
+            <a-upload
+              v-if="!topGarmentUrl"
+              :show-upload-list="false"
+              :before-upload="(file) => handleUpload('top', file)"
+              accept="image/*"
+            >
+              <div class="upload-content">
+                <div class="upload-icon">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
+                  </svg>
+                </div>
+                <div class="upload-text">选择上衣图片</div>
+                <div class="upload-tip">可选，不上传则只试下装</div>
+              </div>
+            </a-upload>
+            <div v-else class="uploaded-preview">
+              <a-image :src="topGarmentUrl" :preview="{ src: topGarmentUrl }" />
+              <div class="preview-actions">
+                <a-button size="small" @click="clearImage('top')">重新上传</a-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 上传下装图片 -->
+        <div class="panel-section">
+          <div class="section-header">上传下装</div>
+          <div class="upload-box small">
+            <a-upload
+              v-if="!bottomGarmentUrl"
+              :show-upload-list="false"
+              :before-upload="(file) => handleUpload('bottom', file)"
+              accept="image/*"
+            >
+              <div class="upload-content">
+                <div class="upload-icon">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
+                  </svg>
+                </div>
+                <div class="upload-text">选择下装图片</div>
+                <div class="upload-tip">可选，不上传则只试上衣</div>
+              </div>
+            </a-upload>
+            <div v-else class="uploaded-preview">
+              <a-image :src="bottomGarmentUrl" :preview="{ src: bottomGarmentUrl }" />
+              <div class="preview-actions">
+                <a-button size="small" @click="clearImage('bottom')">重新上传</a-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部生成按钮 -->
+        <div class="panel-footer">
+          <a-button
+            type="primary"
+            block
+            size="large"
+            :loading="submitting || polling"
+            :disabled="(!personImageUrl && !selectedPresetKey) || (!topGarmentUrl && !bottomGarmentUrl)"
+            @click="handleSubmit"
+            class="generate-btn"
+          >
+            <span class="btn-text">{{ submitting || polling ? '生成中...' : '✨ 开始AI试衣' }}</span>
+          </a-button>
+          <a-alert
+            v-if="errorMessage"
+            type="error"
+            :message="errorMessage"
+            show-icon
+            class="error-alert"
+          />
+        </div>
+      </div>
+
+      <!-- 右侧结果展示区域 -->
+      <div class="right-panel">
+        <!-- 加载中状态 -->
+        <div v-if="polling" class="result-loading">
+          <a-spin size="large" />
+          <div class="loading-text">
+            <h3>正在生成试衣效果...</h3>
+            <p>AI正在为您进行虚拟试衣，请稍候</p>
+          </div>
+        </div>
+
+        <!-- 已生成结果 - 展示大图 -->
+        <div v-else-if="resultImageUrl" class="result-content">
+          <h2 class="result-title">AI 试衣效果</h2>
+          <p class="result-subtitle">智能识别人物轮廓，真实还原服装穿着效果</p>
+
+          <!-- 生成结果大图 -->
+          <div class="result-main">
+            <a-image 
+              :src="resultImageUrl" 
+              :preview="{ src: resultImageUrl }" 
+              class="result-large-image"
+            />
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="result-actions">
+            <a-button type="primary" @click="downloadResult" class="action-btn">
+              <download-outlined /> 下载图片
+            </a-button>
+            <a-button @click="shareResult" class="action-btn">
+              <share-alt-outlined /> 分享
+            </a-button>
+          </div>
+
+          <!-- 任务信息 -->
+          <div class="result-meta" v-if="taskDetail">
+            <span v-if="taskDetail.taskStatus">状态：{{ taskDetail.taskStatus }}</span>
+            <span v-if="taskDetail.endTime">完成：{{ formatTime(taskDetail.endTime) }}</span>
+          </div>
+        </div>
+
+        <!-- 空状态 - 显示引导 -->
+        <div v-else class="result-empty">
+          <h2 class="result-title">AI 智能试衣</h2>
+          <p class="result-subtitle">上传人物与服装图片，AI 为你生成逼真的试穿效果</p>
+
+          <!-- 步骤指示 -->
+          <div class="flow-steps">
+            <span>选择模特</span>
+            <span class="flow-arrow">»</span>
+            <span>上传服装</span>
+            <span class="flow-arrow">»</span>
+            <span>生成效果</span>
+          </div>
+
+          <!-- 功能特性 -->
+          <div class="feature-grid">
+            <div class="feature-item" v-for="feature in features" :key="feature.title">
+              <span class="feature-icon">{{ feature.icon }}</span>
+              <div class="feature-info">
+                <h4>{{ feature.title }}</h4>
+                <p>{{ feature.desc }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- 功能特性展示 -->
-    <div class="features-section">
-      <a-row :gutter="[24, 24]">
-        <a-col :xs="24" :sm="12" :lg="6" v-for="feature in features" :key="feature.title">
-          <div class="feature-card">
-            <div class="feature-icon">{{ feature.icon }}</div>
-            <h3 class="feature-title">{{ feature.title }}</h3>
-            <p class="feature-desc">{{ feature.desc }}</p>
-          </div>
-        </a-col>
-      </a-row>
-    </div>
-
-    <a-card class="tryon-card" :bordered="false">
-      <a-row :gutter="[32, 32]">
-        <!-- 左侧：上传与参数配置 -->
-        <a-col :xs="24" :lg="10">
-          <div class="config-section">
-            <h2 class="section-title">
-              <span class="title-icon">⚙️</span>
-              试衣配置
-            </h2>
-
-            <a-form layout="vertical">
-              <!-- 预设模特选择 -->
-              <a-form-item label="预设模特" class="form-item-custom">
-                <div class="preset-models">
-                  <div
-                    v-for="model in presetModels"
-                    :key="model.key"
-                    :class="['preset-item', { active: selectedPresetKey === model.key }]"
-                    @click="handleSelectPreset(model)"
-                  >
-                    <a-image :src="model.assetUrl" :width="72" :preview="false" />
-                    <div class="preset-name">{{ model.name }}</div>
-                  </div>
-                </div>
-              </a-form-item>
-              <a-form-item label="人物照片" required class="form-item-custom">
-                <a-alert
-                  message="最佳效果提示"
-                  description="建议使用正面全身照，背景简洁，光线充足，人物清晰"
-                  type="info"
-                  show-icon
-                  closable
-                  class="upload-tip-alert"
-                />
-                <a-upload
-                  :show-upload-list="false"
-                  :before-upload="(file) => handleUpload('person', file)"
-                  accept="image/*"
-                >
-                  <div class="upload-box">
-                    <a-button>
-                      <picture-outlined /> 选择人物照片
-                    </a-button>
-                    <span class="upload-tip">支持 JPG / PNG，大小 ≤ 10MB</span>
-                  </div>
-                </a-upload>
-             
-                <div v-if="personImageUrl || selectedPresetPreviewUrl" class="preview-wrapper">
-                  <a-image :src="personImageUrl || selectedPresetPreviewUrl" :width="160" />
-                  <a-button type="link" danger @click="clearImage('person')">移除</a-button>
-                </div>
-              </a-form-item>
-
-              <a-form-item label="上衣图片" class="form-item-custom">
-                <a-upload
-                  :show-upload-list="false"
-                  :before-upload="(file) => handleUpload('top', file)"
-                  accept="image/*"
-                >
-                  <div class="upload-box">
-                    <a-button>
-                      <picture-outlined /> 选择上衣图片
-                    </a-button>
-                    <span class="upload-tip">可选，如不上传则只试穿下装</span>
-                  </div>
-                </a-upload>
-                <div v-if="topGarmentUrl" class="preview-wrapper">
-                  <a-image :src="topGarmentUrl" :width="120" />
-                  <a-button type="link" danger @click="clearImage('top')">移除</a-button>
-                </div>
-              </a-form-item>
-
-              <a-form-item label="下装图片" class="form-item-custom">
-                <a-upload
-                  :show-upload-list="false"
-                  :before-upload="(file) => handleUpload('bottom', file)"
-                  accept="image/*"
-                >
-                  <div class="upload-box">
-                    <a-button>
-                      <picture-outlined /> 选择下装图片
-                    </a-button>
-                    <span class="upload-tip">可选，如不上传则只试穿上衣</span>
-                  </div>
-                </a-upload>
-                <div v-if="bottomGarmentUrl" class="preview-wrapper">
-                  <a-image :src="bottomGarmentUrl" :width="120" />
-                  <a-button type="link" danger @click="clearImage('bottom')">移除</a-button>
-                </div>
-              </a-form-item>
-
-              <a-form-item>
-                <a-button
-                  type="primary"
-                  block
-                  :loading="submitting || polling"
-                  :disabled="(!personImageUrl && !selectedPresetKey) || (!topGarmentUrl && !bottomGarmentUrl)"
-                  @click="handleSubmit"
-                >
-                  <template #icon>
-                    <play-circle-outlined />
-                  </template>
-                  {{ submitting || polling ? '正在生成试衣效果...' : '开始 AI 试衣' }}
-                </a-button>
-              </a-form-item>
-
-              <a-alert
-                v-if="errorMessage"
-                type="error"
-                :message="errorMessage"
-                show-icon
-                class="mt-2"
-              />
-
-              <a-alert
-                v-if="currentTaskId && !errorMessage"
-                type="info"
-                :message="`任务 ID：${currentTaskId}`"
-                show-icon
-                class="mt-2"
-              />
-            </a-form>
-          </div>
-        </a-col>
-
-        <!-- 右侧：试衣结果展示 -->
-        <a-col :xs="24" :lg="14">
-          <div class="preview-section">
-            <h2 class="section-title">
-              <span class="title-icon">✨</span>
-              试衣效果
-            </h2>
-
-            <a-spin :spinning="polling">
-              <div v-if="resultImageUrl" class="result-wrapper">
-                <a-image :src="resultImageUrl" :width="360" />
-                <div class="result-actions">
-                  <a-space>
-                    <a-button type="primary" @click="downloadResult">
-                      <template #icon><download-outlined /></template>
-                      下载图片
-                    </a-button>
-                    <a-button @click="saveToHistory">
-                      <template #icon><save-outlined /></template>
-                      保存到历史
-                    </a-button>
-                    <a-button @click="shareResult">
-                      <template #icon><share-alt-outlined /></template>
-                      分享
-                    </a-button>
-                  </a-space>
-                </div>
-                <div class="result-meta" v-if="taskDetail">
-                  <p>任务状态：{{ taskDetail.taskStatus }}</p>
-                  <p v-if="taskDetail.createTime">创建时间：{{ taskDetail.createTime }}</p>
-                  <p v-if="taskDetail.endTime">完成时间：{{ taskDetail.endTime }}</p>
-                </div>
-              </div>
-
-              <div v-else class="empty-result">
-                <a-empty description="上传图片并点击开始，即可查看试衣效果">
-                  <template #image>
-                    <img
-                      style="width: 120px"
-                      src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y1ZjVmNSIgcng9IjEwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iNDAiIGZpbGw9IiNkOWQ5ZDkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj7wn46oPC90ZXh0Pjwvc3ZnPg=="
-                    />
-                  </template>
-                </a-empty>
-              </div>
-            </a-spin>
-          </div>
-        </a-col>
-     </a-row>
-    </a-card>
 
     <!-- 使用指南弹窗 -->
     <a-modal
@@ -209,6 +224,7 @@
       title="📖 AI 试衣使用指南"
       :footer="null"
       width="600px"
+      class="guide-modal"
     >
       <div class="guide-content">
         <a-steps direction="vertical" :current="-1">
@@ -252,12 +268,13 @@
       title="试衣历史记录"
       placement="right"
       width="450"
+      class="history-drawer"
     >
       <a-spin :spinning="historyLoading">
         <div class="history-content">
           <a-empty v-if="historyList.length === 0" description="暂无历史记录">
             <template #image>
-              <history-outlined style="font-size: 64px; color: #d9d9d9" />
+              <history-outlined style="font-size: 64px; color: #666" />
             </template>
           </a-empty>
           <div v-else class="history-list">
@@ -268,7 +285,7 @@
             >
               <a-image
                 :src="item.localImageUrl"
-                :width="120"
+                :width="100"
                 :preview="true"
                 class="history-image"
               />
@@ -276,39 +293,16 @@
                 <p class="history-time">
                   <clock-circle-outlined /> {{ formatTime(item.submitTime) }}
                 </p>
-                <p class="history-time" v-if="item.endTime">
-                  完成: {{ formatTime(item.endTime) }}
-                </p>
                 <div class="history-actions">
-                  <a-space>
-                    <a-button
-                      type="primary"
-                      size="small"
-                      @click="loadHistoryItem(item)"
-                    >
-                      查看
-                    </a-button>
-                    <a-button
-                      size="small"
-                      @click="downloadHistoryImage(item.localImageUrl)"
-                    >
-                      <download-outlined /> 下载
-                    </a-button>
-                    <a-button
-                      size="small"
-                      @click="shareHistoryImage(item.localImageUrl)"
-                    >
-                      <share-alt-outlined /> 分享
-                    </a-button>
-                    <a-button
-                      type="text"
-                      danger
-                      size="small"
-                      @click.stop="deleteHistoryItem(item, index)"
-                    >
-                      删除
-                    </a-button>
-                  </a-space>
+                  <a-button type="primary" size="small" @click="loadHistoryItem(item)">
+                    查看
+                  </a-button>
+                  <a-button size="small" @click="downloadHistoryImage(item.localImageUrl)">
+                    下载
+                  </a-button>
+                  <a-button type="text" danger size="small" @click.stop="deleteHistoryItem(item, index)">
+                    删除
+                  </a-button>
                 </div>
               </div>
             </div>
@@ -756,327 +750,456 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
 </script>
 
 <style scoped>
-/* 全局样式重置与基础设置 */
+/* 全局基础样式 */
 .tryon-page {
-  padding: 32px 24px;
-  min-height: 100vh;
-  background-image: url('@/assets/backgroundImage/aiTryOn-bg.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #1a1a2e;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-/* 页面标题样式 */
-.page-header {
-  text-align: center;
-  margin-bottom: 40px;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.header-actions {
+/* 主布局 - 左右分栏 */
+.main-layout {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.header-actions .ant-btn {
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #fff;
-  backdrop-filter: blur(5px);
-  transition: all 0.3s;
-}
-
-.header-actions .ant-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
-
-.page-header h1 {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  background: linear-gradient(135deg, #fff 0%, #e6f7ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.subtitle {
-  font-size: 18px;
-  opacity: 0.95;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-}
-
-/* 功能特性展示区 */
-.features-section {
-  max-width: 1400px;
-  margin: 0 auto 40px;
-}
-
-.feature-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
-  border-radius: 16px;
-  padding: 24px;
-  text-align: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #fff 0%, #f0f5ff 100%);
-}
-
-.feature-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
-}
-
-.feature-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1d2129;
-  margin-bottom: 8px;
-}
-
-.feature-desc {
-  font-size: 14px;
-  color: #4e5969;
-  line-height: 1.6;
-  margin: 0;
-}
-
-/* 卡片容器样式 */
-.tryon-card {
-  max-width: 1400px;
-  margin: 0 auto;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tryon-card:hover {
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
-}
-
-.tryon-card :deep(.ant-card-body) {
-  padding: 40px;
-}
-
-/* 区块标题样式 */
-.section-title {
-  font-size: 22px;
-  font-weight: 600;
-  margin-bottom: 24px;
-  color: #1d2129;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e5e6eb;
-}
-
-.title-icon {
-  font-size: 24px;
-}
-
-/* 表单项样式 */
-.form-item-custom :deep(.ant-form-item-label > label) {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1d2129;
-}
-
-/* 上传框样式 */
-.upload-box {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.upload-box .ant-btn {
-  height: 40px;
-  padding: 0 24px;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: #fff;
-  transition: all 0.3s;
-}
-
-.upload-box .ant-btn:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.upload-tip {
-  font-size: 13px;
-  color: #86909c;
-}
-
-/* 预览包裹样式 */
-.preview-wrapper {
-  margin-top: 16px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #f7f8fa;
-  border-radius: 10px;
-  border: 1px solid #e5e6eb;
-}
-
-.preview-wrapper :deep(.ant-image) {
-  border-radius: 8px;
+  height: 100vh;
   overflow: hidden;
 }
 
-/* 上传提示样式 */
-.upload-tip-alert {
-  margin-bottom: 12px;
+/* 左侧操作面板 */
+.left-panel {
+  width: 420px;
+  min-width: 420px;
+  background-color: #252540;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #3a3a5c;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.quick-example {
-  margin-top: 8px;
+/* 左侧滚动条美化 */
+.left-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.left-panel::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.left-panel::-webkit-scrollbar-thumb {
+  background: #3a3a5c;
+  border-radius: 3px;
+}
+
+.left-panel::-webkit-scrollbar-thumb:hover {
+  background: #4a4a6c;
+}
+
+/* 面板头部 */
+.panel-header {
+  padding: 20px;
+  border-bottom: 1px solid #3a3a5c;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.header-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.header-btn {
+  color: #aaa !important;
+  font-size: 13px;
+}
+
+.header-btn:hover {
+  color: #d4a574 !important;
+}
+
+/* 面板区块 */
+.panel-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #3a3a5c;
+}
+
+/* 区块标题 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 14px;
+}
+
+.section-tip {
+  color: #888;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 /* 预设模特网格 */
 .preset-models {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 12px;
-  justify-items: center;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
 .preset-item {
-  padding: 10px;
-  border-radius: 12px;
-  border: 2px solid #e5e6eb;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid #3a3a5c;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: #fff;
+  transition: all 0.3s ease;
+  background: #1a1a2e;
+}
+
+.preset-item img {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .preset-item:hover {
   border-color: #667eea;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
 
 .preset-item.active {
-  border-color: #667eea;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  border-color: #d4a574;
+  background: rgba(212, 165, 116, 0.1);
 }
 
-.preset-item :deep(.ant-image) {
+.preset-name {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #888;
+}
+
+/* 上传框 */
+.upload-box {
+  border: 1px dashed #4a4a6c;
+  border-radius: 12px;
+  background: #1a1a2e;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.upload-box.small {
+  min-height: 100px;
+}
+
+.upload-box:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-content {
+  text-align: center;
+  padding: 16px;
+}
+
+.upload-icon {
+  color: #666680;
+  margin-bottom: 10px;
+}
+
+.upload-icon svg {
+  stroke: currentColor;
+}
+
+.upload-text {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* 已上传预览 */
+.uploaded-preview {
+  width: 100%;
+  padding: 12px;
+  text-align: center;
+}
+
+.uploaded-preview :deep(.ant-image) {
+  max-width: 100%;
+  max-height: 160px;
   border-radius: 8px;
   overflow: hidden;
 }
 
-.preset-name {
-  margin-top: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #4e5969;
+.uploaded-preview :deep(.ant-image img) {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
 }
 
-/* 提交按钮样式 */
-:deep(.ant-btn-primary) {
-  height: 48px;
-  font-size: 16px;
+.preview-actions {
+  margin-top: 10px;
+}
+
+.preview-actions :deep(.ant-btn) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.preview-actions :deep(.ant-btn:hover) {
+  background: rgba(102, 126, 234, 0.3);
+  border-color: #667eea;
+}
+
+/* 底部生成按钮 */
+.panel-footer {
+  padding: 20px;
+  margin-top: auto;
+  background: #252540;
+}
+
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 50px;
+  font-size: 18px;
   font-weight: 600;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-  transition: all 0.3s;
+  background: linear-gradient(90deg, #d4a574 0%, #c9956a 100%) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: #1a1a2e !important;
 }
 
-:deep(.ant-btn-primary:hover:not(:disabled)) {
-  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.4);
+.generate-btn:hover:not(:disabled) {
+  background: linear-gradient(90deg, #e8c19a 0%, #d4a574 100%) !important;
 }
 
-:deep(.ant-btn-primary:active) {
-  transform: translateY(0);
+.generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 预览区域样式 */
-.preview-section {
-  min-height: 400px;
-  background: #f7f8fa;
-  border-radius: 16px;
-  padding: 24px;
+.btn-text {
+  font-size: 18px;
 }
 
-.result-wrapper {
+.error-alert {
+  margin-top: 12px;
+}
+
+/* 右侧结果区域 */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background-color: #1a1a2e;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* 加载状态 */
+.result-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.loading-text {
   text-align: center;
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.result-wrapper :deep(.ant-image) {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.loading-text h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 8px;
 }
 
-.result-actions {
+.loading-text p {
+  font-size: 14px;
+  color: #888;
+  margin: 0;
+}
+
+/* 结果内容 */
+.result-content,
+.result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 900px;
+}
+
+.result-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #d4a574;
+  margin: 0 0 16px;
+}
+
+.result-subtitle {
+  font-size: 16px;
+  color: #888;
+  margin: 0 0 32px;
+  line-height: 1.6;
+}
+
+/* 步骤指示 */
+.flow-steps {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+  font-size: 16px;
+  color: #888;
+}
+
+.flow-arrow {
+  color: #d4a574;
+  font-weight: bold;
+}
+
+/* 生成结果大图 */
+.result-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e6eb;
+}
+
+.result-large-image {
+  max-width: 100%;
+  max-height: 55vh;
+  border-radius: 16px;
+  border: 3px solid rgba(212, 165, 116, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.result-main :deep(.ant-image) {
   display: flex;
   justify-content: center;
 }
 
+.result-main :deep(.ant-image img) {
+  max-width: 100%;
+  max-height: 55vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+}
+
+/* 操作按钮 */
+.result-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.action-btn {
+  height: 40px;
+  border-radius: 8px;
+  padding: 0 24px;
+  font-weight: 500;
+}
+
+.action-btn:first-child {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+}
+
+.action-btn:not(:first-child) {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+.action-btn:not(:first-child):hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 任务信息 */
 .result-meta {
   margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e6eb;
-  font-size: 14px;
-  color: #4e5969;
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 功能特性网格 */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid #3a3a5c;
   text-align: left;
+  transition: all 0.3s ease;
 }
 
-.result-meta p {
-  margin-bottom: 8px;
-  line-height: 1.6;
+.feature-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #4a4a6c;
+  transform: translateY(-2px);
 }
 
-.empty-result {
-  padding: 100px 20px;
-  text-align: center;
+.feature-item .feature-icon {
+  font-size: 32px;
+  flex-shrink: 0;
 }
 
-.mt-2 {
-  margin-top: 16px;
+.feature-info h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 6px;
 }
 
-/* 警告提示框样式优化 */
-:deep(.ant-alert) {
-  border-radius: 10px;
-  border: none;
+.feature-info p {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* 使用指南样式 */
@@ -1115,13 +1238,13 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .history-item {
   display: flex;
-  gap: 16px;
-  padding: 16px;
+  gap: 14px;
+  padding: 14px;
   background: #f7f8fa;
   border-radius: 12px;
   border: 1px solid #e5e6eb;
@@ -1130,12 +1253,8 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
 
 .history-item:hover {
   background: #fff;
-  border-color: #1890ff;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.1);
-}
-
-.history-image {
-  flex-shrink: 0;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
 }
 
 .history-image :deep(.ant-image) {
@@ -1160,243 +1279,96 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
 }
 
 .history-actions {
-  margin-top: 12px;
-}
-
-.history-actions :deep(.ant-space) {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-/* 响应式设计 - 桌面端 */
-@media (min-width: 1200px) {
-  .preset-models {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    max-width: 100%;
-  }
-}
-
-@media (min-width: 992px) and (max-width: 1199px) {
-  .preset-models {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-
-/* 响应式设计 - 平板端 */
-@media (max-width: 1024px) {
-  .tryon-page {
-    padding: 24px 16px;
-  }
-
-  .page-header h1 {
-    font-size: 40px;
-  }
-
-  .subtitle {
-    font-size: 16px;
-  }
-
-  .tryon-card :deep(.ant-card-body) {
-    padding: 32px 24px;
-  }
-
-  .section-title {
-    font-size: 20px;
-  }
-
-  .features-section {
-    margin-bottom: 32px;
-  }
-
-  .feature-card {
-    padding: 20px;
-  }
-
-  .feature-icon {
-    font-size: 40px;
-  }
-
-  .feature-title {
-    font-size: 16px;
-  }
-
-  .preset-item {
-    padding: 8px;
-  }
-
-  .preview-section {
-    margin-top: 32px;
-  }
-}
-
-/* 响应式设计 - 移动端 */
-@media (max-width: 768px) {
-  .tryon-page {
-    padding: 16px 12px;
-  }
-
-  .page-header {
-    margin-bottom: 24px;
-  }
-
-  .page-header h1 {
-    font-size: 32px;
-    margin-bottom: 8px;
-  }
-
-  .subtitle {
-    font-size: 14px;
-  }
-
-  .tryon-card {
-    border-radius: 16px;
-  }
-
-  .tryon-card :deep(.ant-card-body) {
-    padding: 20px 16px;
-  }
-
-  .section-title {
-    font-size: 18px;
-    margin-bottom: 16px;
-  }
-
-  .title-icon {
-    font-size: 20px;
-  }
-
-  .upload-box {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .upload-box .ant-btn {
-    width: 100%;
-    height: 44px;
+/* 响应式 */
+@media (max-width: 1200px) {
+  .left-panel {
+    width: 380px;
+    min-width: 380px;
   }
 
   .preset-models {
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-  }
-
-  .preset-item {
-    padding: 6px;
-  }
-
-  .preset-item {
-    width: 100%;
-  }
-
-  .preset-item :deep(.ant-image) {
-    width: 100% !important;
-    height: auto;
-  }
-
-  .preset-item :deep(.ant-image img) {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-  }
-
-  .preset-name {
-    font-size: 12px;
-    margin-top: 6px;
-  }
-
-  .preview-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .preview-wrapper :deep(.ant-image) {
-    width: 100% !important;
-  }
-
-  :deep(.ant-btn-primary) {
-    height: 44px;
-    font-size: 15px;
-  }
-
-  .preview-section {
-    margin-top: 24px;
-    min-height: 300px;
-    padding: 16px;
-  }
-
-  .result-wrapper {
-    padding: 16px;
-  }
-
-  .result-wrapper :deep(.ant-image) {
-    width: 100% !important;
-  }
-
-  .empty-result {
-    padding: 60px 16px;
-  }
-
-  .result-meta {
-    font-size: 13px;
-  }
-
-  .result-actions :deep(.ant-space) {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .result-actions :deep(.ant-btn) {
-    font-size: 13px;
-    padding: 0 12px;
-  }
-
-  .header-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .header-actions .ant-btn {
-    width: 160px;
   }
 }
 
-/* 响应式设计 - 小屏幕移动端 */
+@media (max-width: 992px) {
+  .main-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+
+  .left-panel {
+    width: 100%;
+    min-width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #3a3a5c;
+    height: auto;
+    overflow: visible;
+  }
+
+  .right-panel {
+    min-height: 60vh;
+    height: auto;
+    overflow: visible;
+    padding: 30px 20px;
+  }
+
+  .preset-models {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .preset-models {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-title {
+    font-size: 24px;
+  }
+
+  .result-subtitle {
+    font-size: 14px;
+  }
+
+  .flow-steps {
+    font-size: 14px;
+  }
+
+  .result-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
-  .page-header h1 {
-    font-size: 28px;
+  .panel-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
   }
 
   .preset-models {
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .section-title {
-    font-size: 16px;
-  }
-
-  .feature-card {
-    padding: 16px;
-  }
-
-  .feature-icon {
-    font-size: 32px;
-  }
-
-  .feature-title {
-    font-size: 15px;
-  }
-
-  .feature-desc {
-    font-size: 13px;
-  }
-
-  .result-actions :deep(.ant-btn) {
-    width: 100%;
-  }
-
-  .result-actions :deep(.ant-space) {
-    width: 100%;
   }
 }
 </style>

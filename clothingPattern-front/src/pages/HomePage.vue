@@ -1,18 +1,26 @@
 <template>
   <div id="homePage">
-    <!-- 搜索框 -->
-    <div class="search-bar">
-      <a-input-search
-        placeholder="从海量服装图案中搜索"
-        v-model:value="searchParams.patternName"
-        enter-button="搜索"
-        size="large"
-        @search="doSearch"
-      />
+    <!-- 顶部欢迎区域 -->
+    <div class="hero-section">
+      <h1 class="hero-title">发现精美服装图案</h1>
+      <p class="hero-subtitle">海量原创设计，激发你的创意灵感</p>
+      
+      <!-- 搜索框 -->
+      <div class="search-bar">
+        <a-input-search
+          placeholder="搜索图案名称、风格、关键词..."
+          v-model:value="searchParams.patternName"
+          enter-button="搜索"
+          size="large"
+          @search="doSearch"
+        />
+      </div>
     </div>
 
-    <!-- 筛选条件 -->
-    <div class="filter-section">
+    <!-- 主内容区域 -->
+    <div class="main-content">
+      <!-- 筛选条件 -->
+      <div class="filter-section">
       <!-- 风格标签 -->
       <div class="filter-row">
         <span class="filter-label">风格：</span>
@@ -62,17 +70,18 @@
     <!-- 图案列表 -->
     <PatternList :data-list="dataList" :loading="loading" />
 
-    <!-- 分页 -->
-    <a-pagination
-      v-if="total > 0"
-      class="pagination"
-      v-model:current="searchParams.current"
-      v-model:pageSize="searchParams.pageSize"
-      :total="total"
-      :show-size-changer="true"
-      :show-total="(total: number) => `共 ${total} 个图案`"
-      @change="onPageChange"
-    />
+      <!-- 分页 -->
+      <a-pagination
+        v-if="total > 0"
+        class="pagination"
+        v-model:current="searchParams.current"
+        v-model:pageSize="searchParams.pageSize"
+        :total="total"
+        :show-size-changer="true"
+        :show-total="(total: number) => `共 ${total} 个图案`"
+        @change="onPageChange"
+      />
+    </div>
   </div>
 </template>
 
@@ -171,17 +180,45 @@ onMounted(() => {
 <style scoped>
 /* 全局样式重置与基础设置 */
 #homePage {
-  padding: 32px 24px;
   min-height: 100vh;
-  background-image: url('@/assets/backgroundImage/home-bg.png');
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 顶部欢迎区域 */
+.hero-section {
+  text-align: center;
+  padding: 48px 24px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  margin-bottom: 0;
+}
+
+.hero-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 32px;
 }
 
 /* 搜索框样式优化 */
 .search-bar {
-  max-width: 720px;
-  margin: 0 auto 40px;
+  max-width: 640px;
+  margin: 0 auto;
   position: relative;
+}
+
+/* 主内容区域 */
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 24px;
 }
 
 :deep(.ant-input-search-large) {
@@ -224,18 +261,18 @@ onMounted(() => {
 
 /* 筛选区域样式优化 */
 .filter-section {
-  background: rgba(255, 255, 255, 0.5);
-  padding: 32px;
-  border-radius: 16px;
-  margin-bottom: 32px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f0f2f5;
+  background: #ffffff;
+  padding: 24px 28px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eef0f3;
 }
 
 .filter-row {
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
@@ -245,10 +282,10 @@ onMounted(() => {
 
 .filter-label {
   font-weight: 600;
-  margin-right: 20px;
+  margin-right: 16px;
   min-width: 70px;
   color: #1d2129;
-  font-size: 15px;
+  font-size: 14px;
   white-space: nowrap;
 }
 
@@ -334,27 +371,47 @@ onMounted(() => {
 
 /* 响应式优化 */
 @media (max-width: 1024px) {
-  #homePage {
+  .main-content {
     padding: 24px 16px;
   }
 
+  .hero-section {
+    padding: 36px 16px 32px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
   .filter-section {
-    padding: 24px;
+    padding: 20px;
   }
 
   .filter-row {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
   }
 }
 
 @media (max-width: 768px) {
-  #homePage {
-    padding: 16px 8px;
+  .hero-section {
+    padding: 32px 12px 28px;
+  }
+
+  .hero-title {
+    font-size: 24px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .main-content {
+    padding: 16px 12px;
   }
 
   .search-bar {
     max-width: 100%;
-    margin-bottom: 24px;
   }
 
   :deep(.ant-input-search-large) {
@@ -373,19 +430,19 @@ onMounted(() => {
 
   .filter-section {
     padding: 16px;
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .filter-row {
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
   }
 
   .filter-label {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     margin-right: 0;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   :deep(.ant-tag-checkable) {

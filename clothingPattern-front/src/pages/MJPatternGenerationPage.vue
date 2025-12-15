@@ -871,7 +871,7 @@ const viewPatternDetail = (pattern: any) => {
 .mj-pattern-generation-page {
   height: 100vh;
   overflow: hidden;
-  background-color: #1a1a2e;
+  background-color: #ffffff;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
