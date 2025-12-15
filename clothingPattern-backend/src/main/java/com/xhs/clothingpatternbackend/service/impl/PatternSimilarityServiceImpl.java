@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +46,8 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
     private PatternService patternService;
 
     private static final String REDIS_REC_PREFIX = "rec:user:";
+    private static final String REDIS_HOT_PATTERNS_KEY = "rec:hot:patterns";
+    private static final long HOT_PATTERNS_EXPIRE_HOURS = 2; // 热门图案缓存2小时
 
     @Override
     @SuppressWarnings("unchecked")
@@ -84,20 +87,67 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
         return patternService.getPatternVOList(patterns, userId);
     }
 
-    @Override
-    public List<PatternVO> getHotPatterns(int limit) {
-        // 按点赞数排序获取热门图案
+    /**
+     * 获取热门图案ID列表（带缓存）
+     */
+    @SuppressWarnings("unchecked")
+    private List<Long> getHotPatternIds(int limit) {
+        // 1. 尝试从 Redis 获取热门图案 ID 列表
+        try {
+            Object cached = redisTemplate.opsForValue().get(REDIS_HOT_PATTERNS_KEY);
+            if (cached instanceof List) {
+                List<Long> cachedIds = (List<Long>) cached;
+                if (!cachedIds.isEmpty()) {
+                    log.debug("从Redis获取热门图案ID列表，共{}个", cachedIds.size());
+                    return cachedIds.stream().limit(limit).collect(Collectors.toList());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("从Redis获取热门图案列表失败: {}", e.getMessage());
+        }
+
+        // 2. Redis 未命中，从数据库查询
         QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue());
         queryWrapper.eq("isDelete", 0);
         queryWrapper.orderByDesc("likeCount");
-        queryWrapper.last("LIMIT " + limit);
+        queryWrapper.last("LIMIT " + Math.max(limit, 20)); // 多查一些用于缓存
 
         List<Pattern> patterns = patternMapper.selectList(queryWrapper);
+        List<Long> hotPatternIds = patterns.stream()
+                .map(Pattern::getId)
+                .collect(Collectors.toList());
+
+        // 3. 存入 Redis 缓存
+        if (!hotPatternIds.isEmpty()) {
+            try {
+                redisTemplate.opsForValue().set(REDIS_HOT_PATTERNS_KEY, hotPatternIds, 
+                        HOT_PATTERNS_EXPIRE_HOURS, TimeUnit.HOURS);
+                log.debug("热门图案ID列表已缓存到Redis，共{}个", hotPatternIds.size());
+            } catch (Exception e) {
+                log.warn("缓存热门图案列表到Redis失败: {}", e.getMessage());
+            }
+        }
+
+        return hotPatternIds.stream().limit(limit).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PatternVO> getHotPatterns(int limit) {
+        // 1. 获取热门图案 ID 列表（带缓存）
+        List<Long> hotPatternIds = getHotPatternIds(limit);
+        
+        if (CollUtil.isEmpty(hotPatternIds)) {
+            return new ArrayList<>();
+        }
+
+        // 2. 根据 ID 查询详细信息
+        List<Pattern> patterns = patternMapper.selectBatchIds(hotPatternIds);
         if (CollUtil.isEmpty(patterns)) {
             return new ArrayList<>();
         }
 
+        // 3. 转换为 VO
         return patternService.getPatternVOList(patterns, null);
     }
 }

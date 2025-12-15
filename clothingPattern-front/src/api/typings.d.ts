@@ -565,8 +565,8 @@ declare namespace API {
     updateTime?: string
     tempImageUrlList?: string[]
     localImageUrlList?: string[]
-    origPromptList?: string[]
     sortList?: number[]
+    origPromptList?: string[]
   }
 
   type likeArticleParams = {
@@ -867,6 +867,10 @@ declare namespace API {
 
   type recommendPatternsParams = {
     prompt: string
+  }
+
+  type recordViewBehaviorParams = {
+    patternId: number
   }
 
   type Result = {

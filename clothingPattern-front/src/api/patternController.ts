@@ -17,6 +17,21 @@ export async function auditPattern(
   })
 }
 
+/** 此处后端没有提供注释 POST /pattern/behavior/view */
+export async function recordViewBehavior(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.recordViewBehaviorParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/pattern/behavior/view', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /pattern/delete */
 export async function deletePattern(body: API.DeleteRequest, options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean>('/pattern/delete', {
@@ -131,6 +146,22 @@ export async function listMyPatternVoByPage(
   })
 }
 
+/** 此处后端没有提供注释 GET /pattern/recommend */
+export async function getRecommendations(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListPatternVO>('/pattern/recommend', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
+/** 此处后端没有提供注释 POST /pattern/recommend/refresh */
+export async function refreshRecommendations(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean>('/pattern/recommend/refresh', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 POST /pattern/update */
 export async function updatePattern(
   body: API.PatternUpdateRequest,
@@ -142,36 +173,6 @@ export async function updatePattern(
       'Content-Type': 'application/json',
     },
     data: body,
-    ...(options || {}),
-  })
-}
-
-/** 获取个性化推荐图案列表 GET /pattern/recommend */
-export async function getPatternRecommendations(options?: { [key: string]: any }) {
-  return request<API.BaseResponseListPatternVO>('/pattern/recommend', {
-    method: 'GET',
-    ...(options || {}),
-  })
-}
-
-/** 记录用户浏览行为 POST /pattern/behavior/view */
-export async function recordViewBehavior(
-  params: { patternId: number },
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseBoolean>('/pattern/behavior/view', {
-    method: 'POST',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
-
-/** 手动触发推荐算法刷新（仅管理员） POST /pattern/recommend/refresh */
-export async function refreshRecommendations(options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean>('/pattern/recommend/refresh', {
-    method: 'POST',
     ...(options || {}),
   })
 }

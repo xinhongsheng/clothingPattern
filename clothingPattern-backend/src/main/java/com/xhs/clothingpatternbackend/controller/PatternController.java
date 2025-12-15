@@ -32,7 +32,9 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -151,6 +153,7 @@ public class PatternController {
 
     /**
      * 分页获取图案封装列表
+     * 登录用户在第一页且无筛选条件时，推荐图案优先显示
      *
      * @param patternQueryRequest
      * @return
@@ -173,41 +176,116 @@ public class PatternController {
         } catch (Exception e) {
             // 未登录，保持loginUserId为null
         }
+
+        // 判断是否需要插入推荐图案：第一页 + 已登录 + 无筛选条件
+        boolean shouldInsertRecommend = current == 1 && loginUserId != null && !hasFilterConditions(patternQueryRequest);
+        List<PatternVO> recommendList = new ArrayList<>();
         
-        //构建缓存
+        if (shouldInsertRecommend) {
+            // 获取推荐图案（不使用缓存，因为推荐是个性化的）
+            recommendList = patternSimilarityService.getRecommendations(loginUserId, 10);
+        }
+        
+        // 构建缓存key（不包含用户ID，因为普通列表是公共的）
         String queryCondition = JSONUtil.toJsonStr(patternQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
         String cacheKey = String.format("xhs_pattern:listPictureVOByPage:%s", hashKey);
-        //先从本地缓存读取
+        
+        Page<PatternVO> patternVOPage = null;
+        
+        // 先从本地缓存读取
         String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
-        if(cachedValue!=null){
-            Page<PatternVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
-            return ResultUtils.success(cachePage);
+        if (cachedValue != null) {
+            patternVOPage = parseCachedPage(cachedValue);
+        } else {
+            // 从Redis中读取
+            ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+            cachedValue = valueOps.get(cacheKey);
+            if (cachedValue != null) {
+                LOCAL_CACHE.put(cacheKey, cachedValue);
+                patternVOPage = parseCachedPage(cachedValue);
+            } else {
+                // 缓存未命中，查询数据库
+                Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
+                        patternService.getQueryWrapper(patternQueryRequest));
+                patternVOPage = new Page<>(current, size, patternPage.getTotal());
+                List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords(), loginUserId);
+                patternVOPage.setRecords(patternVOList);
+
+                // 存入缓存
+                String cacheValue = JSONUtil.toJsonStr(patternVOPage);
+                int cacheExpireTime = 300 + RandomUtil.randomInt(0, 300);
+                LOCAL_CACHE.put(cacheKey, cacheValue);
+                valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
+            }
         }
 
-        //从redis中读取
-        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
-        cachedValue = valueOps.get(cacheKey);
-        if(cachedValue!=null){
-            //存入本地缓存
-            LOCAL_CACHE.put(cacheKey, cachedValue);
-            Page<PatternVO> cachePage = JSONUtil.toBean(cachedValue, Page.class);
-            return ResultUtils.success(cachePage);
+        // 如果有推荐图案，将推荐图案插入到列表前面
+        if (!recommendList.isEmpty() && patternVOPage != null) {
+            List<PatternVO> originalList = patternVOPage.getRecords();
+            if (originalList == null) {
+                originalList = new ArrayList<>();
+            }
+            
+            // 获取推荐图案ID集合，用于去重
+            Set<Long> recommendIds = recommendList.stream()
+                    .map(PatternVO::getId)
+                    .collect(java.util.stream.Collectors.toSet());
+            
+            // 从普通列表中过滤掉已在推荐中的图案
+            List<PatternVO> filteredList = originalList.stream()
+                    .filter(item -> !recommendIds.contains(item.getId()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            // 合并：推荐图案 + 普通图案
+            List<PatternVO> mergedList = new java.util.ArrayList<>();
+            mergedList.addAll(recommendList);
+            mergedList.addAll(filteredList);
+            
+            patternVOPage.setRecords(mergedList);
         }
-
-        Page<Pattern> patternPage = patternService.page(new Page<>(current, size),
-                patternService.getQueryWrapper(patternQueryRequest));
-        Page<PatternVO> patternVOPage = new Page<>(current, size, patternPage.getTotal());
-        List<PatternVO> patternVOList = patternService.getPatternVOList(patternPage.getRecords(), loginUserId);
-        patternVOPage.setRecords(patternVOList);
-
-        //存入缓存中
-        String cacheValue = JSONUtil.toJsonStr(patternVOPage);
-        int cacheExpireTime=300+ RandomUtil.randomInt(0, 300);
-        LOCAL_CACHE.put(cacheKey, cacheValue);
-        valueOps.set(cacheKey, cacheValue, cacheExpireTime, TimeUnit.SECONDS);
 
         return ResultUtils.success(patternVOPage);
+    }
+
+    /**
+     * 判断是否有筛选条件
+     */
+    private boolean hasFilterConditions(PatternQueryRequest request) {
+        if (request == null) {
+            return false;
+        }
+        // 检查是否有搜索或筛选条件
+        return (request.getPatternName() != null && !request.getPatternName().isEmpty()) ||
+               (request.getStyle() != null && !request.getStyle().isEmpty()) ||
+               (request.getSeason() != null && !request.getSeason().isEmpty()) ||
+               (request.getTargetAudience() != null && !request.getTargetAudience().isEmpty()) ||
+               (request.getGenerationType() != null && !request.getGenerationType().isEmpty()) ||
+               request.getUserId() != null ||
+               request.getId() != null;
+    }
+
+    /**
+     * 解析缓存中的分页数据，正确处理泛型
+     */
+    private Page<PatternVO> parseCachedPage(String cachedValue) {
+        cn.hutool.json.JSONObject jsonObject = JSONUtil.parseObj(cachedValue);
+        Page<PatternVO> page = new Page<>();
+        page.setCurrent(jsonObject.getLong("current", 1L));
+        page.setSize(jsonObject.getLong("size", 10L));
+        page.setTotal(jsonObject.getLong("total", 0L));
+        page.setPages(jsonObject.getLong("pages", 0L));
+        
+        // 正确解析 records 为 PatternVO 列表
+        cn.hutool.json.JSONArray recordsArray = jsonObject.getJSONArray("records");
+        if (recordsArray != null) {
+            List<PatternVO> records = JSONUtil.toList(recordsArray, PatternVO.class);
+            page.setRecords(records);
+        } else {
+            page.setRecords(new ArrayList<>());
+        }
+        
+        return page;
     }
 
     /**

@@ -11,18 +11,6 @@
       />
     </div>
 
-    <!-- 猜你喜欢推荐区域 -->
-    <div class="recommend-section" v-if="recommendList.length > 0">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="title-icon">&#x2764;</span>
-          猜你喜欢
-        </h2>
-        <span class="section-subtitle">基于您的喜好为您推荐</span>
-      </div>
-      <PatternList :data-list="recommendList" :loading="recommendLoading" />
-    </div>
-
     <!-- 筛选条件 -->
     <div class="filter-section">
       <!-- 风格标签 -->
@@ -91,21 +79,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { listPatternVoByPage, getPatternRecommendations } from '@/api/patternController'
+import { listPatternVoByPage } from '@/api/patternController'
 import PatternList from '@/components/PatternList.vue'
-import { useLoginUserStore } from '@/stores/useLoginUserStore'
-
-// 登录用户 Store
-const loginUserStore = useLoginUserStore()
 
 // 数据
 const dataList = ref<API.PatternVO[]>([])
 const total = ref(0)
 const loading = ref(true)
-
-// 推荐数据
-const recommendList = ref<API.PatternVO[]>([])
-const recommendLoading = ref(false)
 
 // 搜索条件
 const searchParams = reactive<API.PatternQueryRequest>({
@@ -185,28 +165,7 @@ const handleAudienceChange = (audience: string, checked: boolean) => {
 // 页面加载时请求一次
 onMounted(() => {
   fetchData()
-  fetchRecommendations()
 })
-
-// 获取推荐数据
-const fetchRecommendations = async () => {
-  // 只有登录用户才获取推荐
-  if (!loginUserStore.loginUser?.id) {
-    return
-  }
-
-  recommendLoading.value = true
-  try {
-    const res = await getPatternRecommendations()
-    if (res.data.code === 0 && res.data.data) {
-      recommendList.value = res.data.data
-    }
-  } catch (error: any) {
-    console.error('获取推荐失败：', error.message)
-  } finally {
-    recommendLoading.value = false
-  }
-}
 </script>
 
 <style scoped>
@@ -271,43 +230,6 @@ const fetchRecommendations = async () => {
   margin-bottom: 32px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
   border: 1px solid #f0f2f5;
-}
-
-/* 推荐区域样式 */
-.recommend-section {
-  background: linear-gradient(135deg, rgba(255, 240, 240, 0.8) 0%, rgba(255, 250, 245, 0.8) 100%);
-  padding: 32px;
-  border-radius: 16px;
-  margin-bottom: 32px;
-  box-shadow: 0 6px 24px rgba(255, 100, 100, 0.08);
-  border: 1px solid rgba(255, 200, 200, 0.3);
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
-}
-
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1d2129;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.title-icon {
-  color: #ff4d4f;
-  font-size: 18px;
-}
-
-.section-subtitle {
-  font-size: 14px;
-  color: #86909c;
 }
 
 .filter-row {
