@@ -1,19 +1,30 @@
 <template>
   <div id="homePage">
     <!-- 顶部欢迎区域 -->
+    <!-- 顶部欢迎区域 (Compact Mode) -->
     <div class="hero-section">
-      <h1 class="hero-title">发现精美服装图案</h1>
-      <p class="hero-subtitle">海量原创设计，激发你的创意灵感</p>
-      
-      <!-- 搜索框 -->
-      <div class="search-bar">
-        <a-input-search
-          placeholder="搜索图案名称、风格、关键词..."
-          v-model:value="searchParams.patternName"
-          enter-button="搜索"
-          size="large"
-          @search="doSearch"
-        />
+      <div class="hero-content">
+        <div class="hero-left">
+          <h1 class="hero-title">发现精美服装图案</h1>
+          <p class="hero-subtitle">海量原创设计，激发创意</p>
+        </div>
+        
+        <div class="hero-right">
+          <div class="search-container">
+            <div :class="['expandable-search', { expanded: isSearchExpanded }]">
+              <a-input-search
+                placeholder="搜索图案..."
+                v-model:value="searchParams.patternName"
+                @search="doSearch"
+                @blur="handleSearchBlur"
+                ref="searchInputRef"
+              />
+            </div>
+            <div class="search-icon-btn" @click="toggleSearch">
+              <SearchOutlined />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -86,8 +97,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
+import { SearchOutlined } from '@ant-design/icons-vue'
 import { listPatternVoByPage } from '@/api/patternController'
 import PatternList from '@/components/PatternList.vue'
 
@@ -141,6 +153,33 @@ const doSearch = () => {
   fetchData()
 }
 
+// 搜索栏展开逻辑
+const isSearchExpanded = ref(false)
+const searchInputRef = ref()
+
+const toggleSearch = () => {
+  isSearchExpanded.value = !isSearchExpanded.value
+  if (isSearchExpanded.value) {
+    nextTick(() => {
+      // 尝试聚焦输入框，需要确保 ref 绑定正确且组件暴露了 focus 方法
+      // Antdv InputSearch 可能需要 input.focus()
+      searchInputRef.value?.focus?.()
+    })
+  } else {
+    // 如果是关闭，且有搜索内容，是否要清空？
+    // 暂时保持不清空，仅收起
+  }
+}
+
+const handleSearchBlur = () => {
+  // 可选：失去焦点时是否自动收起？
+  // 为避免用户体验不好（点搜索按钮还没触发就收起了），这里暂时不自动收起
+  // 或者加个延时
+  if (!searchParams.patternName) {
+    isSearchExpanded.value = false
+  }
+}
+
 // 处理风格选择
 const handleStyleChange = (style: string, checked: boolean) => {
   if (checked) {
@@ -185,94 +224,156 @@ onMounted(() => {
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-/* 顶部欢迎区域 */
+/* 统一的动画缓动函数 */
+:root {
+  --transition-duration: 0.3s;
+  --transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 顶部欢迎区域 - 悬浮圆角框模式 */
 .hero-section {
-  text-align: center;
-  padding: 48px 24px 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  margin-bottom: 0;
+  max-width: 1400px;
+  margin: 24px auto 0;
+  padding: 12px 32px;
+  background: #ffffff;
+  border-radius: 24px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.hero-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 48px;
+}
+
+.hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .hero-title {
-  font-size: 36px;
+  font-size: 20px;
   font-weight: 700;
-  margin-bottom: 12px;
+  color: #1f2937;
+  margin: 0;
   letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-subtitle {
-  font-size: 16px;
-  opacity: 0.9;
-  margin-bottom: 32px;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  padding-left: 16px;
+  border-left: 1px solid #e5e7eb;
+  line-height: 1.2;
 }
 
-/* 搜索框样式优化 */
-.search-bar {
-  max-width: 640px;
-  margin: 0 auto;
+/* 搜索区域 */
+.hero-right {
+  display: flex;
+  align-items: center;
+}
+
+.search-container {
   position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon-btn {
+  font-size: 20px;
+  color: #4b5563;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: #f3f4f6;
+    color: #4f46e5;
+  }
+}
+
+.expandable-search {
+  width: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  margin-right: 0;
+  
+  &.expanded {
+    width: 260px;
+    opacity: 1;
+    visibility: visible;
+    margin-right: 12px;
+  }
+}
+
+/* 搜索框内部样式覆盖 */
+:deep(.ant-input-search) {
+  width: 100%;
+}
+
+:deep(.ant-input-search .ant-input) {
+  border-radius: 20px;
+  padding-left: 16px;
+  padding-right: 40px; /* 留出按钮空间 */
+  height: 36px;
+  font-size: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+  
+  &:focus {
+    background: #ffffff;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+  }
+}
+
+:deep(.ant-input-search .ant-input-search-button) {
+  display: none; /* 隐藏默认搜索按钮，使用回车或输入框内图标 */
 }
 
 /* 主内容区域 */
 .main-content {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 32px 24px;
-}
-
-:deep(.ant-input-search-large) {
-  --ant-input-height: 56px;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-:deep(.ant-input-search-large:hover) {
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
-}
-
-:deep(.ant-input-search-large .ant-input) {
-  font-size: 16px;
-  padding: 0 24px;
-  border: none;
-}
-
-:deep(.ant-input-search-large .ant-input-search-button) {
-  height: 100%;
-  padding: 0 32px;
-  font-size: 16px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-  border: none;
-  transition: all 0.3s;
-}
-
-:deep(.ant-input-search-large .ant-input-search-button:hover) {
-  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-  transform: scale(1.02);
-}
-
-:deep(.ant-input-search-large .ant-input-search-button:active) {
-  transform: scale(0.98);
+  padding: 24px 24px;
 }
 
 /* 筛选区域样式优化 */
 .filter-section {
   background: #ffffff;
-  padding: 24px 28px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #eef0f3;
+  padding: 32px;
+  border-radius: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  transition: all var(--transition-duration) var(--transition-easing);
+}
+
+.filter-section:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .filter-row {
   display: flex;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
@@ -282,92 +383,121 @@ onMounted(() => {
 
 .filter-label {
   font-weight: 600;
-  margin-right: 16px;
-  min-width: 70px;
-  color: #1d2129;
-  font-size: 14px;
+  margin-right: 20px;
+  min-width: 80px;
+  color: #1f2937;
+  font-size: 15px;
+  line-height: 32px;
   white-space: nowrap;
 }
 
 /* 标签样式优化 */
 :deep(.ant-tag-checkable) {
   cursor: pointer;
-  border-radius: 20px;
-  padding: 6px 16px;
+  border-radius: 12px;
+  padding: 6px 20px;
+  height: 32px;
+  line-height: 20px;
   margin-right: 12px;
   margin-bottom: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 14px;
-  border-color: #e5e6eb;
-  color: #4e5969;
-  background-color: #f7f8fa;
+  border: 1px solid transparent;
+  color: #6b7280;
+  background-color: #f3f4f6;
+  font-weight: 500;
 }
 
 :deep(.ant-tag-checkable:hover) {
-  border-color: #1890ff;
-  color: #1890ff;
-  background-color: #e6f7ff;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  color: #4f46e5;
+  background-color: #eef2ff;
+  transform: translateY(-1px);
 }
 
 :deep(.ant-tag-checkable-checked) {
-  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   color: #ffffff;
-  border-color: #1890ff;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  font-weight: 600;
 }
 
 :deep(.ant-tag-checkable-checked:hover) {
-  background: linear-gradient(135deg, #40a9ff 0%, #1890ff 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
 }
 
 /* 分页样式优化 */
 .pagination {
   text-align: center;
-  margin-top: 40px;
-  padding: 20px 0;
+  margin-top: 64px;
+  padding: 24px 0;
 }
 
 :deep(.ant-pagination) {
-  font-size: 14px;
-}
-
-:deep(.ant-pagination-item) {
-  border-radius: 8px !important;
-  margin: 0 4px;
-  transition: all 0.3s;
-}
-
-:deep(.ant-pagination-item:hover) {
-  border-color: #1890ff;
-  transform: translateY(-2px);
-}
-
-:deep(.ant-pagination-item-active) {
-  border-color: #1890ff !important;
-  background-color: #e6f7ff !important;
-}
-
-:deep(.ant-pagination-item-active a) {
-  color: #1890ff !important;
+  font-size: 15px;
   font-weight: 500;
 }
 
-:deep(.ant-pagination-prev, .ant-pagination-next) {
-  border-radius: 8px !important;
-  transition: all 0.3s;
+:deep(.ant-pagination-item) {
+  border-radius: 12px !important;
+  margin: 0 6px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  transition: all 0.2s ease;
 }
 
-:deep(.ant-pagination-prev:hover, .ant-pagination-next:hover) {
-  border-color: #1890ff;
-  background-color: #f0f9ff;
+:deep(.ant-pagination-item:hover) {
+  border-color: #818cf8;
+  color: #4f46e5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+:deep(.ant-pagination-item-active) {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+:deep(.ant-pagination-item-active a) {
+  color: #ffffff !important;
+}
+
+:deep(.ant-pagination-item-active:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+:deep(.ant-pagination-prev),
+:deep(.ant-pagination-next) {
+  border-radius: 12px !important;
+  background: #ffffff;
+  border: 1px solid transparent;
+}
+
+:deep(.ant-pagination-prev:hover),
+:deep(.ant-pagination-next:hover) {
+  border-color: #818cf8;
+  color: #4f46e5;
+  transform: translateY(-2px);
+  background: #ffffff;
+}
+
+:deep(.ant-pagination-disabled) {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 :deep(.ant-pagination-show-size-changer) {
-  margin-left: 16px;
+  margin-left: 24px;
 }
+
+:deep(.ant-select-selector) {
+  border-radius: 8px !important;
+}
+
 
 /* 响应式优化 */
 @media (max-width: 1024px) {
@@ -376,11 +506,15 @@ onMounted(() => {
   }
 
   .hero-section {
-    padding: 36px 16px 32px;
+    padding: 48px 16px 40px;
   }
 
   .hero-title {
-    font-size: 28px;
+    font-size: 36px;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
   }
 
   .filter-section {
@@ -394,16 +528,16 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .hero-section {
-    padding: 32px 12px 28px;
+    padding: 40px 12px 36px;
   }
 
   .hero-title {
-    font-size: 24px;
+    font-size: 28px;
   }
 
   .hero-subtitle {
-    font-size: 14px;
-    margin-bottom: 24px;
+    font-size: 15px;
+    margin-bottom: 32px;
   }
 
   .main-content {

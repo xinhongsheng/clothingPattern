@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { withDefaults } from 'vue'
+
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { DeleteOutlined, HeartOutlined, HeartFilled } from '@ant-design/icons-vue'
@@ -171,27 +171,33 @@ const doDelete = async (pattern: API.PatternVO, e: Event) => {
   padding: 16px 0;
 
   .pattern-card {
-    transition: all 0.3s ease;
-    border-radius: 8px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 16px;
     overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    background: #ffffff;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      border-color: rgba(79, 70, 229, 0.1);
     }
 
     :deep(.ant-card-body) {
-      padding: 16px;
+      padding: 20px;
     }
 
     :deep(.ant-card-actions) {
       background: #fafafa;
-
+      border-top: 1px solid rgba(0, 0, 0, 0.04);
+      
       > li {
-        margin: 8px 0;
+        margin: 12px 0;
+        color: #6b7280;
+        transition: color 0.2s;
 
         &:hover {
-          color: #1890ff;
+          color: #4f46e5;
         }
       }
     }
@@ -199,90 +205,124 @@ const doDelete = async (pattern: API.PatternVO, e: Event) => {
 
   .like-action {
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+      color: #ef4444;
+    }
 
     &:hover .like-icon {
       transform: scale(1.2);
     }
 
     .like-icon {
-      font-size: 18px;
-      transition: all 0.3s ease;
+      font-size: 20px;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 
       &.liked {
-        color: #ff4d4f;
-        animation: heartBeat 0.3s ease;
+        color: #ef4444;
+        filter: drop-shadow(0 4px 6px rgba(239, 68, 68, 0.25));
+        animation: heartBeat 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
       }
+    }
+    
+    span {
+      font-weight: 500;
+      font-size: 14px;
     }
   }
 
   @keyframes heartBeat {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.2);
-    }
-    100% {
-      transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+    100% { transform: scale(1); }
   }
 
   .pattern-cover {
     position: relative;
-    height: 200px;
+    height: 240px;
     overflow: hidden;
-    background: #f5f5f5;
+    background: #f3f4f6;
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s ease;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     &:hover img {
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
 
     .status-tag {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 12px;
+      right: 12px;
       margin: 0;
       font-size: 12px;
-      padding: 2px 8px;
-      border-radius: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.04) 100%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    &:hover::after {
+      opacity: 1;
     }
   }
 
   .pattern-desc {
     .desc-text {
-      font-size: 13px;
-      color: #8c8c8c;
-      margin-bottom: 8px;
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 12px;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      line-height: 1.5;
-      min-height: 40px;
+      line-height: 1.6;
+      min-height: 44px;
     }
 
     .pattern-tags {
-      margin-top: 8px;
+      margin-top: 12px;
 
       .ant-tag {
-        margin-bottom: 4px;
+        margin-bottom: 6px;
         font-size: 12px;
+        border: none;
+        background: #f3f4f6;
+        color: #6b7280;
+        border-radius: 6px;
+        padding: 2px 10px;
+        
+        &:last-child {
+          margin-right: 0;
+        }
       }
     }
   }
 
   :deep(.ant-card-meta-title) {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 8px !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
