@@ -107,20 +107,7 @@
           </div>
         </div>
 
-        <!-- 查看相似图案 -->
-        <div class="panel-section" v-if="recommendedPatterns.length > 0">
-          <div class="section-header">相似图案推荐</div>
-          <div class="similar-patterns-mini">
-            <div
-              v-for="pattern in recommendedPatterns.slice(0, 4)"
-              :key="pattern.id"
-              class="similar-pattern-item"
-              @click="viewPatternDetail(pattern)"
-            >
-              <img :src="pattern.thumbUrl || pattern.patternUrl" :alt="pattern.patternName" />
-            </div>
-          </div>
-        </div>
+
 
         <!-- 底部按钮 -->
         <div class="panel-footer">
@@ -309,7 +296,7 @@ import {
   ReloadOutlined,
   CloseOutlined,
 } from '@ant-design/icons-vue'
-import { imagine, executeAction as mjExecuteAction, savePattern, recommendPatterns, expandPrompt } from '@/api/midjourneyjiekou'
+import { imagine, executeAction as mjExecuteAction, savePattern, expandPrompt } from '@/api/midjourneyjiekou'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 
@@ -346,12 +333,7 @@ const saveForm = reactive({
 const generating = ref(false)
 const executing = ref(false)
 const saving = ref(false)
-const recommending = ref(false)
 const expanding = ref(false)
-
-// 推荐结果
-const recommendedPatterns = ref<any[]>([]
-)
 
 // MJ 响应数据
 const mjResponse = ref<any>(null)
@@ -831,39 +813,7 @@ const handleExpandPrompt = async () => {
   }
 }
 
-// 获取智能推荐
-const fetchRecommendations = async () => {
-  if (!formState.prompt || formState.prompt.trim().length < 2) {
-    message.warning('请先输入至少 2 个字的描述')
-    return
-  }
 
-  try {
-    recommending.value = true
-    recommendedPatterns.value = []
-
-    const res = await recommendPatterns({ prompt: formState.prompt })
-
-    if (res.data.code === 0 && res.data.data) {
-      recommendedPatterns.value = res.data.data
-      if (res.data.data.length === 0) {
-        message.info('暂无相似图案，试试 AI 生成全新设计吧！')
-      } else {
-        message.success(`找到 ${res.data.data.length} 个相似图案`)
-      }
-    }
-  } catch (error: any) {
-    console.error('获取推荐失败:', error)
-    message.error('获取推荐失败')
-  } finally {
-    recommending.value = false
-  }
-}
-
-// 查看推荐图案详情
-const viewPatternDetail = (pattern: any) => {
-  router.push(`/pattern/detail/${pattern.id}`)
-}
 </script>
 
 <style scoped>
@@ -1075,30 +1025,7 @@ const viewPatternDetail = (pattern: any) => {
   color: #fff;
 }
 
-/* 相似图案迷你列表 */
-.similar-patterns-mini {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
 
-.similar-pattern-item {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.similar-pattern-item:hover {
-  transform: scale(1.05);
-}
-
-.similar-pattern-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 /* 底部按钮区域 */
 .panel-footer {

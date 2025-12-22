@@ -19,14 +19,12 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.PatternSimilarityService;
-import com.xhs.clothingpatternbackend.service.PatternVectorService;
 import com.xhs.clothingpatternbackend.service.UserBehaviorService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.task.CollaborativeFilteringTask;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -52,8 +50,6 @@ public class PatternController {
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private PatternVectorService patternVectorService;
 
     @Resource
     private PatternSimilarityService patternSimilarityService;
@@ -373,7 +369,7 @@ public class PatternController {
         // 清空图案列表缓存
         clearPatternListCache();
         // 删除向量
-        patternVectorService.removeById(id);
+//        patternVectorService.removeById(id);
         return ResultUtils.success(true);
     }
 

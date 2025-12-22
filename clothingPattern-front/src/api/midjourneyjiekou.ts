@@ -53,20 +53,6 @@ export async function imagine(body: API.MJImagineRequest, options?: { [key: stri
   })
 }
 
-/** 智能图案推荐 GET /mj/recommend */
-export async function recommendPatterns(
-  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.recommendPatternsParams,
-  options?: { [key: string]: any }
-) {
-  return request<API.BaseResponseListPattern>('/mj/recommend', {
-    method: 'GET',
-    params: {
-      ...params,
-    },
-    ...(options || {}),
-  })
-}
 
 /** 保存图片到数据库 POST /mj/save */
 export async function savePattern(body: API.MJImagineVO, options?: { [key: string]: any }) {

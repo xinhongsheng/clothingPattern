@@ -16,4 +16,10 @@
         id,userId,patternId,
         createTime,isDelete
     </sql>
+
+    <!-- INSERT IGNORE：冲突时忽略插入，不会报错 -->
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO user_like (id, userId, patternId, isDelete, createTime)
+        VALUES (#{id}, #{userId}, #{patternId}, #{isDelete}, NOW())
+    </insert>
 </mapper>

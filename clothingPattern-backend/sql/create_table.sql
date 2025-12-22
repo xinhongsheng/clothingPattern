@@ -343,17 +343,6 @@ CREATE TABLE IF NOT EXISTS `pattern` (
                                          INDEX `idx_createTime`(`createTime` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1996442354772226050 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '服装图案表（智能图案生成模块核心表）' ROW_FORMAT = DYNAMIC;
 
--- 智能推荐
-DROP TABLE IF EXISTS `pattern_vector`;
-
-CREATE TABLE `pattern_vector` (
-                                  `patternId` bigint NOT NULL COMMENT '关联 pattern 表的主键ID',
-                                  `vectorData` json NOT NULL COMMENT '384维特征向量数组，存储格式为 [0.1, 0.2, ...]',
-                                  `createTime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                  PRIMARY KEY (`patternId`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图案AI特征向量表';
-
-
 -- =====================================================
 -- 协同过滤推荐系统所需表结构
 -- =====================================================

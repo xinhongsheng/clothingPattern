@@ -56,6 +56,17 @@ public interface LikeMapper extends BaseMapper<UserLike> {
      */
     @org.apache.ibatis.annotations.Update("UPDATE user_like SET isDelete = #{isDelete} WHERE id = #{id}")
     int updateLikeStatus(@Param("id") Long id, @Param("isDelete") Integer isDelete);
+
+    /**
+     * INSERT IGNORE 原子插入（解决并发问题）
+     * @param id 点赞记录ID
+     * @param userId 用户ID
+     * @param patternId 图案ID
+     * @param isDelete 删除标记（0-有效，1-已删除）
+     * @return 影响的行数（0=已存在，1=插入成功）
+     */
+    int insertIgnore(@Param("id") Long id, @Param("userId") Long userId, 
+                     @Param("patternId") Long patternId, @Param("isDelete") Integer isDelete);
 }
 
 

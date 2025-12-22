@@ -183,34 +183,42 @@ public class LikeSyncTask {
     }
 
     private void syncSingleUserLike(Long userId, Long patternId, boolean liked) {
-        // 查询现有记录
-        LambdaQueryWrapper<UserLike> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(UserLike::getUserId, userId)
-                .eq(UserLike::getPatternId, patternId);
+        try {
+            // 查询现有记录（包括已删除的）
+            UserLike userLike = likeMapper.selectOneIncludeDeleted(userId, patternId);
 
-        UserLike userLike = likeMapper.selectOne(queryWrapper);
-
-        if (liked) {
-            // 点赞状态
-            if (userLike == null) {
-                // 新增点赞记录
-                userLike = new UserLike();
-                userLike.setUserId(userId);
-                userLike.setPatternId(patternId);
-                userLike.setIsDelete(0);
-                likeMapper.insert(userLike);
-            } else if (userLike.getIsDelete() == 1) {
-                // 恢复删除的记录
-                userLike.setIsDelete(0);
-                likeMapper.updateById(userLike);
+            if (liked) {
+                // 点赞状态
+                if (userLike == null) {
+                    // 新增点赞记录 - 使用 INSERT IGNORE 原子操作，避免并发冲突
+                    int affectedRows = likeMapper.insertIgnore(
+                        com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),
+                        userId,
+                        patternId,
+                        0 // isDelete = 0 表示有效
+                    );
+                    if (affectedRows > 0) {
+                        log.debug("定时任务：新增点赞记录成功 userId={}, patternId={}", userId, patternId);
+                    } else {
+                        log.debug("定时任务：点赞记录已存在（并发冲突）userId={}, patternId={}", userId, patternId);
+                    }
+                } else if (userLike.getIsDelete() == 1) {
+                    // 恢复删除的记录
+                    likeMapper.updateLikeStatus(userLike.getId(), 0);
+                    log.debug("定时任务：恢复点赞记录 userId={}, patternId={}", userId, patternId);
+                } else {
+                    log.debug("定时任务：点赞记录已存在且有效 userId={}, patternId={}", userId, patternId);
+                }
+            } else {
+                // 取消点赞状态
+                if (userLike != null && userLike.getIsDelete() == 0) {
+                    // 软删除记录
+                    likeMapper.updateLikeStatus(userLike.getId(), 1);
+                    log.debug("定时任务：取消点赞记录 userId={}, patternId={}", userId, patternId);
+                }
             }
-        } else {
-            // 取消点赞状态
-            if (userLike != null && userLike.getIsDelete() == 0) {
-                // 软删除记录
-                userLike.setIsDelete(1);
-                likeMapper.updateById(userLike);
-            }
+        } catch (Exception e) {
+            log.error("定时任务：同步单个用户点赞关系失败 userId={}, patternId={}", userId, patternId, e);
         }
     }
 

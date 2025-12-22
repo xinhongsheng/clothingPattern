@@ -128,21 +128,39 @@
         </dependency>
 
         <!-- 亚马逊java深度学习 all-MiniLM-L6-v2 -->
-            <dependency>
-                <groupId>ai.djl</groupId>
-                <artifactId>api</artifactId>
-                <version>0.28.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.djl.onnxruntime</groupId>
-                <artifactId>onnxruntime-engine</artifactId>
-                <version>0.28.0</version>
-            </dependency>
-            <dependency>
-                <groupId>ai.djl.huggingface</groupId>
-                <artifactId>tokenizers</artifactId>
-                <version>0.28.0</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>ai.djl</groupId>-->
+<!--                <artifactId>api</artifactId>-->
+<!--                <version>0.28.0</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>ai.djl.onnxruntime</groupId>-->
+<!--                <artifactId>onnxruntime-engine</artifactId>-->
+<!--                <version>0.28.0</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>ai.djl.huggingface</groupId>-->
+<!--                <artifactId>tokenizers</artifactId>-->
+<!--                <version>0.28.0</version>-->
+<!--            </dependency>-->
+        <!-- 降级DJL核心API到0.25.0，兼容低版本GLIBC -->
+<!--        <dependency>-->
+<!--            <groupId>ai.djl</groupId>-->
+<!--            <artifactId>api</artifactId>-->
+<!--            <version>0.25.0</version>-->
+<!--        </dependency>-->
+<!--        &lt;!&ndash; 降级ONNX Runtime引擎到0.25.0 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>ai.djl.onnxruntime</groupId>-->
+<!--            <artifactId>onnxruntime-engine</artifactId>-->
+<!--            <version>0.25.0</version>-->
+<!--        </dependency>-->
+<!--        &lt;!&ndash; 降级tokenizers到0.25.0，保持版本一致 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>ai.djl.huggingface</groupId>-->
+<!--            <artifactId>tokenizers</artifactId>-->
+<!--            <version>0.25.0</version>-->
+<!--        </dependency>-->
 
 
     </dependencies>

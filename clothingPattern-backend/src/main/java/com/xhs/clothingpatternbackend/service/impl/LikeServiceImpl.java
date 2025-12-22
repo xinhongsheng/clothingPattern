@@ -318,42 +318,47 @@ public class LikeServiceImpl extends ServiceImpl<LikeMapper, UserLike>
     }
 
     /**
-     * 立即同步点赞数据到数据库
+     * 立即同步点赞数据到数据库（使用 INSERT IGNORE 原子操作，解决并发问题）
      * 确保点赞操作后数据立即持久化，避免刷新页面后状态丢失
      */
     private void syncToDatabase(Long userId, Long patternId, boolean liked, int likeCount) {
         try {
             log.info("syncToDatabase开始: userId={}, patternId={}, liked={}, likeCount={}", userId, patternId, liked, likeCount);
             
-            // 1. 同步用户点赞关系
-            // 注意：需要使用 selectOneIncludeDeleted 来查询所有记录（包括已删除的），
-            // 因为 @TableLogic 会自动过滤 isDelete = 1 的记录
-            UserLike userLike = likeMapper.selectOneIncludeDeleted(userId, patternId);
-            log.info("查询现有点赞记录: userId={}, patternId={}, userLike={}", userId, patternId, 
-                    userLike != null ? "id=" + userLike.getId() + ",isDelete=" + userLike.getIsDelete() : "null");
-            
+            // 1. 同步用户点赞关系（使用 INSERT IGNORE 原子操作）
             if (liked) {
-                // 点赞状态：需要确保数据库中有有效记录
-                if (userLike == null) {
-                    // 新增点赞记录
-                    userLike = new UserLike();
-                    userLike.setUserId(userId);
-                    userLike.setPatternId(patternId);
-                    userLike.setIsDelete(0);
-                    int insertResult = likeMapper.insert(userLike);
-                    log.info("新增点赞记录成功: userId={}, patternId={}, id={}, insertResult={}", userId, patternId, userLike.getId(), insertResult);
-                } else if (userLike.getIsDelete() == 1) {
-                    // 恢复删除的记录 - 使用原生SQL更新，确保isDelete字段被更新
-                    int updateResult = likeMapper.updateLikeStatus(userLike.getId(), 0);
-                    log.info("恢复点赞记录成功: userId={}, patternId={}, id={}, updateResult={}", userId, patternId, userLike.getId(), updateResult);
+                // 点赞状态：先查询是否已存在记录
+                UserLike existingLike = likeMapper.selectOneIncludeDeleted(userId, patternId);
+                
+                if (existingLike == null) {
+                    // 记录不存在，使用 INSERT IGNORE 原子插入
+                    int affectedRows = likeMapper.insertIgnore(
+                        com.baomidou.mybatisplus.core.toolkit.IdWorker.getId(),
+                        userId,
+                        patternId,
+                        0 // isDelete = 0 表示有效
+                    );
+                    
+                    if (affectedRows > 0) {
+                        log.info("新增点赞记录成功: userId={}, patternId={}, affectedRows={}", userId, patternId, affectedRows);
+                    } else {
+                        log.info("点赞记录已存在（并发冲突）: userId={}, patternId={}", userId, patternId);
+                    }
+                } else if (existingLike.getIsDelete() == 1) {
+                    // 记录已存在但已删除，恢复记录
+                    int updateResult = likeMapper.updateLikeStatus(existingLike.getId(), 0);
+                    log.info("恢复点赞记录成功: userId={}, patternId={}, id={}, updateResult={}", 
+                            userId, patternId, existingLike.getId(), updateResult);
                 } else {
                     log.info("点赞记录已存在且有效，无需操作: userId={}, patternId={}", userId, patternId);
                 }
             } else {
-                // 取消点赞状态：软删除记录 - 使用原生SQL更新，确保isDelete字段被更新
-                if (userLike != null && userLike.getIsDelete() == 0) {
-                    int updateResult = likeMapper.updateLikeStatus(userLike.getId(), 1);
-                    log.info("取消点赞记录成功: userId={}, patternId={}, id={}, updateResult={}", userId, patternId, userLike.getId(), updateResult);
+                // 取消点赞状态：软删除记录
+                UserLike existingLike = likeMapper.selectOneIncludeDeleted(userId, patternId);
+                if (existingLike != null && existingLike.getIsDelete() == 0) {
+                    int updateResult = likeMapper.updateLikeStatus(existingLike.getId(), 1);
+                    log.info("取消点赞记录成功: userId={}, patternId={}, id={}, updateResult={}", 
+                            userId, patternId, existingLike.getId(), updateResult);
                 } else {
                     log.info("无需取消点赞，记录不存在或已删除: userId={}, patternId={}", userId, patternId);
                 }

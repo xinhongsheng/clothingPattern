@@ -312,7 +312,7 @@ const handleSend = async (e?: Event) => {
   try {
     // 5. 发起 Fetch 请求
     // const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
-    const response = await fetch('http://bs.xinxiangyang.work/api/ai/ask/stream', {
+    const response = await fetch('https://bs.xinxiangyang.work/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
 
