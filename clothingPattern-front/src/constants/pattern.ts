@@ -35,7 +35,7 @@ export const GENERATION_TYPE_ENUM = {
 export const GENERATION_TYPE_MAP: Record<string, string> = {
   TEXT_GENERATED: '文字生成',
   IMAGE_REFERENCED: '图片参考生成',
-  MJ_GENERATED: 'Midjourney生成', // 新增：与枚举对应
+  MJ_GENERATED: '高清生成', // 新增：与枚举对应
 };
 
 // 生成类型选项（用于下拉框）

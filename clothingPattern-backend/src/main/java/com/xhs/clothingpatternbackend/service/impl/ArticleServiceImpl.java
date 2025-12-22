@@ -781,8 +781,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
                         .eq("auditStatus", AUDIT_STATUS_APPROVED)
                         .eq("isDelete", IS_DELETE_NO)
                         // 核心：只统计「当天创建」的文章（也可以换成publishTime，根据业务选）
-                        .ge("createTime", startTime)
-                        .le("createTime", endTime)
+                        .ge("publishTime", startTime)
+                        .le("publishTime", endTime)
                         // 按当前维度降序，同分值按ID降序（保证结果唯一）
                         .orderByDesc(sortField)
                         .orderByDesc("id")

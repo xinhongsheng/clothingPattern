@@ -469,7 +469,7 @@ const onPageChange = () => {
 
 // 跳转创作页面
 const goToCreate = () => {
-  router.push('/patternGeneration')
+  router.push('/mj/generation')
 }
 
 // 页面加载
