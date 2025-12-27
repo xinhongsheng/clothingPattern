@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="globalHeader">
     <a-row :wrap="false">
       <a-col flex="200px">
@@ -23,7 +23,9 @@
           <div v-if="loginUserStore.loginUser.id">
             <a-dropdown>
               <a-space>
-                <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
+                <a-badge :dot="mjTaskStore.hasUnread" :offset="[-2, 2]">
+                  <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
+                </a-badge>
                 {{ loginUserStore.loginUser.userName ?? '无名' }}
               </a-space>
               <template #overlay>
@@ -33,6 +35,12 @@
                       <UserOutlined />
                       我的创意
                     </router-link>
+                  </a-menu-item>
+                  <a-menu-item v-if="mjTaskStore.notification" @click="goToMJGeneration">
+                    <a-badge :dot="mjTaskStore.hasUnread" :offset="[4, 0]">
+                      <HighlightOutlined />
+                      <span style="margin-left: 8px">{{ getMJTaskStatusText() }}</span>
+                    </a-badge>
                   </a-menu-item>
                   <a-menu-item>
                     <router-link to="/user/profile">
@@ -76,6 +84,7 @@ import {
 } from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
+import { useMJTaskStore } from '@/stores/useMJTaskStore.ts'
 import { ref, h, computed } from 'vue' // 注意：h 函数需要导入（用于渲染图标）
 import { userLoginOut } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
@@ -83,6 +92,30 @@ import { useRouter } from 'vue-router' // 补充：导入 useRouter
 
 const router = useRouter() // 初始化 router（之前代码漏了，会导致 router.afterEach 报错）
 const loginUserStore = useLoginUserStore()
+const mjTaskStore = useMJTaskStore()
+
+// 获取MJ任务状态文本
+const getMJTaskStatusText = () => {
+  const notification = mjTaskStore.notification
+  if (!notification) return ''
+  switch (notification.status) {
+    case 'PENDING':
+    case 'PROCESSING':
+      return '智能创作中...'
+    case 'SUCCEEDED':
+      return '创作完成，点击查看'
+    case 'FAILED':
+      return '创作失败，点击重试'
+    default:
+      return '智能创作'
+  }
+}
+
+// 跳转到智能创作页面
+const goToMJGeneration = () => {
+  mjTaskStore.markRead()
+  router.push('/mj/generation')
+}
 
 const originItems = [
   {

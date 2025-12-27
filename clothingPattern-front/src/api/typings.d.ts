@@ -235,12 +235,6 @@ declare namespace API {
     message?: string
   }
 
-  type BaseResponseListPattern = {
-    code?: number
-    data?: Pattern[]
-    message?: string
-  }
-
   type BaseResponseListPatternVO = {
     code?: number
     data?: PatternVO[]
@@ -274,6 +268,12 @@ declare namespace API {
   type BaseResponseMapLongBoolean = {
     code?: number
     data?: Record<string, any>
+    message?: string
+  }
+
+  type BaseResponseMJGenerateTaskVO = {
+    code?: number
+    data?: MJGenerateTaskVO
     message?: string
   }
 
@@ -497,8 +497,16 @@ declare namespace API {
     patternId: number
   }
 
+  type getGenerateStatusParams = {
+    taskId: string
+  }
+
   type getHotArticlesParams = {
     limit?: number
+  }
+
+  type getImagineStatusParams = {
+    taskId: string
   }
 
   type getLikeStatus1Params = {
@@ -511,10 +519,6 @@ declare namespace API {
 
   type getPatternByIdParams = {
     id: number
-  }
-
-  type getPatternGenerateStatusParams = {
-    taskId: string
   }
 
   type getPatternVOByIdParams = {
@@ -573,9 +577,9 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
+    sortList?: number[]
     tempImageUrlList?: string[]
     localImageUrlList?: string[]
-    sortList?: number[]
     origPromptList?: string[]
   }
 
@@ -616,6 +620,15 @@ declare namespace API {
     style?: string
     season?: string
     targetAudience?: string
+  }
+
+  type MJGenerateTaskVO = {
+    taskId?: string
+    status?: string
+    result?: MJImagineVO
+    errorMessage?: string
+    createTime?: number
+    updateTime?: number
   }
 
   type MJImagineRequest = {
@@ -883,10 +896,6 @@ declare namespace API {
     localImageUrl?: string
     submitTime?: string
     endTime?: string
-  }
-
-  type recommendPatternsParams = {
-    prompt: string
   }
 
   type recordViewBehaviorParams = {

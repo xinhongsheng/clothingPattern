@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="tryon-page">
     <!-- 主布局 - 左右分栏 -->
     <div class="main-layout">

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="patternManagePage">
     <!-- 页面标题和操作区 -->
     <a-card :bordered="false" class="header-card">

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="patternDetailPage">
     <a-spin :spinning="loading" size="large">
       <a-card v-if="pattern" :bordered="false" class="detail-card">

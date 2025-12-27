@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="article-edit-page">
     <a-card :title="isEdit ? '编辑文章' : '新建文章'" :bordered="false">
       <template #extra>
@@ -55,7 +55,7 @@
           <div class="upload-tip">建议尺寸：800x600，支持jpg、png格式，大小不超过2MB</div>
         </a-form-item>
 
-        <!-- 摘要 -->
+        <!-- ժҪ -->
         <a-form-item label="文章摘要" required>
           <a-textarea
             v-model:value="formData.summary"

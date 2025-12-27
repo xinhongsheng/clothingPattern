@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <div class="comment-section">
       <!-- 评论统计 -->
       <div class="comment-header">

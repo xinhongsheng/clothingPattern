@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="fusion-page">
     <!-- 主布局 - 左右分栏 -->
     <div class="main-layout">
@@ -24,7 +24,7 @@
                   </svg>
                 </div>
                 <div class="upload-text">上传图片</div>
-                <div class="upload-tip">支持JPG、JPEG、PNG、BMP图片<br>格式，大小不超过5M</div>
+                <div class="upload-tip">支持JPG、JPEG、PNG、BMPͼƬ<br>格式，大小不超过5M</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
@@ -53,7 +53,7 @@
                   </svg>
                 </div>
                 <div class="upload-text">上传图片</div>
-                <div class="upload-tip">支持JPG、JPEG、PNG、BMP图片<br>格式，大小不超过5M</div>
+                <div class="upload-tip">支持JPG、JPEG、PNG、BMPͼƬ<br>格式，大小不超过5M</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
@@ -119,7 +119,7 @@
             />
           </div>
 
-          <!-- 保存按钮 -->
+          <!-- 保存结果 -->
           <div class="save-section">
             <a-button type="primary" :loading="saving" @click="handleSaveResult" class="save-btn">
               💾 保存图案
@@ -135,9 +135,9 @@
           <!-- 步骤指示 -->
           <div class="flow-steps">
             <span>服装图</span>
-            <span class="flow-arrow">»</span>
+            <span class="flow-arrow">→</span>
             <span>图案图</span>
-            <span class="flow-arrow">»</span>
+            <span class="flow-arrow">→</span>
             <span>生成结果</span>
           </div>
 
@@ -147,12 +147,12 @@
               <img :src="exampleGarment" alt="服装图示例" />
               <span class="example-label">服装图示例</span>
             </div>
-            <span class="image-arrow">»</span>
+            <span class="image-arrow">→</span>
             <div class="example-item">
               <img :src="examplePattern" alt="图案图示例" />
               <span class="example-label">图案图示例</span>
             </div>
-            <span class="image-arrow">»</span>
+            <span class="image-arrow">→</span>
             <div class="example-item">
               <img :src="exampleResult" alt="生成效果示例" />
               <span class="example-label">生成效果示例</span>
@@ -920,7 +920,7 @@ const handleSaveSelected = async () => {
   color: #888;
 }
 
-/* 保存按钮 */
+/* 保存结果 */
 .save-section {
   margin-top: 32px;
 }
@@ -1012,3 +1012,6 @@ const handleSaveSelected = async () => {
   }
 }
 </style>
+
+
+

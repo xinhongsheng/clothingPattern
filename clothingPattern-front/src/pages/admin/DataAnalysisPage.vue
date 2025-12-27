@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="dataAnalysisPage">
     <a-page-header title="数据分析中心" sub-title="平台核心数据监控与分析报告" />
 

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="pattern-list">
     <!-- 图案列表 -->
     <a-list

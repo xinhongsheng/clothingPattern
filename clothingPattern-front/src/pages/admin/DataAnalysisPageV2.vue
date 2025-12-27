@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LeftOne from '@/components/LeftOne.vue'
 import LeftTwo from '@/components/LeftTwo.vue'

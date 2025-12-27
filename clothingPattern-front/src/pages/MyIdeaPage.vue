@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="myIdeaPage" class="my-idea-page">
     <!-- 页面头部 -->
     <div class="page-header">

@@ -12,11 +12,17 @@ import com.xhs.clothingpatternbackend.mapper.PatternMapper;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJActionRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJBlendRequest;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJImagineRequest;
+import com.xhs.clothingpatternbackend.model.dto.mj.MJGenerateMessage;
+import com.xhs.clothingpatternbackend.model.dto.mj.MJGenerateTaskInfo;
 import com.xhs.clothingpatternbackend.model.vo.MJImagineVO;
+import com.xhs.clothingpatternbackend.model.vo.MJGenerateTaskVO;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
+import com.xhs.clothingpatternbackend.model.enums.PatternGenerateStatusEnum;
+import com.xhs.clothingpatternbackend.mq.MJGenerateProducer;
 import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
+import com.xhs.clothingpatternbackend.service.MJGenerateTaskService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.PromptTranslateService;
 import com.xhs.clothingpatternbackend.service.UserService;
@@ -58,6 +64,12 @@ public class MJController {
     
     @Resource
     private PromptTranslateService promptTranslateService;
+
+    @Resource
+    private MJGenerateTaskService mjGenerateTaskService;
+
+    @Resource
+    private MJGenerateProducer mjGenerateProducer;
 
     @Resource
     private ObjectMapper objectMapper; // Jackson 工具，用于 String 转 float[]
@@ -112,6 +124,51 @@ public class MJController {
             log.error("调用Midjourney API异常", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败：" + e.getMessage());
         }
+    }
+
+    /**
+     * 异步生成图片（Imagine）
+     *
+     * @param request 请求参数
+     * @param httpRequest HTTP请求
+     * @return 任务信息
+     */
+    @PostMapping("/imagine/async")
+    @Operation(summary = "异步生成图片（不保存）")
+    public BaseResponse<MJGenerateTaskVO> imagineAsync(@RequestBody MJImagineRequest request,
+                                                       HttpServletRequest httpRequest) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        String originalPrompt = request.getPrompt();
+        ThrowUtils.throwIf(StringUtils.isBlank(originalPrompt), ErrorCode.PARAMS_ERROR, "提示词不能为空");
+
+        User loginUser = userService.getLoginUser(httpRequest);
+        MJGenerateTaskInfo taskInfo = mjGenerateTaskService.createTask(loginUser.getId());
+        MJGenerateMessage message = new MJGenerateMessage(taskInfo.getTaskId(), loginUser.getId(), request);
+        try {
+            mjGenerateProducer.send(message);
+        } catch (Exception e) {
+            mjGenerateTaskService.markFailed(taskInfo.getTaskId(), "Queue send failed");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成任务提交失败");
+        }
+        return ResultUtils.success(toTaskVO(taskInfo));
+    }
+
+    @GetMapping("/imagine/status/{taskId}")
+    @Operation(summary = "查询异步生成状态")
+    public BaseResponse<MJGenerateTaskVO> getImagineStatus(@PathVariable String taskId,
+                                                           HttpServletRequest httpRequest) {
+        ThrowUtils.throwIf(StringUtils.isBlank(taskId), ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(httpRequest);
+        MJGenerateTaskInfo taskInfo = mjGenerateTaskService.getTask(taskId);
+        ThrowUtils.throwIf(taskInfo == null, ErrorCode.NOT_FOUND_ERROR, "任务不存在");
+        if (!userService.isAdmin(loginUser) && !loginUser.getId().equals(taskInfo.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+        MJGenerateTaskVO taskVO = toTaskVO(taskInfo);
+        if (PatternGenerateStatusEnum.SUCCEEDED.getValue().equals(taskInfo.getStatus())) {
+            taskVO.setResult(taskInfo.getResult());
+        }
+        return ResultUtils.success(taskVO);
     }
     /**
      * 执行动作（如upsample、variation等）
@@ -302,6 +359,17 @@ public class MJController {
         } catch (Exception e) {
             log.warn("缓存清理失败，不影响主流程", e);
         }
+    }
+
+    private MJGenerateTaskVO toTaskVO(MJGenerateTaskInfo taskInfo) {
+        MJGenerateTaskVO taskVO = new MJGenerateTaskVO();
+        taskVO.setTaskId(taskInfo.getTaskId());
+        taskVO.setStatus(taskInfo.getStatus());
+        taskVO.setResult(taskInfo.getResult());
+        taskVO.setErrorMessage(taskInfo.getErrorMessage());
+        taskVO.setCreateTime(taskInfo.getCreateTime());
+        taskVO.setUpdateTime(taskInfo.getUpdateTime());
+        return taskVO;
     }
 }
 

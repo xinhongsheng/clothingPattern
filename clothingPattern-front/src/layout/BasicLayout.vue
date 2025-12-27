@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="basicLayout">
     <a-layout style="min-height: 100vh">
       <a-layout-header class="header">

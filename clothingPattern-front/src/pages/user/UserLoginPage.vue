@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <!-- 新增外层容器：承载背景图 + 居中登录框 -->
   <div class="login-container">
     <div id="userLoginPage">

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="article-detail-page">
     <a-spin :spinning="loading">
       <div v-if="article" class="article-container">

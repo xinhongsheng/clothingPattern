@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="article-manage-page">
     <a-card title="文章管理" :bordered="false">
       <!-- 操作栏 -->
@@ -43,7 +43,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item label="状态">
+          <a-form-item label="״̬">
             <a-select
               v-model:value="searchParams.status"
               placeholder="选择状态"
@@ -109,7 +109,7 @@
             <a-tag color="blue">{{ record?.categoryName }}</a-tag>
           </template>
 
-          <!-- 状态 -->
+          <!-- ״̬ -->
           <template v-else-if="column.key === 'status'">
             <a-tag v-if="record?.status === 'DRAFT'" color="default">草稿</a-tag>
             <a-tag v-else-if="record?.status === 'PUBLISHED'" color="success">已发布</a-tag>
@@ -267,7 +267,7 @@
               <span v-else class="text-gray">-</span>
             </template>
 
-            <!-- 状态 -->
+            <!-- ״̬ -->
             <template v-else-if="column.key === 'status'">
               <a-tag :color="record.status === 1 ? 'success' : 'default'">
                 {{ record.status === 1 ? '启用' : '禁用' }}
@@ -330,7 +330,7 @@
         <a-form-item label="排序">
           <a-input-number v-model:value="editingCategory.sortOrder" :min="0" style="width: 100%" />
         </a-form-item>
-        <a-form-item label="状态">
+        <a-form-item label="״̬">
           <a-select v-model:value="editingCategory.status" style="width: 100%">
             <a-select-option :value="1">启用</a-select-option>
             <a-select-option :value="0">禁用</a-select-option>
@@ -452,7 +452,7 @@ const categoryColumns = [
     width: 80,
   },
   {
-    title: '状态',
+    title: '״̬',
     dataIndex: 'status',
     key: 'status',
     width: 80,
@@ -491,7 +491,7 @@ const columns = [
     width: 100,
   },
   {
-    title: '状态',
+    title: '״̬',
     dataIndex: 'status',
     key: 'status',
     width: 80,

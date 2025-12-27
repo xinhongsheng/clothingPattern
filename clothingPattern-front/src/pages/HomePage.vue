@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="homePage">
     <!-- 顶部欢迎区域 -->
     <!-- 顶部欢迎区域 (Compact Mode) -->

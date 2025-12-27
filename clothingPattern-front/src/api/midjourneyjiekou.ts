@@ -53,6 +53,31 @@ export async function imagine(body: API.MJImagineRequest, options?: { [key: stri
   })
 }
 
+/** 异步生成图片（不保存） POST /mj/imagine/async */
+export async function imagineAsync(body: API.MJImagineRequest, options?: { [key: string]: any }) {
+  return request<API.BaseResponseMJGenerateTaskVO>('/mj/imagine/async', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 查询异步生成状态 GET /mj/imagine/status/${param0} */
+export async function getImagineStatus(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getImagineStatusParams,
+  options?: { [key: string]: any }
+) {
+  const { taskId: param0, ...queryParams } = params
+  return request<API.BaseResponseMJGenerateTaskVO>(`/mj/imagine/status/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
+    ...(options || {}),
+  })
+}
 
 /** 保存图片到数据库 POST /mj/save */
 export async function savePattern(body: API.MJImagineVO, options?: { [key: string]: any }) {

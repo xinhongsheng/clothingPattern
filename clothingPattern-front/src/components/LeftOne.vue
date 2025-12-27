@@ -1,4 +1,4 @@
-# LeftOne.vue
+﻿# LeftOne.vue
 
 <template>
   <div ref="chartRef1" style="width: 100%; height: 100%"></div>

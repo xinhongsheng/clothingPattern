@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="aiPage" :class="{ 'is-mobile': isMobile }">
     <div v-if="isMobile" class="mobile-header">
       <div class="logo-area">

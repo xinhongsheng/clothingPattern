@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="banner-manage-page">
     <a-card title="轮播图管理" :bordered="false">
       <!-- 操作栏 -->
@@ -19,7 +19,7 @@
       >
         <!-- 使用新的 bodyCell 插槽 -->
         <template #bodyCell="{ column, record }">
-          <!-- 图片 -->
+          <!-- ͼƬ -->
           <template v-if="column.key === 'imageUrl'">
             <a-image
               v-if="record?.imageUrl"
@@ -31,7 +31,7 @@
             <span v-else class="text-gray">无图片</span>
           </template>
 
-          <!-- 状态 -->
+          <!-- ״̬ -->
           <template v-else-if="column.key === 'status'">
             <a-tag :color="record?.status === 1 ? 'success' : 'default'">
               {{ record?.status === 1 ? '启用' : '禁用' }}
@@ -70,7 +70,7 @@
         <a-form-item label="标题" required>
           <a-input v-model:value="form.title" placeholder="请输入轮播图标题" />
         </a-form-item>
-        <a-form-item label="图片" required>
+        <a-form-item label="ͼƬ" required>
           <a-upload
             list-type="picture-card"
             :file-list="fileList"
@@ -97,7 +97,7 @@
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="状态">
+        <a-form-item label="״̬">
           <a-select v-model:value="form.status" style="width: 100%">
             <a-select-option :value="1">启用</a-select-option>
             <a-select-option :value="0">禁用</a-select-option>
@@ -155,7 +155,7 @@ const columns = [
     key: 'title',
   },
   {
-    title: '图片',
+    title: 'ͼƬ',
     dataIndex: 'imageUrl',
     key: 'imageUrl',
     width: 150,
@@ -172,7 +172,7 @@ const columns = [
     width: 80,
   },
   {
-    title: '状态',
+    title: '״̬',
     dataIndex: 'status',
     key: 'status',
     width: 80,

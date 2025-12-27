@@ -1,4 +1,4 @@
-# RightOne.vue
+﻿# RightOne.vue
 
 <template>
   <div ref="chartRef" style="width: 100%; height: 100%"></div>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-profile-page">
     <a-card :bordered="false">
       <a-tabs v-model:activeKey="activeTab">

@@ -1,4 +1,4 @@
-# CenterOne.vue
+﻿# CenterOne.vue
 
 <template>
   <div class="center-one-container">

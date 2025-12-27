@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="article-page">
     <div class="page-container">
       <!-- 顶部轮播图 -->
@@ -135,7 +135,7 @@
             </a-spin>
           </div>
 
-          <!-- 推广/广告位 (占位) -->
+          <!-- 推广/广告位 (ռλ) -->
           <div class="sidebar-card promotion-card card-glass">
             <div class="promo-content">
               <h4>分享你的灵感</h4>

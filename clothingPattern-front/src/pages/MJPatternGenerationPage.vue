@@ -1,17 +1,17 @@
-<template>
+﻿<template>
   <div class="mj-pattern-generation-page">
     <!-- 未登录提示 -->
     <a-alert
       v-if="!isUserLoggedIn"
       message="需要登录才能使用智能创作功能"
-      description="请先登录您的账号，然后即可开始创作属于您的独特图案🎨"
+      description="请先登录您的账号，然后即可开始创作属于您的独特图案。"
       type="warning"
       show-icon
       closable
       class="login-alert"
     >
       <template #icon>
-        <span style="font-size: 20px">🔒</span>
+        <span style="font-size: 20px">🔔</span>
       </template>
     </a-alert>
 
@@ -24,7 +24,7 @@
           <div class="section-header">请输入关键词描述</div>
           <a-textarea
             v-model:value="formState.prompt"
-            placeholder="请简要输入关键词描述，例如:卡通小熊，并使用自动扩写功能完成完整关键词扩写"
+            placeholder="请简要输入关键词描述，例如：卡通小熊，并使用自动扩写功能完成完整关键词扩写"
             :rows="4"
             :maxlength="1000"
             class="prompt-textarea"
@@ -53,9 +53,7 @@
 
         <!-- 风格引擎区域 -->
         <div class="panel-section">
-          <div class="section-header style-header">
-            风格引擎：
-          </div>
+          <div class="section-header style-header">风格引擎：</div>
 
           <!-- 风格选择器 -->
           <div class="style-grid">
@@ -63,7 +61,7 @@
               v-for="style in styleEngines"
               :key="style.id"
               class="style-item"
-              :class="{ 'active': selectedStyleEngine?.id === style.id }"
+              :class="{ active: selectedStyleEngine?.id === style.id }"
               @click="selectStyleEngine(style)"
             >
               <div class="style-icon">{{ style.icon }}</div>
@@ -83,7 +81,7 @@
                   v-for="season in seasonOptions"
                   :key="season"
                   class="tag-option"
-                  :class="{ 'active': formState.season === season }"
+                  :class="{ active: formState.season === season }"
                   @click="toggleSeason(season)"
                 >
                   {{ season }}
@@ -97,7 +95,7 @@
                   v-for="audience in audienceOptions"
                   :key="audience"
                   class="tag-option"
-                  :class="{ 'active': formState.targetAudience === audience }"
+                  :class="{ active: formState.targetAudience === audience }"
                   @click="toggleAudience(audience)"
                 >
                   {{ audience }}
@@ -106,8 +104,6 @@
             </div>
           </div>
         </div>
-
-
 
         <!-- 底部按钮 -->
         <div class="panel-footer">
@@ -147,7 +143,7 @@
               v-for="i in 4"
               :key="i"
               class="result-image-item"
-              :class="{ 'selected': selectedImageIndex === i }"
+              :class="{ selected: selectedImageIndex === i }"
               @click="selectImage(i)"
             >
               <a-image
@@ -189,17 +185,17 @@
             <div class="final-info">
               <div class="info-text">✅ 已放大为高清图片</div>
             </div>
-            
+
             <!-- 保存表单 -->
             <div class="save-section">
-              <a-input 
-                v-model:value="saveForm.patternName" 
+              <a-input
+                v-model:value="saveForm.patternName"
                 placeholder="输入图案名称"
                 class="save-input"
               />
-              <a-button 
-                type="primary" 
-                @click="saveToDatabase" 
+              <a-button
+                type="primary"
+                @click="saveToDatabase"
                 :loading="saving"
                 :disabled="!saveForm.patternName"
                 class="save-btn"
@@ -212,10 +208,10 @@
             <div class="continue-actions">
               <div class="action-title">继续优化</div>
               <div class="action-row">
-                <a-button 
-                  v-for="i in 4" 
-                  :key="i" 
-                  @click="handleContinueVariation(i)" 
+                <a-button
+                  v-for="i in 4"
+                  :key="i"
+                  @click="handleContinueVariation(i)"
                   :loading="executing"
                 >
                   🎨 变体 {{ i }}
@@ -223,19 +219,17 @@
               </div>
             </div>
 
-            <a-button @click="backToStep2" class="back-btn">
-              ← 返回重新选择
-            </a-button>
+            <a-button @click="backToStep2" class="back-btn"> ← 返回重新选择 </a-button>
           </div>
 
-          <!-- 四图结果（变体/重生成后） -->
+          <!-- 四图结果（变体重生成后） -->
           <div v-else class="final-grid">
             <div class="result-images">
               <div
                 v-for="i in 4"
                 :key="i"
                 class="result-image-item"
-                :class="{ 'selected': selectedImageIndex === i }"
+                :class="{ selected: selectedImageIndex === i }"
                 @click="selectImage(i)"
               >
                 <a-image
@@ -262,9 +256,7 @@
               </a-button>
             </div>
 
-            <a-button @click="backToStep2" class="back-btn">
-              ← 返回重新选择
-            </a-button>
+            <a-button @click="backToStep2" class="back-btn"> ← 返回重新选择 </a-button>
           </div>
         </div>
 
@@ -278,30 +270,36 @@
             </div>
           </div>
           <div class="empty-text">
-            <h3>您尚未生成作品</h3>
-            <p>在左侧操作栏开始您的款式生成吧~</p>
+            <h3>您还未生成作品？</h3>
+            <p>在左侧操作面板选择提示词即可开始创作~</p>
           </div>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { message } from 'ant-design-vue'
+import { EditOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import {
-  EditOutlined,
-  ReloadOutlined,
-  CloseOutlined,
-} from '@ant-design/icons-vue'
-import { imagine, executeAction as mjExecuteAction, savePattern, expandPrompt } from '@/api/midjourneyjiekou'
+  imagineAsync,
+  getImagineStatus,
+  executeAction as mjExecuteAction,
+  savePattern,
+  expandPrompt,
+} from '@/api/midjourneyjiekou'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { useMJTaskStore } from '@/stores/useMJTaskStore'
 
 const router = useRouter()
 const loginUserStore = useLoginUserStore()
+const mjTaskStore = useMJTaskStore()
+
+const storageKey = 'mj_generate_task'
+const pollIntervalMs = 2000
 
 // 判断用户是否已登录
 const isUserLoggedIn = computed(() => {
@@ -339,6 +337,7 @@ const expanding = ref(false)
 const mjResponse = ref<any>(null)
 const finalResult = ref<any>(null)
 const originalPrompt = ref('')
+const currentTaskId = ref<string | null>(null)
 
 // 选中的操作
 const selectedAction = ref<string | null>(null)
@@ -361,13 +360,13 @@ const audienceOptions = ['儿童', '青少年', '成人', '中老年', '通用']
 // 风格引擎选项
 const styleEngines = ref([
   { id: 1, name: '简约', icon: '✨' },
-  { id: 2, name: '可爱', icon: '🐻' },
-  { id: 3, name: '复古', icon: '🌼' },
-  { id: 4, name: '卡通', icon: '🌈' },
+  { id: 2, name: '可爱', icon: '🐶' },
+  { id: 3, name: '复古', icon: '🌲' },
+  { id: 4, name: '卡通', icon: '🔛' },
   { id: 5, name: '抽象', icon: '🎨' },
-  { id: 6, name: '民族', icon: '🎭' },
+  { id: 6, name: '民族', icon: '🎁' },
   { id: 7, name: '未来', icon: '🚀' },
-  { id: 8, name: '写实', icon: '🌿' },
+  { id: 8, name: '写实', icon: '🌶' },
   { id: 9, name: '手绘', icon: '✏️' },
 ])
 
@@ -472,7 +471,7 @@ const backToStep2 = () => {
 // 快捷提示词
 const quickPrompts = ref([
   '可爱的卡通小猫图案',
-  '复古花卉印花设计',
+  '复古花草印花设计',
   '简约几何线条图案',
   '森系小清新植物',
   '赛博朋克科技风',
@@ -483,43 +482,213 @@ const quickPrompts = ref([
 
 // 灵感示例
 const inspirationExamples = ref([
-  { icon: '🌸', name: '花卉印花', desc: '适合春夏季节' },
+  { icon: '🌳', name: '花草印花', desc: '适合春夏季节' },
   { icon: '🦋', name: '蝴蝶元素', desc: '轻盈浪漫风格' },
   { icon: '⭐', name: '星空图案', desc: '梦幻神秘感' },
-  { icon: '🍃', name: '植物叶子', desc: '自然清新风' },
+  { icon: '🍀', name: '植物叶子', desc: '自然清新风' },
   { icon: '🎨', name: '抽象艺术', desc: '独特个性化' },
-  { icon: '🔷', name: '几何形状', desc: '现代简约风' },
+  { icon: '🔺', name: '几何形状', desc: '现代简约风' },
 ])
+
+type MjTaskSnapshot = {
+  taskId: string
+  status: string
+  result?: any
+  errorMessage?: string
+  updateTime?: number
+  originalPrompt?: string
+  formState?: {
+    style?: string
+    season?: string
+    targetAudience?: string
+  }
+  notified?: boolean
+}
+
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+const readTaskSnapshot = (): MjTaskSnapshot | null => {
+  const raw = localStorage.getItem(storageKey)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as MjTaskSnapshot
+  } catch {
+    return null
+  }
+}
+
+const saveTaskSnapshot = (snapshot: MjTaskSnapshot) => {
+  localStorage.setItem(storageKey, JSON.stringify(snapshot))
+}
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+const applySnapshot = (snapshot: MjTaskSnapshot) => {
+  currentTaskId.value = snapshot.taskId
+  if (snapshot.originalPrompt) {
+    originalPrompt.value = snapshot.originalPrompt
+    // 回填prompt到表单
+    formState.prompt = snapshot.originalPrompt
+  }
+  if (snapshot.formState) {
+    formState.style = snapshot.formState.style
+    formState.season = snapshot.formState.season
+    formState.targetAudience = snapshot.formState.targetAudience
+    // 回填风格引擎选中状态
+    if (snapshot.formState.style) {
+      const matchedStyle = styleEngines.value.find((s) => s.name === snapshot.formState!.style)
+      if (matchedStyle) {
+        selectedStyleEngine.value = matchedStyle
+      }
+    }
+  }
+}
+
+const pollGenerateStatus = async (taskId: string) => {
+  try {
+    const res = await getImagineStatus({ taskId })
+    if (res.data.code !== 0) {
+      throw new Error(res.data.message || '获取任务状态失败')
+    }
+    const taskData = res.data.data
+    if (!taskData) {
+      throw new Error('任务状态为空')
+    }
+    currentTaskId.value = taskData.taskId || taskId
+
+    if (taskData.status === 'SUCCEEDED' && taskData.result) {
+      mjResponse.value = taskData.result
+      generating.value = false
+      currentStep.value = 2
+      stopPolling()
+
+      const snapshot: MjTaskSnapshot = {
+        taskId,
+        status: taskData.status,
+        result: taskData.result,
+        errorMessage: taskData.errorMessage,
+        updateTime: taskData.updateTime,
+        originalPrompt: originalPrompt.value,
+        formState: {
+          style: formState.style,
+          season: formState.season,
+          targetAudience: formState.targetAudience,
+        },
+      }
+      saveTaskSnapshot(snapshot)
+
+      // 更新通知store，显示未读通知
+      mjTaskStore.markSucceeded(taskId, taskData.result)
+
+      message.success({
+        content: '图案生成完成，返回智能创作页可继续变体/放大/保存',
+        key: 'generating',
+      })
+      return
+    }
+
+    if (taskData.status === 'FAILED') {
+      generating.value = false
+      stopPolling()
+      const snapshot: MjTaskSnapshot = {
+        taskId,
+        status: taskData.status,
+        errorMessage: taskData.errorMessage,
+        updateTime: taskData.updateTime,
+        originalPrompt: originalPrompt.value,
+        formState: {
+          style: formState.style,
+          season: formState.season,
+          targetAudience: formState.targetAudience,
+        },
+      }
+      saveTaskSnapshot(snapshot)
+
+      // 更新通知store，显示失败通知
+      mjTaskStore.markFailed(taskId, taskData.errorMessage || '图案生成失败')
+
+      message.error({
+        content: taskData.errorMessage || '图案生成失败，请稍后重试',
+        key: 'generating',
+      })
+      return
+    }
+
+    stopPolling()
+    pollTimer = setTimeout(() => {
+      pollGenerateStatus(taskId)
+    }, pollIntervalMs)
+  } catch (error: any) {
+    generating.value = false
+    stopPolling()
+    message.error({
+      content: error.message || '获取任务状态失败',
+      key: 'generating',
+    })
+  }
+}
+
+onMounted(() => {
+  // 进入页面时标记通知为已读
+  mjTaskStore.markRead()
+
+  const snapshot = readTaskSnapshot()
+  if (!snapshot) {
+    return
+  }
+  applySnapshot(snapshot)
+  if (snapshot.status === 'SUCCEEDED' && snapshot.result) {
+    mjResponse.value = snapshot.result
+    currentStep.value = 2
+    generating.value = false
+    return
+  }
+  if (snapshot.status === 'PENDING' || snapshot.status === 'PROCESSING') {
+    generating.value = true
+    pollGenerateStatus(snapshot.taskId)
+  }
+})
+
+onBeforeUnmount(() => {
+  stopPolling()
+})
 
 // 步骤1：生成图片
 const handleGenerate = async () => {
-  // 检查登录状态
   if (!isUserLoggedIn.value) {
     message.warning('请先登录后再使用智能创作功能')
-    // 跳转到登录页面
     router.push({
       path: '/user/login',
       query: {
-        redirect: '/mj/generation' // 登录成功后返回当前页面
-      }
+        redirect: '/mj/generation',
+      },
     })
     return
   }
 
   try {
+    stopPolling()
     generating.value = true
+    currentStep.value = 1
+    selectedImageIndex.value = null
+    mjResponse.value = null
 
-    // 保存原始提示词（用于显示）
     originalPrompt.value = formState.prompt
 
     message.loading({
-      content: '正在生成图案，请耐心等待...',
+      content: '正在生成图案，请稍候...',
       key: 'generating',
       duration: 0,
     })
 
-    // 直接传递所有字段给后端，后端会处理组合和翻译
-    const res = await imagine({
+    const res = await imagineAsync({
       prompt: formState.prompt,
       action: 'generate',
       style: formState.style,
@@ -527,23 +696,40 @@ const handleGenerate = async () => {
       targetAudience: formState.targetAudience,
     })
 
-    if (res.data.code === 0 && res.data.data) {
-      mjResponse.value = res.data.data
-      currentStep.value = 2
-      message.success({
-        content: '图案生成成功！请选择你喜欢的图片进行操作',
-        key: 'generating',
+    if (res.data.code === 0 && res.data.data?.taskId) {
+      const taskId = res.data.data.taskId
+      currentTaskId.value = taskId
+      saveTaskSnapshot({
+        taskId,
+        status: res.data.data.status || 'PENDING',
+        updateTime: res.data.data.updateTime,
+        originalPrompt: originalPrompt.value,
+        formState: {
+          style: formState.style,
+          season: formState.season,
+          targetAudience: formState.targetAudience,
+        },
       })
-    } else {
-      throw new Error(res.data.message || '生成失败')
+
+      // 创建任务通知，保存创作参数
+      mjTaskStore.createTask({
+        taskId,
+        prompt: originalPrompt.value,
+        style: formState.style,
+        season: formState.season,
+        targetAudience: formState.targetAudience,
+      })
+
+      pollGenerateStatus(taskId)
+      return
     }
+    throw new Error(res.data.message || '生成失败')
   } catch (error: any) {
-    console.error('生成图案失败:', error)
+    console.error('生成失败:', error)
     message.error({
-      content: error.message || '生成失败，请重试',
+      content: error.message || '生成失败',
       key: 'generating',
     })
-  } finally {
     generating.value = false
   }
 }
@@ -569,7 +755,7 @@ const executeAction = async () => {
     executing.value = true
 
     message.loading({
-      content: `正在执行 ${getActionName(selectedAction.value)}...`,
+      content: `Executing ${getActionName(selectedAction.value)}...`,
       key: 'executing',
       duration: 0,
     })
@@ -583,41 +769,36 @@ const executeAction = async () => {
     if (res.data.code === 0 && res.data.data) {
       const newResult = res.data.data
 
-      // 清理可能存在的URL格式问题
       if (newResult.imageUrl) {
-        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
+        newResult.imageUrl = newResult.imageUrl.replace(/:\\d+$/, '')
       }
       if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
+        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\\d+$/, '')
       }
 
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
+      isVariationResult.value =
+        selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
 
-      // 判断结果类型：variation和reroll返回4张图，upsample返回单图
-      isVariationResult.value = selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
-
-      // 如果是放大操作，自动填充图案名称
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
         saveForm.patternName = `MJ-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
-      // 重置选择
       selectedAction.value = null
-
       currentStep.value = 3
       message.success({
-        content: '操作执行成功！可以保存或继续优化',
+        content: '操作完成，可保存或继续优化',
         key: 'executing',
       })
     } else {
-      throw new Error(res.data.message || '执行失败')
+      throw new Error(res.data.message || '操作失败')
     }
   } catch (error: any) {
-    console.error('执行操作失败:', error)
+    console.error('操作失败:', error)
     message.error({
-      content: error.message || '执行失败，请重试',
+      content: error.message || '操作失败',
       key: 'executing',
     })
   } finally {
@@ -636,7 +817,7 @@ const executeContinueAction = async () => {
     executing.value = true
 
     message.loading({
-      content: `正在执行 ${getActionName(selectedAction.value)}...`,
+      content: `Executing ${getActionName(selectedAction.value)}...`,
       key: 'executing',
       duration: 0,
     })
@@ -648,57 +829,43 @@ const executeContinueAction = async () => {
     })
 
     if (res.data.code === 0 && res.data.data) {
-      // 更新最终结果
       const newResult = res.data.data
 
-      // 清理可能存在的URL格式问题
       if (newResult.imageUrl) {
-        // 移除URL末尾可能存在的 :数字 格式
-        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
+        newResult.imageUrl = newResult.imageUrl.replace(/:\\d+$/, '')
       }
       if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
+        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\\d+$/, '')
       }
 
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
+      isVariationResult.value =
+        selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
 
-      // 判断新结果类型
-      isVariationResult.value = selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
-
-      // 如果是放大操作，自动填充图案名称
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
         saveForm.patternName = `MJ-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
-      // 重置选择
       selectedAction.value = null
-
-      // 打印调试信息
-      console.log('继续操作成功，新结果：', finalResult.value)
-      console.log('图片URL:', finalResult.value.imageUrl)
-      console.log('原始URL:', finalResult.value.rawImageUrl)
-
       message.success({
-        content: '操作执行成功！可以继续优化或保存',
+        content: '操作完成，可继续优化或保存',
         key: 'executing',
       })
     } else {
-      throw new Error(res.data.message || '执行失败')
+      throw new Error(res.data.message || '操作失败')
     }
   } catch (error: any) {
-    console.error('执行操作失败:', error)
+    console.error('操作失败:', error)
     message.error({
-      content: error.message || '执行失败，请重试',
+      content: error.message || '操作失败',
       key: 'executing',
     })
   } finally {
     executing.value = false
   }
 }
-
-
 
 // 保存到数据库
 const saveToDatabase = async () => {
@@ -734,6 +901,22 @@ const saveToDatabase = async () => {
         content: '图案保存成功！',
         key: 'saving',
       })
+
+      // 清除任务数据，避免刷新页面后数据残留
+      localStorage.removeItem(storageKey)
+      mjTaskStore.clearTask()
+
+      // 重置页面状态
+      currentStep.value = 1
+      mjResponse.value = null
+      finalResult.value = null
+      formState.prompt = ''
+      formState.style = undefined
+      formState.season = undefined
+      formState.targetAudience = undefined
+      selectedStyleEngine.value = null
+      originalPrompt.value = ''
+      saveForm.patternName = ''
 
       // 跳转到我的作品页面
       setTimeout(() => {
@@ -778,7 +961,7 @@ const getActionName = (action: string) => {
 // AI 扩写提示词
 const handleExpandPrompt = async () => {
   if (!formState.prompt || formState.prompt.trim().length < 2) {
-    message.warning('请先输入至少 2 个字的描述')
+    message.warning('请至少输入2个字')
     return
   }
 
@@ -786,7 +969,7 @@ const handleExpandPrompt = async () => {
     expanding.value = true
 
     message.loading({
-      content: 'AI 正在扩写中...',
+      content: '正在扩写中...',
       key: 'expanding',
       duration: 0,
     })
@@ -796,24 +979,22 @@ const handleExpandPrompt = async () => {
     if (res.data.code === 0 && res.data.data) {
       formState.prompt = res.data.data
       message.success({
-        content: '扩写成功！已更新为更详细的描述',
+        content: '扩写成功',
         key: 'expanding',
       })
     } else {
       throw new Error(res.data.message || '扩写失败')
     }
   } catch (error: any) {
-    console.error('AI扩写失败:', error)
+    console.error('Prompt expand failed:', error)
     message.error({
-      content: error.message || '扩写失败，请重试',
+      content: error.message || '扩写失败',
       key: 'expanding',
     })
   } finally {
     expanding.value = false
   }
 }
-
-
 </script>
 
 <style scoped>
@@ -1024,8 +1205,6 @@ const handleExpandPrompt = async () => {
   border-color: #667eea;
   color: #fff;
 }
-
-
 
 /* 底部按钮区域 */
 .panel-footer {
@@ -1251,7 +1430,7 @@ const handleExpandPrompt = async () => {
 .preview-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
   border-radius: 16px;
   border: 2px dashed rgba(255, 255, 255, 0.1);
 }
@@ -1488,3 +1667,4 @@ const handleExpandPrompt = async () => {
   }
 }
 </style>
+

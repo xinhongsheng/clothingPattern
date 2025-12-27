@@ -1,6 +1,7 @@
 // @ts-ignore
 /* eslint-disable */
 import request from '@/request'
+import type { FormExpose } from 'ant-design-vue/es/form/Form'
 
 /** 此处后端没有提供注释 GET /try-on/${param0} */
 export async function getTryOnHistory(
