@@ -786,9 +786,9 @@ const executeAction = async () => {
     executing.value = true
 
     message.loading({
-      content: `Executing ${getActionName(selectedAction.value)}...`,
+      content: `正在执行 ${getActionName(selectedAction.value)}...`,
       key: 'executing',
-      duration: 0,
+      duration: 2,
     })
 
     const res = await mjExecuteAction({
@@ -801,10 +801,10 @@ const executeAction = async () => {
       const newResult = res.data.data
 
       if (newResult.imageUrl) {
-        newResult.imageUrl = newResult.imageUrl.replace(/:\\d+$/, '')
+        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
       }
       if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\\d+$/, '')
+        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
       }
 
       finalResult.value = newResult
@@ -819,10 +819,8 @@ const executeAction = async () => {
 
       selectedAction.value = null
       currentStep.value = 3
-      message.success({
-        content: '操作完成，可保存或继续优化',
-        key: 'executing',
-      })
+      // 成功后关闭loading
+      message.destroy('executing')
     } else {
       throw new Error(res.data.message || '操作失败')
     }
@@ -831,6 +829,7 @@ const executeAction = async () => {
     message.error({
       content: error.message || '操作失败',
       key: 'executing',
+      duration: 3,
     })
   } finally {
     executing.value = false
@@ -848,9 +847,9 @@ const executeContinueAction = async () => {
     executing.value = true
 
     message.loading({
-      content: `Executing ${getActionName(selectedAction.value)}...`,
+      content: `正在执行 ${getActionName(selectedAction.value)}...`,
       key: 'executing',
-      duration: 0,
+      duration: 2,
     })
 
     const res = await mjExecuteAction({
@@ -863,10 +862,10 @@ const executeContinueAction = async () => {
       const newResult = res.data.data
 
       if (newResult.imageUrl) {
-        newResult.imageUrl = newResult.imageUrl.replace(/:\\d+$/, '')
+        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
       }
       if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\\d+$/, '')
+        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
       }
 
       finalResult.value = newResult
@@ -880,10 +879,8 @@ const executeContinueAction = async () => {
       }
 
       selectedAction.value = null
-      message.success({
-        content: '操作完成，可继续优化或保存',
-        key: 'executing',
-      })
+      // 成功后关闭loading
+      message.destroy('executing')
     } else {
       throw new Error(res.data.message || '操作失败')
     }
@@ -892,6 +889,7 @@ const executeContinueAction = async () => {
     message.error({
       content: error.message || '操作失败',
       key: 'executing',
+      duration: 3,
     })
   } finally {
     executing.value = false
