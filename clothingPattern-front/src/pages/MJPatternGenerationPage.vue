@@ -530,29 +530,45 @@ const stopPolling = () => {
   }
 }
 
+const syncStyleEngineSelection = (style?: string) => {
+  if (style) {
+    const matchedStyle = styleEngines.value.find((s) => s.name === style)
+    selectedStyleEngine.value = matchedStyle || null
+    return
+  }
+  selectedStyleEngine.value = null
+}
+
+const applyCreationParams = (params: {
+  prompt?: string
+  style?: string
+  season?: string
+  targetAudience?: string
+}) => {
+  if (params.prompt !== undefined) {
+    originalPrompt.value = params.prompt
+    formState.prompt = params.prompt
+  }
+  if (params.style !== undefined) {
+    formState.style = params.style
+  }
+  if (params.season !== undefined) {
+    formState.season = params.season
+  }
+  if (params.targetAudience !== undefined) {
+    formState.targetAudience = params.targetAudience
+  }
+  syncStyleEngineSelection(formState.style)
+}
+
 const applySnapshot = (snapshot: MjTaskSnapshot) => {
   currentTaskId.value = snapshot.taskId
-  
-  // 始终回填prompt
-  originalPrompt.value = snapshot.originalPrompt || ''
-  formState.prompt = snapshot.originalPrompt || ''
-  
-  // 始终回填其他参数
-  formState.style = snapshot.formState?.style
-  formState.season = snapshot.formState?.season
-  formState.targetAudience = snapshot.formState?.targetAudience
-  
-  // 回填风格引擎选中状态
-  if (snapshot.formState?.style) {
-    const matchedStyle = styleEngines.value.find((s) => s.name === snapshot.formState!.style)
-    if (matchedStyle) {
-      selectedStyleEngine.value = matchedStyle
-    } else {
-      selectedStyleEngine.value = null
-    }
-  } else {
-    selectedStyleEngine.value = null
-  }
+  applyCreationParams({
+    prompt: snapshot.originalPrompt,
+    style: snapshot.formState?.style,
+    season: snapshot.formState?.season,
+    targetAudience: snapshot.formState?.targetAudience,
+  })
 }
 
 const pollGenerateStatus = async (taskId: string) => {
@@ -644,10 +660,21 @@ onMounted(() => {
   mjTaskStore.markRead()
 
   const snapshot = readTaskSnapshot()
+  const creationParams = mjTaskStore.getCreationParams()
+  if (snapshot) {
+    applySnapshot(snapshot)
+  }
+  if (creationParams) {
+    applyCreationParams({
+      prompt: snapshot?.originalPrompt ?? creationParams.prompt,
+      style: snapshot?.formState?.style ?? creationParams.style,
+      season: snapshot?.formState?.season ?? creationParams.season,
+      targetAudience: snapshot?.formState?.targetAudience ?? creationParams.targetAudience,
+    })
+  }
   if (!snapshot) {
     return
   }
-  applySnapshot(snapshot)
   if (snapshot.status === 'SUCCEEDED' && snapshot.result) {
     mjResponse.value = snapshot.result
     currentStep.value = 2
@@ -1671,4 +1698,3 @@ const handleExpandPrompt = async () => {
   }
 }
 </style>
-
