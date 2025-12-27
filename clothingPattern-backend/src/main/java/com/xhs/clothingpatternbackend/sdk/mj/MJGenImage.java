@@ -33,11 +33,12 @@ public class MJGenImage {
     
     public MJGenImage() {
         // 创建OkHttpClient，设置超时时间
-        // Midjourney生成图片通常需要30-120秒，所以设置较长的超时时间
+        // Midjourney生成图片通常需要5分钟以上，所以设置较长的超时时间
         this.client = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)      // 连接超时60秒
-                .readTimeout(180, TimeUnit.SECONDS)        // 读取超时180秒（3分钟）
+                .readTimeout(300, TimeUnit.SECONDS)        // 读取超时300秒（5分钟）
                 .writeTimeout(60, TimeUnit.SECONDS)        // 写入超时60秒
+                .callTimeout(360, TimeUnit.SECONDS)        // 整体调用超时360秒（6分钟）
                 .retryOnConnectionFailure(true)            // 连接失败时重试
                 .build();
     }

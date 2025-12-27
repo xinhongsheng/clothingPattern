@@ -27,15 +27,15 @@ export const useMJTaskStore = defineStore('mjTask', () => {
   // 是否有未读通知
   const hasUnread = ref(false)
 
-  // 从localStorage读取
+  // 从 localStorage读取
   const loadFromStorage = () => {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       try {
         const data = JSON.parse(raw) as MJTaskNotification
         notification.value = data
-        // 生成成功且未读则显示未读状态
-        hasUnread.value = data.status === 'SUCCEEDED' && !data.read
+        // 生成成功或失败且未读则显示未读状态
+        hasUnread.value = (data.status === 'SUCCEEDED' || data.status === 'FAILED') && !data.read
       } catch {
         notification.value = null
         hasUnread.value = false
