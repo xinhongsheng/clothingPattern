@@ -21,11 +21,28 @@
       <a-col flex="200px">
         <div class="user-login-status">
           <div v-if="loginUserStore.loginUser.id">
+            <!-- 通知铃铛图标 -->
+            <a-popover 
+              v-if="mjTaskStore.notification" 
+              placement="bottomRight"
+              trigger="click"
+            >
+              <template #content>
+                <div class="notification-content" @click="goToMJGeneration">
+                  <div class="notification-item">
+                    <HighlightOutlined style="color: #1890ff; margin-right: 8px" />
+                    <span>{{ getMJTaskStatusText() }}</span>
+                  </div>
+                </div>
+              </template>
+              <a-badge :count="mjTaskStore.hasUnread ? 1 : 0" :offset="[-2, 2]" class="notification-badge">
+                <BellOutlined class="notification-icon" />
+              </a-badge>
+            </a-popover>
+            
             <a-dropdown>
               <a-space>
-                <a-badge :dot="mjTaskStore.hasUnread" :offset="[-2, 2]">
-                  <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
-                </a-badge>
+                <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
                 {{ loginUserStore.loginUser.userName ?? '无名' }}
               </a-space>
               <template #overlay>
@@ -36,25 +53,17 @@
                       我的创意
                     </router-link>
                   </a-menu-item>
-                  <a-menu-item v-if="mjTaskStore.notification" @click="goToMJGeneration">
-                    <a-badge :dot="mjTaskStore.hasUnread" :offset="[4, 0]">
-                      <HighlightOutlined />
-                      <span style="margin-left: 8px">{{ getMJTaskStatusText() }}</span>
-                    </a-badge>
-                  </a-menu-item>
                   <a-menu-item>
                     <router-link to="/user/profile">
                       <UserOutlined />
                       个人中心
                     </router-link>
                   </a-menu-item>
-                  <!-- 退出登录：直接放在同一个 a-menu 内，去掉多余的 a-menu 嵌套 -->
                   <a-menu-item @click="doLogout">
                     <LogoutOutlined />
                     退出登录
                   </a-menu-item>
                 </a-menu>
-                <!-- 闭合 a-menu -->
               </template>
             </a-dropdown>
           </div>
@@ -81,6 +90,7 @@ import {
   TeamOutlined,
   AppstoreOutlined,
   CrownOutlined,
+  BellOutlined,
 } from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
@@ -270,5 +280,42 @@ router.afterEach((to) => {
 /* 优化：下拉菜单宽度自适应 */
 :deep(.ant-dropdown-menu) {
   min-width: 120px;
+}
+
+/* 通知图标样式 */
+.notification-badge {
+  margin-right: 16px;
+  cursor: pointer;
+}
+
+.notification-icon {
+  font-size: 20px;
+  color: #666;
+  transition: color 0.3s;
+}
+
+.notification-icon:hover {
+  color: #1890ff;
+}
+
+/* 通知内容样式 */
+.notification-content {
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.notification-item {
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.notification-item:hover {
+  background-color: #f5f5f5;
+}
+
+.user-login-status > div {
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -532,22 +532,26 @@ const stopPolling = () => {
 
 const applySnapshot = (snapshot: MjTaskSnapshot) => {
   currentTaskId.value = snapshot.taskId
-  if (snapshot.originalPrompt) {
-    originalPrompt.value = snapshot.originalPrompt
-    // 回填prompt到表单
-    formState.prompt = snapshot.originalPrompt
-  }
-  if (snapshot.formState) {
-    formState.style = snapshot.formState.style
-    formState.season = snapshot.formState.season
-    formState.targetAudience = snapshot.formState.targetAudience
-    // 回填风格引擎选中状态
-    if (snapshot.formState.style) {
-      const matchedStyle = styleEngines.value.find((s) => s.name === snapshot.formState!.style)
-      if (matchedStyle) {
-        selectedStyleEngine.value = matchedStyle
-      }
+  
+  // 始终回填prompt
+  originalPrompt.value = snapshot.originalPrompt || ''
+  formState.prompt = snapshot.originalPrompt || ''
+  
+  // 始终回填其他参数
+  formState.style = snapshot.formState?.style
+  formState.season = snapshot.formState?.season
+  formState.targetAudience = snapshot.formState?.targetAudience
+  
+  // 回填风格引擎选中状态
+  if (snapshot.formState?.style) {
+    const matchedStyle = styleEngines.value.find((s) => s.name === snapshot.formState!.style)
+    if (matchedStyle) {
+      selectedStyleEngine.value = matchedStyle
+    } else {
+      selectedStyleEngine.value = null
     }
+  } else {
+    selectedStyleEngine.value = null
   }
 }
 
@@ -683,9 +687,9 @@ const handleGenerate = async () => {
     originalPrompt.value = formState.prompt
 
     message.loading({
-      content: '正在生成图案，请稍候...',
+      content: '正在生成图案，请稍候查看...',
       key: 'generating',
-      duration: 0,
+      duration: 2,
     })
 
     const res = await imagineAsync({
