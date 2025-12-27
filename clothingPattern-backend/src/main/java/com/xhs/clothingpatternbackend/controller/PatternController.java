@@ -16,7 +16,11 @@ import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.pattern.*;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
+import com.xhs.clothingpatternbackend.model.enums.PatternGenerateStatusEnum;
+import com.xhs.clothingpatternbackend.model.vo.PatternGenerateTaskVO;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
+import com.xhs.clothingpatternbackend.mq.PatternGenerateProducer;
+import com.xhs.clothingpatternbackend.service.PatternGenerateTaskService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.PatternSimilarityService;
 import com.xhs.clothingpatternbackend.service.UserBehaviorService;
@@ -60,6 +64,12 @@ public class PatternController {
     @Resource
     private CollaborativeFilteringTask collaborativeFilteringTask;
 
+    @Resource
+    private PatternGenerateTaskService patternGenerateTaskService;
+
+    @Resource
+    private PatternGenerateProducer patternGenerateProducer;
+
     // 改为公共静态变量，方便其他服务清空缓存
     public static final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -76,19 +86,42 @@ public class PatternController {
      * @return
      */
     @PostMapping("/generate")
-    public BaseResponse<Pattern> generatePattern(@RequestBody PatternGenerateRequest patternGenerateRequest,
-                                                    HttpServletRequest request) {
+    public BaseResponse<PatternGenerateTaskVO> generatePattern(@RequestBody PatternGenerateRequest patternGenerateRequest,
+                                                               HttpServletRequest request) {
         ThrowUtils.throwIf(patternGenerateRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        Long patternId = patternService.generatePattern(patternGenerateRequest, loginUser);
-        
-        // 获取生成的图案详情并返回
-        Pattern pattern = patternService.getById(patternId);
-//        PatternVO patternVO = patternService.getPatternVO(pattern, loginUser.getId());
-        // 清空图案列表缓存
-        clearPatternListCache();
+        PatternGenerateTaskInfo taskInfo = patternGenerateTaskService.createTask(loginUser.getId());
+        PatternGenerateMessage message = new PatternGenerateMessage(
+                taskInfo.getTaskId(),
+                loginUser.getId(),
+                patternGenerateRequest
+        );
+        try {
+            patternGenerateProducer.send(message);
+        } catch (Exception e) {
+            patternGenerateTaskService.markFailed(taskInfo.getTaskId(), "Queue send failed");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "生成任务提交失败");
+        }
 
-        return ResultUtils.success(pattern);
+        return ResultUtils.success(toTaskVO(taskInfo, null));
+    }
+
+    @GetMapping("/generate/status/{taskId}")
+    public BaseResponse<PatternGenerateTaskVO> getGenerateStatus(@PathVariable String taskId,
+                                                                 HttpServletRequest request) {
+        ThrowUtils.throwIf(taskId == null || taskId.isBlank(), ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        PatternGenerateTaskInfo taskInfo = patternGenerateTaskService.getTask(taskId);
+        ThrowUtils.throwIf(taskInfo == null, ErrorCode.NOT_FOUND_ERROR, "任务不存在");
+        if (!userService.isAdmin(loginUser) && !loginUser.getId().equals(taskInfo.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+        Pattern pattern = null;
+        if (PatternGenerateStatusEnum.SUCCEEDED.getValue().equals(taskInfo.getStatus())
+                && taskInfo.getPatternId() != null) {
+            pattern = patternService.getById(taskInfo.getPatternId());
+        }
+        return ResultUtils.success(toTaskVO(taskInfo, pattern));
     }
 
     /**
@@ -425,6 +458,18 @@ public class PatternController {
         } catch (Exception e) {
             // 缓存清理失败不影响主流程
         }
+    }
+
+    private PatternGenerateTaskVO toTaskVO(PatternGenerateTaskInfo taskInfo, Pattern pattern) {
+        PatternGenerateTaskVO taskVO = new PatternGenerateTaskVO();
+        taskVO.setTaskId(taskInfo.getTaskId());
+        taskVO.setStatus(taskInfo.getStatus());
+        taskVO.setPatternId(taskInfo.getPatternId());
+        taskVO.setErrorMessage(taskInfo.getErrorMessage());
+        taskVO.setCreateTime(taskInfo.getCreateTime());
+        taskVO.setUpdateTime(taskInfo.getUpdateTime());
+        taskVO.setPattern(pattern);
+        return taskVO;
     }
 
     // ==================== 个性化推荐相关接口 ====================

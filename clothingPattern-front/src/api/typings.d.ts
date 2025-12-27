@@ -331,6 +331,12 @@ declare namespace API {
     message?: string
   }
 
+  type BaseResponsePatternGenerateTaskVO = {
+    code?: number
+    data?: PatternGenerateTaskVO
+    message?: string
+  }
+
   type BaseResponsePatternVO = {
     code?: number
     data?: PatternVO
@@ -505,6 +511,10 @@ declare namespace API {
 
   type getPatternByIdParams = {
     id: number
+  }
+
+  type getPatternGenerateStatusParams = {
+    taskId: string
   }
 
   type getPatternVOByIdParams = {
@@ -800,6 +810,16 @@ declare namespace API {
     size?: string
     negativePrompt?: string
     promptExtend?: boolean
+  }
+
+  type PatternGenerateTaskVO = {
+    taskId?: string
+    status?: string
+    patternId?: number
+    pattern?: Pattern
+    errorMessage?: string
+    createTime?: number
+    updateTime?: number
   }
 
   type PatternQueryRequest = {

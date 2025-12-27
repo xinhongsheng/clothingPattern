@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div id="patternGenerationPage" class="pattern-generation-page">
     <!-- 页面标题 -->
     <div class="page-header">
@@ -464,7 +464,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, watch } from 'vue'
+import { ref, reactive, h, watch, onBeforeUnmount } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   EditOutlined,
@@ -477,7 +477,7 @@ import {
   ReloadOutlined,
   PlusOutlined,
 } from '@ant-design/icons-vue'
-import { generatePattern } from '@/api/patternController'
+import { generatePattern, getPatternGenerateStatus, getPatternById } from '@/api/patternController'
 import { useRouter } from 'vue-router'
 import { AUDIT_STATUS_MAP, AUDIT_STATUS_COLOR_MAP, GENERATION_TYPE_ENUM } from '@/constants/pattern'
 
@@ -526,6 +526,9 @@ const formState = reactive<{
 const generating = ref(false)
 const generatedPattern = ref<any>(null)
 const advancedOpen = ref<string[]>([])
+const currentTaskId = ref<string | null>(null)
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+const pollIntervalMs = 2000
 
 // 计算是否是批量模式
 const isBatchMode = ref(false)
@@ -541,6 +544,92 @@ watch(
     }
   },
 )
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+const resolvePattern = async (taskData: any) => {
+  if (taskData?.pattern) {
+    return taskData.pattern
+  }
+  if (taskData?.patternId) {
+    const patternRes = await getPatternById({ id: taskData.patternId })
+    if (patternRes.data.code === 0) {
+      return patternRes.data.data
+    }
+  }
+  return null
+}
+
+const pollGenerateStatus = async (taskId: string) => {
+  try {
+    const res = await getPatternGenerateStatus({ taskId })
+    if (res.data.code !== 0) {
+      throw new Error(res.data.message || '获取任务状态失败')
+    }
+    const taskData = res.data.data
+    if (!taskData) {
+      throw new Error('任务状态为空')
+    }
+    currentTaskId.value = taskData.taskId || taskId
+
+    if (taskData.status === 'SUCCEEDED') {
+      const pattern = await resolvePattern(taskData)
+      if (!pattern) {
+        throw new Error('生成已完成，但未获取到图案信息')
+      }
+      generatedPattern.value = pattern
+      generating.value = false
+      stopPolling()
+
+      if (isBatchMode.value) {
+        message.success({
+          content: `组图生成成功！共生成 ${formState.maxImages} 张图案，已全部保存到数据库`,
+          key: 'generating',
+          duration: 5,
+        })
+        message.info({
+          content: `所有${formState.maxImages} 张图案均已提交审核，请在管理后台查看全部图案`,
+          duration: 5,
+        })
+      } else {
+        message.success({ content: '图案生成成功！', key: 'generating' })
+        message.info('图案已提交审核，请稍后在“我的作品”中查看')
+      }
+      return
+    }
+
+    if (taskData.status === 'FAILED') {
+      generating.value = false
+      stopPolling()
+      message.error({
+        content: taskData.errorMessage || '图案生成失败，请稍后重试',
+        key: 'generating',
+      })
+      return
+    }
+
+    stopPolling()
+    pollTimer = setTimeout(() => {
+      pollGenerateStatus(taskId)
+    }, pollIntervalMs)
+  } catch (error: any) {
+    generating.value = false
+    stopPolling()
+    message.error({
+      content: error.message || '获取任务状态失败，请稍后重试',
+      key: 'generating',
+    })
+  }
+}
+
+onBeforeUnmount(() => {
+  stopPolling()
+})
 
 // 图片压缩函数
 const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<Blob> => {
@@ -708,7 +797,10 @@ const handleRemoveMultipleImage = (file: any) => {
 // 生成图案
 const handleGenerate = async () => {
   try {
+    stopPolling()
     generating.value = true
+    generatedPattern.value = null
+    currentTaskId.value = null
     isBatchMode.value =
       formState.serviceType === 'doubao' && formState.doubaoMode.startsWith('batch')
 
@@ -720,37 +812,17 @@ const handleGenerate = async () => {
 
     const res = await generatePattern(formState)
 
-    if (res.data.code === 0 && res.data.data) {
-      if (isBatchMode.value) {
-        // 组图模式：显示提示信息
-        message.success({
-          content: `组图生成成功！共生成 ${formState.maxImages} 张图案，已全部保存到数据库`,
-          key: 'generating',
-          duration: 5,
-        })
-
-        // 显示第一张图片的预览
-        generatedPattern.value = res.data.data
-
-        // 额外提示
-        message.info({
-          content: `所有 ${formState.maxImages} 张图案均已提交审核，请在管理后台查看全部图案`,
-          duration: 5,
-        })
-      } else {
-        // 单图模式：显示预览
-        message.success({ content: '图案生成成功！', key: 'generating' })
-        generatedPattern.value = res.data.data
-        message.info('图案已提交审核，请稍后在“我的作品”中查看')
-      }
-    } else {
-      throw new Error(res.data.message || '生成失败')
+    if (res.data.code === 0 && res.data.data?.taskId) {
+      currentTaskId.value = res.data.data.taskId
+      pollGenerateStatus(res.data.data.taskId)
+      return
     }
+    throw new Error(res.data.message || '生成失败')
   } catch (error: any) {
     console.error('生成图案失败:', error)
     message.error({ content: error.message || '生成失败，请重试', key: 'generating' })
-  } finally {
     generating.value = false
+    stopPolling()
   }
 }
 
@@ -769,6 +841,8 @@ const viewMyPatterns = () => {
 // 重置表单
 const resetForm = () => {
   generatedPattern.value = null
+  currentTaskId.value = null
+  stopPolling()
   formState.patternName = ''
   formState.description = ''
   formState.referenceImageUrl = ''
@@ -843,3 +917,4 @@ const formatDateTime = (date: Date | string) => {
   }
 }
 </style>
+
