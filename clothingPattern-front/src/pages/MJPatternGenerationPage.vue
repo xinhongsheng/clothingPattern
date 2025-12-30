@@ -9,20 +9,7 @@
       <span class="noise" />
     </div>
 
-    <!-- 未登录提示 -->
-    <!-- <a-alert
-      v-if="!isUserLoggedIn"
-      message="需要登录才能使用智能创作功能"
-      description="请先登录您的账号，然后即可开始创作属于您的独特图案。"
-      type="warning"
-      show-icon
-      closable
-      class="login-alert"
-    >
-      <template #icon>
-        <span style="font-size: 20px">🔔</span>
-      </template>
-    </a-alert> -->
+
 
     <!-- 主内容区域 - 左右分栏布局 -->
     <div class="main-layout">
