@@ -1097,34 +1097,39 @@ const handleExpandPrompt = async () => {
 </script>
 
 <style scoped lang="scss">
-/* ========= 霓虹主题变量 ========= */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Sora:wght@400;500;600;700&display=swap');
+
+/* ========= 霓虹工坊主题变量 ========= */
 .mj-pattern-generation-page {
-  --bg0: #050614;
-  --bg1: #0b0d22;
-  --panel: rgba(18, 18, 44, 0.78);
-  --panel2: rgba(10, 10, 26, 0.55);
+  --bg0: #0d0f16;
+  --bg1: #151a26;
+  --panel: rgba(18, 20, 32, 0.86);
+  --panel2: rgba(14, 16, 26, 0.64);
   --line: rgba(255, 255, 255, 0.12);
-  --text: rgba(255, 255, 255, 0.92);
-  --muted: rgba(255, 255, 255, 0.64);
-  --muted2: rgba(255, 255, 255, 0.46);
-  --c1: rgba(0, 255, 209, 0.95);
-  --c2: rgba(255, 70, 218, 0.88);
-  --c3: rgba(72, 133, 255, 0.88);
-  --shadow: 0 26px 90px rgba(0, 0, 0, 0.55);
+  --text: rgba(247, 241, 233, 0.94);
+  --muted: rgba(247, 241, 233, 0.68);
+  --muted2: rgba(247, 241, 233, 0.48);
+  --c1: rgba(245, 162, 77, 0.98);
+  --c2: rgba(47, 182, 166, 0.92);
+  --c3: rgba(139, 172, 255, 0.88);
+  --shadow: 0 26px 90px rgba(6, 7, 12, 0.58);
   --r12: 12px;
   --r16: 16px;
   --r18: 18px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-body: 'Sora', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Fraunces', 'Noto Serif SC', 'Songti SC', serif;
 
   height: 100vh;
   overflow: hidden;
   position: relative;
-  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background:
-    radial-gradient(1200px 700px at 18% 10%, rgba(0, 255, 209, 0.20), transparent 60%),
-    radial-gradient(900px 650px at 86% 18%, rgba(255, 70, 218, 0.18), transparent 60%),
-    radial-gradient(900px 700px at 55% 105%, rgba(72, 133, 255, 0.16), transparent 55%),
-    linear-gradient(180deg, var(--bg0) 0%, var(--bg0) 42%, #04030d 100%);
+    radial-gradient(1200px 700px at 18% 10%, rgba(245, 162, 77, 0.18), transparent 60%),
+    radial-gradient(900px 650px at 86% 16%, rgba(47, 182, 166, 0.16), transparent 60%),
+    radial-gradient(900px 700px at 55% 105%, rgba(139, 172, 255, 0.14), transparent 55%),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg0) 42%, #0a0b12 100%);
 }
 
 /* ========= 背景层 ========= */
@@ -1147,18 +1152,18 @@ const handleExpandPrompt = async () => {
   .b1 {
     left: -140px;
     top: -160px;
-    background: radial-gradient(circle at 30% 30%, rgba(0, 255, 209, 0.85), rgba(0, 255, 209, 0) 60%);
+    background: radial-gradient(circle at 30% 30%, rgba(245, 162, 77, 0.85), rgba(245, 162, 77, 0) 60%);
   }
   .b2 {
     right: -170px;
     top: -110px;
-    background: radial-gradient(circle at 40% 40%, rgba(255, 70, 218, 0.85), rgba(255, 70, 218, 0) 62%);
+    background: radial-gradient(circle at 40% 40%, rgba(47, 182, 166, 0.8), rgba(47, 182, 166, 0) 62%);
     animation-delay: -2s;
   }
   .b3 {
     left: 18%;
     bottom: -300px;
-    background: radial-gradient(circle at 40% 40%, rgba(72, 133, 255, 0.85), rgba(72, 133, 255, 0) 62%);
+    background: radial-gradient(circle at 40% 40%, rgba(139, 172, 255, 0.75), rgba(139, 172, 255, 0) 62%);
     animation-delay: -4s;
   }
 
@@ -1187,6 +1192,11 @@ const handleExpandPrompt = async () => {
   50% { transform: translate3d(12px, 20px, 0) scale(1.04); }
 }
 
+@keyframes panelEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ========= 未登录提示 ========= */
 .login-alert {
   margin: 16px;
@@ -1212,10 +1222,11 @@ const handleExpandPrompt = async () => {
   overflow-y: auto;
   overflow-x: hidden;
 
-  background: linear-gradient(180deg, rgba(22, 22, 52, 0.82), rgba(12, 12, 30, 0.72));
-  border-right: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(20, 22, 34, 0.86), rgba(12, 14, 24, 0.78));
+  border-right: 1px solid var(--line);
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(14px);
+  animation: panelEnter 0.7s var(--ease) both;
 
   /* 滚动条美化 */
   &::-webkit-scrollbar { width: 6px; }
@@ -1226,7 +1237,7 @@ const handleExpandPrompt = async () => {
 
 .left-hero {
   padding: 18px 20px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid var(--line);
   position: relative;
 
   .hero-badge {
@@ -1235,9 +1246,9 @@ const handleExpandPrompt = async () => {
     gap: 10px;
     padding: 7px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
     font-size: 12px;
 
     .dot {
@@ -1245,28 +1256,29 @@ const handleExpandPrompt = async () => {
       height: 8px;
       border-radius: 999px;
       background: var(--c1);
-      box-shadow: 0 0 14px rgba(0, 255, 209, 0.85);
+      box-shadow: 0 0 14px rgba(245, 162, 77, 0.7);
     }
     .chip {
       padding: 2px 8px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.10);
-      color: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--muted);
     }
   }
 
   .hero-title {
     position: relative;
     margin-top: 10px;
-    font-size: 18px;
-    font-weight: 900;
-    letter-spacing: 0.1px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: var(--font-display);
+    letter-spacing: 0.2px;
 
     .shine {
       position: absolute;
       inset: -8px -10px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
       transform: skewX(-14deg);
       animation: shine 2.8s ease-in-out infinite;
       pointer-events: none;
@@ -1277,7 +1289,7 @@ const handleExpandPrompt = async () => {
   .hero-subtitle {
     margin-top: 6px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--muted);
   }
 }
 
@@ -1289,13 +1301,13 @@ const handleExpandPrompt = async () => {
 
 .panel-section {
   padding: 18px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid var(--line);
 }
 
 .section-header {
   font-size: 14px;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.92);
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 12px;
   display: flex;
   align-items: baseline;
@@ -1305,21 +1317,21 @@ const handleExpandPrompt = async () => {
   .mini-tip {
     font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.52);
+    color: var(--muted2);
   }
 }
 
 .section-header.style-header {
-  color: rgba(255, 70, 218, 0.92);
+  color: var(--c1);
   .style-pill {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
     font-size: 11px;
     .x {
       cursor: pointer;
@@ -1329,32 +1341,32 @@ const handleExpandPrompt = async () => {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.16);
     }
     .x:hover {
-      border-color: rgba(255, 70, 218, 0.35);
-      color: rgba(255, 70, 218, 0.95);
+      border-color: rgba(245, 162, 77, 0.4);
+      color: var(--c1);
     }
   }
 }
 
 /* 输入框皮肤 */
 .prompt-textarea {
-  background-color: rgba(10, 10, 26, 0.70) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background-color: var(--panel2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   border-radius: 14px !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text) !important;
   font-size: 13px;
   resize: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
-.prompt-textarea::placeholder { color: rgba(255, 255, 255, 0.42) !important; }
+.prompt-textarea::placeholder { color: var(--muted2) !important; }
 
 .prompt-textarea:focus {
-  border-color: rgba(0, 255, 209, 0.35) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10) !important;
+  border-color: rgba(47, 182, 166, 0.45) !important;
+  box-shadow: 0 0 0 3px rgba(47, 182, 166, 0.16) !important;
 }
 
 .prompt-footer {
@@ -1364,18 +1376,18 @@ const handleExpandPrompt = async () => {
   margin-top: 10px;
 }
 
-.char-count { font-size: 12px; color: rgba(255, 255, 255, 0.48); }
+.char-count { font-size: 12px; color: var(--muted2); }
 
 .prompt-actions-inline { display: flex; gap: 10px; }
 
 .prompt-actions-inline :deep(.ant-btn) {
-  color: rgba(255, 255, 255, 0.70);
+  color: var(--muted);
   font-size: 13px;
   border-radius: 10px;
 }
-.prompt-actions-inline :deep(.ant-btn:hover) { color: rgba(255, 255, 255, 0.95); }
+.prompt-actions-inline :deep(.ant-btn:hover) { color: var(--text); }
 
-.expand-action-btn { color: rgba(0, 255, 209, 0.90) !important; }
+.expand-action-btn { color: var(--c2) !important; }
 
 /* 风格网格 */
 .style-grid {
@@ -1388,8 +1400,8 @@ const handleExpandPrompt = async () => {
   cursor: pointer;
   text-align: center;
   padding: 12px 8px;
-  background: rgba(10, 10, 26, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 14, 24, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
   transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   position: relative;
@@ -1398,8 +1410,8 @@ const handleExpandPrompt = async () => {
   .style-glow {
     position: absolute;
     inset: -20px;
-    background: radial-gradient(circle at 30% 20%, rgba(0, 255, 209, 0.18), transparent 50%),
-      radial-gradient(circle at 70% 70%, rgba(255, 70, 218, 0.14), transparent 55%);
+    background: radial-gradient(circle at 30% 20%, rgba(245, 162, 77, 0.18), transparent 52%),
+      radial-gradient(circle at 70% 70%, rgba(47, 182, 166, 0.16), transparent 56%);
     filter: blur(18px);
     opacity: 0;
     transition: opacity .18s ease;
@@ -1409,27 +1421,27 @@ const handleExpandPrompt = async () => {
 
 .style-item:hover {
   transform: translateY(-2px);
-  border-color: rgba(0, 255, 209, 0.28);
+  border-color: rgba(47, 182, 166, 0.45);
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
   .style-glow { opacity: 1; }
 }
 
 .style-item.active {
-  background: rgba(0, 255, 209, 0.10);
-  border-color: rgba(0, 255, 209, 0.40);
-  box-shadow: 0 22px 80px rgba(0, 255, 209, 0.08);
+  background: rgba(47, 182, 166, 0.14);
+  border-color: rgba(47, 182, 166, 0.6);
+  box-shadow: 0 22px 80px rgba(47, 182, 166, 0.14);
   .style-glow { opacity: 1; }
 }
 
 .style-icon { font-size: 22px; margin-bottom: 4px; }
-.style-name { font-size: 12px; color: rgba(255, 255, 255, 0.70); font-weight: 800; }
+.style-name { font-size: 12px; color: var(--muted); font-weight: 700; }
 
 /* 标签选择 */
 .tags-group { display: flex; flex-direction: column; gap: 12px; }
 .tag-row { display: flex; align-items: flex-start; gap: 10px; }
 .tag-label {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--muted);
   min-width: 44px;
   margin-top: 2px;
   font-weight: 700;
@@ -1439,9 +1451,9 @@ const handleExpandPrompt = async () => {
 .tag-option {
   padding: 6px 12px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.70);
-  background: rgba(10, 10, 26, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+  background: rgba(12, 14, 24, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   cursor: pointer;
   transition: transform .18s ease, border-color .18s ease, background .18s ease;
@@ -1449,21 +1461,21 @@ const handleExpandPrompt = async () => {
 
 .tag-option:hover {
   transform: translateY(-1px);
-  border-color: rgba(72, 133, 255, 0.35);
+  border-color: rgba(47, 182, 166, 0.45);
 }
 
 .tag-option.active {
-  background: linear-gradient(135deg, rgba(72, 133, 255, 0.28), rgba(255, 70, 218, 0.18));
-  border-color: rgba(72, 133, 255, 0.42);
-  color: rgba(255, 255, 255, 0.92);
+  background: linear-gradient(135deg, rgba(245, 162, 77, 0.28), rgba(47, 182, 166, 0.22));
+  border-color: rgba(245, 162, 77, 0.45);
+  color: var(--text);
 }
 
 /* 底部按钮 */
 .panel-footer {
   padding: 18px 20px 20px;
   margin-top: auto;
-  background: linear-gradient(180deg, rgba(18, 18, 44, 0.35), rgba(18, 18, 44, 0.60));
-  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(16, 18, 28, 0.48), rgba(14, 16, 24, 0.72));
+  border-top: 1px solid var(--line);
 }
 
 .generate-btn {
@@ -1475,8 +1487,8 @@ const handleExpandPrompt = async () => {
 }
 
 .neon-primary {
-  background: linear-gradient(90deg, rgba(0, 255, 209, 0.95), rgba(255, 70, 218, 0.88)) !important;
-  box-shadow: 0 18px 60px rgba(0, 255, 209, 0.16), 0 18px 60px rgba(255, 70, 218, 0.12);
+  background: linear-gradient(90deg, rgba(245, 162, 77, 0.98), rgba(47, 182, 166, 0.92)) !important;
+  box-shadow: 0 18px 60px rgba(245, 162, 77, 0.2), 0 18px 60px rgba(47, 182, 166, 0.16);
   position: relative;
   overflow: hidden;
 
@@ -1498,7 +1510,7 @@ const handleExpandPrompt = async () => {
 .footer-hint {
   margin-top: 10px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1507,8 +1519,8 @@ const handleExpandPrompt = async () => {
     width: 8px;
     height: 8px;
     border-radius: 999px;
-    background: rgba(255, 70, 218, 0.95);
-    box-shadow: 0 0 14px rgba(255, 70, 218, 0.85);
+    background: var(--c1);
+    box-shadow: 0 0 14px rgba(245, 162, 77, 0.7);
     animation: pulse 1.2s ease-in-out infinite;
   }
 }
@@ -1531,10 +1543,12 @@ const handleExpandPrompt = async () => {
   justify-content: center;
 
   padding: 34px;
-  background: radial-gradient(900px 650px at 60% 25%, rgba(255, 70, 218, 0.10), transparent 58%),
-    radial-gradient(900px 650px at 30% 60%, rgba(0, 255, 209, 0.10), transparent 58%),
-    rgba(10, 10, 26, 0.60);
+  background: radial-gradient(900px 650px at 60% 25%, rgba(245, 162, 77, 0.12), transparent 58%),
+    radial-gradient(900px 650px at 30% 60%, rgba(47, 182, 166, 0.12), transparent 58%),
+    rgba(12, 14, 24, 0.64);
   backdrop-filter: blur(14px);
+  animation: panelEnter 0.7s var(--ease) both;
+  animation-delay: 0.08s;
 }
 
 /* ========= 生成中状态（情绪化 loading） ========= */
@@ -1558,19 +1572,19 @@ const handleExpandPrompt = async () => {
   gap: 10px;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
   width: fit-content;
   margin: 0 auto;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--text);
 
   .live-dot {
     width: 9px;
     height: 9px;
     border-radius: 999px;
-    background: var(--c1);
-    box-shadow: 0 0 14px rgba(0, 255, 209, 0.85);
+    background: var(--c2);
+    box-shadow: 0 0 14px rgba(47, 182, 166, 0.7);
     animation: pulse 1.2s ease-in-out infinite;
   }
 }
@@ -1578,6 +1592,8 @@ const handleExpandPrompt = async () => {
 .loading-title {
   font-size: 18px;
   font-weight: 1000;
+  font-family: var(--font-display);
+  letter-spacing: 0.2px;
   color: rgba(255, 255, 255, 0.92);
   .dots {
     display: inline-block;
@@ -1602,7 +1618,7 @@ const handleExpandPrompt = async () => {
     padding: 10px 10px;
     border: 1px solid rgba(255, 255, 255, 0.10);
     background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--muted);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1614,10 +1630,10 @@ const handleExpandPrompt = async () => {
 
   .phase-item.active {
     color: rgba(255, 255, 255, 0.94);
-    border-color: rgba(0, 255, 209, 0.35);
-    background: rgba(0, 255, 209, 0.10);
+    border-color: rgba(47, 182, 166, 0.5);
+    background: rgba(47, 182, 166, 0.16);
     transform: translateY(-1px);
-    box-shadow: 0 18px 55px rgba(0, 255, 209, 0.10);
+    box-shadow: 0 18px 55px rgba(47, 182, 166, 0.16);
   }
 
   @media (max-width: 560px) {
@@ -1646,7 +1662,7 @@ const handleExpandPrompt = async () => {
 
 .sk-img {
   height: 220px;
-  background: linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(255, 70, 218, 0.06));
+  background: linear-gradient(135deg, rgba(245, 162, 77, 0.08), rgba(47, 182, 166, 0.06));
 }
 
 .sk-meta { padding: 12px; }
@@ -1694,7 +1710,7 @@ const handleExpandPrompt = async () => {
     display: block;
     height: 100%;
     width: 38%;
-    background: linear-gradient(90deg, rgba(0, 255, 209, 0.85), rgba(255, 70, 218, 0.65));
+    background: linear-gradient(90deg, rgba(245, 162, 77, 0.9), rgba(47, 182, 166, 0.7));
     border-radius: 999px;
     animation: progressSlide 1.4s ease-in-out infinite;
   }
@@ -1707,7 +1723,7 @@ const handleExpandPrompt = async () => {
 
 .mini-note {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
   text-align: center;
 }
 
@@ -1729,11 +1745,13 @@ const handleExpandPrompt = async () => {
 .result-title {
   font-size: 16px;
   font-weight: 1000;
-  .spark { margin-right: 6px; filter: drop-shadow(0 0 10px rgba(0, 255, 209, 0.45)); }
+  font-family: var(--font-display);
+  letter-spacing: 0.2px;
+  .spark { margin-right: 6px; filter: drop-shadow(0 0 10px rgba(47, 182, 166, 0.45)); }
 }
 .result-sub {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
 }
 
 .frame-grid {
@@ -1759,8 +1777,8 @@ const handleExpandPrompt = async () => {
 .result-image-item:hover { transform: translateY(-2px); }
 
 .result-image-item.selected {
-  border-color: rgba(0, 255, 209, 0.45);
-  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10), 0 24px 80px rgba(0, 255, 209, 0.08);
+  border-color: rgba(47, 182, 166, 0.6);
+  box-shadow: 0 0 0 3px rgba(47, 182, 166, 0.16), 0 24px 80px rgba(47, 182, 166, 0.12);
 }
 
 .thumb-frame {
@@ -1815,8 +1833,8 @@ const handleExpandPrompt = async () => {
   color: rgba(255, 255, 255, 0.90) !important;
 }
 .ghost-btn:hover {
-  border-color: rgba(0, 255, 209, 0.28) !important;
-  background: rgba(0, 255, 209, 0.10) !important;
+  border-color: rgba(47, 182, 166, 0.45) !important;
+  background: rgba(47, 182, 166, 0.14) !important;
 }
 
 /* ========= 放大后单图 ========= */
@@ -1851,10 +1869,10 @@ const handleExpandPrompt = async () => {
     inset: -2px;
     background: conic-gradient(
       from 180deg,
-      rgba(0, 255, 209, 0.35),
-      rgba(255, 70, 218, 0.28),
-      rgba(72, 133, 255, 0.28),
-      rgba(0, 255, 209, 0.35)
+      rgba(245, 162, 77, 0.35),
+      rgba(47, 182, 166, 0.28),
+      rgba(139, 172, 255, 0.28),
+      rgba(245, 162, 77, 0.35)
     );
     filter: blur(18px);
     opacity: 0.35;
@@ -1879,8 +1897,8 @@ const handleExpandPrompt = async () => {
   display: grid;
   gap: 6px;
 }
-.info-text { font-size: 14px; font-weight: 1000; color: rgba(0, 255, 209, 0.85); }
-.info-sub { font-size: 12px; color: rgba(255, 255, 255, 0.62); }
+.info-text { font-size: 14px; font-weight: 1000; color: var(--c2); }
+.info-sub { font-size: 12px; color: var(--muted); }
 
 /* 保存表单 */
 .save-section {
@@ -1894,14 +1912,14 @@ const handleExpandPrompt = async () => {
   flex: 1;
   height: 42px;
   background: rgba(255, 255, 255, 0.06) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   border-radius: 14px !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--text) !important;
 }
-.save-input::placeholder { color: rgba(255, 255, 255, 0.42) !important; }
+.save-input::placeholder { color: var(--muted2) !important; }
 .save-input:focus {
-  border-color: rgba(0, 255, 209, 0.35) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10) !important;
+  border-color: rgba(47, 182, 166, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(47, 182, 166, 0.16) !important;
 }
 
 .save-btn {
@@ -1923,7 +1941,7 @@ const handleExpandPrompt = async () => {
 }
 .action-title {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
   text-align: center;
   font-weight: 900;
 }
@@ -1936,11 +1954,11 @@ const handleExpandPrompt = async () => {
   border-radius: 14px !important;
   background: transparent !important;
   border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  color: rgba(255, 255, 255, 0.62) !important;
+  color: var(--muted) !important;
 }
 .back-btn:hover {
-  border-color: rgba(72, 133, 255, 0.35) !important;
-  color: rgba(72, 133, 255, 0.92) !important;
+  border-color: rgba(139, 172, 255, 0.5) !important;
+  color: rgba(139, 172, 255, 0.9) !important;
 }
 
 /* ========= 空状态 ========= */
@@ -1996,11 +2014,13 @@ const handleExpandPrompt = async () => {
     font-weight: 1000;
     margin: 0 0 8px;
     color: rgba(255, 255, 255, 0.92);
+    font-family: var(--font-display);
+    letter-spacing: 0.2px;
   }
   p {
     font-size: 12px;
     margin: 0;
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--muted);
   }
 }
 
