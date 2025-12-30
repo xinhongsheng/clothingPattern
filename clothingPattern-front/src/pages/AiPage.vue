@@ -10,12 +10,14 @@
       </a-button>
     </div>
 
+    <!-- Desktop Sidebar -->
     <div class="sidebar-container" v-show="!isMobile">
       <div class="sidebar-header">
         <div class="app-logo">
           <BulbFilled class="logo-icon" />
           <span class="title-text">Fashion AI</span>
         </div>
+
         <div class="role-selector">
           <div
             v-for="role in roles"
@@ -47,55 +49,96 @@
 
       <div class="sidebar-footer">
         <div class="user-info">
-          <a-avatar size="small" :style="{ backgroundColor: '#00d2ff' }">U</a-avatar>
+          <a-avatar size="small" :style="{ backgroundColor: 'var(--accent-2)' }">U</a-avatar>
           <span>设计师</span>
         </div>
       </div>
     </div>
 
+    <!-- Mobile Drawer -->
     <a-drawer
       v-model:open="drawerVisible"
       placement="left"
       :closable="false"
-      width="240px"
-      :bodyStyle="{ padding: 0, background: '#1a1a2e' }"
+      width="260px"
+      :bodyStyle="{ padding: 0, background: 'transparent' }"
     >
-      <div class="drawer-menu">
-        <h3>切换角色</h3>
-        <div class="role-list-mobile">
-          <div
-            v-for="role in roles"
-            :key="role.id"
-            class="mobile-role-item"
-            @click="handleMobileRoleSelect(role.id)"
-          >
-            <span>{{ role.icon }} {{ role.name }}</span>
+      <div class="drawer-shell">
+        <div class="drawer-head">
+          <div class="drawer-brand">
+            <BulbFilled class="logo-icon" />
+            <span>Fashion AI</span>
+          </div>
+          <div class="drawer-sub">切换角色</div>
+        </div>
+
+        <div class="drawer-menu">
+          <div class="role-list-mobile">
+            <div
+              v-for="role in roles"
+              :key="role.id"
+              class="mobile-role-item"
+              :class="{ active: currentRole === role.id }"
+              @click="handleMobileRoleSelect(role.id)"
+            >
+              <span class="emoji">{{ role.icon }}</span>
+              <span class="name">{{ role.name }}</span>
+            </div>
+          </div>
+
+          <div class="drawer-divider"></div>
+
+          <div class="drawer-quick">
+            <div class="section-label">灵感快捷键</div>
+            <div class="inspiration-list">
+              <div
+                v-for="(item, index) in commonQuestions"
+                :key="index"
+                class="inspire-item"
+                @click="selectQuestion(item)"
+              >
+                <ThunderboltOutlined class="icon-small" />
+                <span class="text-truncate">{{ item }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </a-drawer>
 
+    <!-- Main Chat -->
     <div class="main-chat-area">
       <div class="chat-header">
         <div class="current-role-tag">
           <span class="role-icon">{{ getRoleIcon(currentRole) }}</span>
           正在与 <strong>{{ getRoleName(currentRole) }}</strong> 对话
         </div>
-        <a-button type="text" size="small" @click="clearChat" title="清空对话">
+        <a-button
+          type="text"
+          size="small"
+          class="header-icon-btn"
+          @click="clearChat"
+          title="清空对话"
+        >
           <DeleteOutlined />
         </a-button>
       </div>
 
+      <!-- Messages (only scrollable area) -->
       <div class="messages-container" ref="messagesAreaRef">
         <template v-if="messages.length === 0">
           <div class="empty-state">
-            <div class="empty-icon">🎨</div>
-            <h3>AI 服装设计灵感</h3>
-            <p>输入关键词或上传图片，开始创作。</p>
-            <div class="tags-row">
-              <span class="tag" @click="selectQuestion('2025春夏流行色')">2025流行色</span>
-              <span class="tag" @click="selectQuestion('新中式风格面料推荐')">新中式面料</span>
-              <span class="tag" @click="selectQuestion('生成赛博朋克风格图案')">赛博朋克图案</span>
+            <div class="empty-card">
+              <div class="empty-icon">🎨</div>
+              <h3>AI 服装设计灵感</h3>
+              <p>输入关键词或上传图片，开始创作。</p>
+              <div class="tags-row">
+                <span class="tag" @click="selectQuestion('2025春夏流行色')">2025流行色</span>
+                <span class="tag" @click="selectQuestion('新中式风格面料推荐')">新中式面料</span>
+                <span class="tag" @click="selectQuestion('生成赛博朋克风格图案')"
+                  >赛博朋克图案</span
+                >
+              </div>
             </div>
           </div>
         </template>
@@ -107,7 +150,7 @@
             </div>
             <div class="content-col">
               <div class="bubble">
-                <a-image v-if="msg.imageUrl" :src="msg.imageUrl" class="chat-img" :width="150" />
+                <a-image v-if="msg.imageUrl" :src="msg.imageUrl" class="chat-img" :width="170" />
                 <div class="text markdown-body" v-html="formatMarkdown(msg.content)"></div>
               </div>
               <div v-if="msg.loading" class="loading-dots">
@@ -118,6 +161,7 @@
         </div>
       </div>
 
+      <!-- Input -->
       <div class="input-wrapper">
         <div v-if="uploadedImageUrl" class="image-preview-mini">
           <img :src="uploadedImageUrl" />
@@ -126,7 +170,7 @@
 
         <div class="input-box glass-panel">
           <a-upload :before-upload="handleImageUpload" :show-upload-list="false" accept="image/*">
-            <a-button type="text" class="icon-btn">
+            <a-button type="text" class="icon-btn" title="上传参考图">
               <PictureOutlined />
             </a-button>
           </a-upload>
@@ -146,9 +190,15 @@
             :loading="loading"
             @click="handleSend"
             class="send-btn"
+            title="发送"
           >
             <template #icon><SendOutlined /></template>
           </a-button>
+        </div>
+
+        <div class="input-hint">
+          <span class="dot"></span>
+          Enter 发送，Shift + Enter 换行
         </div>
       </div>
     </div>
@@ -235,8 +285,6 @@ const selectQuestion = (q: string) => {
 const handleRoleSwitch = (id: string) => {
   if (currentRole.value !== id) {
     currentRole.value = id
-    // 可选：切换角色时清空对话，避免上下文混淆
-    // messages.value = []
     message.success(`已切换为：${getRoleName(id)}`)
   }
 }
@@ -310,17 +358,12 @@ const handleSend = async (e?: Event) => {
   `.trim()
 
   try {
-    // 5. 发起 Fetch 请求
     const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
-    // const response = await fetch('https://bs.xinxiangyang.work/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-
-      // 🔥 关键配置：携带 Session Cookie，解决“未登录”错误
       credentials: 'include',
-
       body: JSON.stringify({
-        question: finalPrompt, // 发送处理后的 Prompt
+        question: finalPrompt,
         imageUrl: imgData,
       }),
     })
@@ -378,11 +421,11 @@ const formatMarkdown = (text: string) => {
   if (!text) return ''
   return text
     .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // 粗体
+    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
     .replace(
       /`(.*?)`/g,
-      '<code style="background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:3px;">$1</code>',
-    ) // 行内代码
+      '<code style="background:rgba(31,26,21,0.06);padding:2px 6px;border-radius:8px;border:1px solid rgba(31,26,21,0.08)">$1</code>',
+    )
 }
 
 onMounted(() => {
@@ -404,310 +447,458 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 </script>
 
 <style scoped lang="less">
-/* --- 全局变量与 Reset --- */
-@bg-dark: #12121c;
-@bg-panel: #1e1e2d;
-@accent: #00d2ff;
-@text-main: #e0e0e0;
-@text-sub: #8a8a9a;
-@border: 1px solid rgba(255, 255, 255, 0.08);
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:wght@400;600;700&display=swap');
 
 * {
   box-sizing: border-box;
 }
 
 #aiPage {
+  /* ===== Design Tokens（与首页一致）===== */
+  --ink: #1f1a15;
+  --muted: #7a6f66;
+  --accent: #d45b2d;
+  --accent-2: #2a9d8f;
+  --surface: #fffdf8;
+  --surface-2: #f6efe6;
+  --stroke: rgba(31, 26, 21, 0.08);
+  --shadow: 0 22px 60px rgba(31, 26, 21, 0.12);
+  --transition-duration: 0.35s;
+  --transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-body: 'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Newsreader', 'Noto Serif SC', 'Songti SC', serif;
+
   height: 100vh;
   width: 100vw;
-  background: @bg-dark;
-  color: @text-main;
-  display: flex;
   overflow: hidden;
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
+  display: flex;
+  color: var(--ink);
+  font-family: var(--font-body);
+  position: relative;
+  isolation: isolate;
+
+  background:
+    radial-gradient(900px 420px at 8% -10%, rgba(240, 181, 128, 0.4), transparent 65%),
+    radial-gradient(800px 380px at 92% 5%, rgba(122, 210, 196, 0.35), transparent 60%),
+    linear-gradient(180deg, #fbf7f1 0%, #ffffff 55%, #f6efe6 100%);
 }
 
-/* --- 侧边栏 --- */
+#aiPage::before {
+  content: '';
+  position: absolute;
+  inset: -10% -20% auto;
+  height: 420px;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.7), transparent 65%);
+  opacity: 0.75;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#aiPage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(31, 26, 21, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.35;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ====== Sidebar（桌面）====== */
 .sidebar-container {
-  width: 240px;
-  background: @bg-panel;
-  border-right: @border;
+  width: 216px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
+  padding: 14px 14px 12px;
+  position: relative;
+  z-index: 1;
+
+  background: rgba(255, 255, 255, 0.72);
+  border-right: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+  box-shadow: 12px 0 40px rgba(31, 26, 21, 0.06);
+  border-top-right-radius: 22px;
+  border-bottom-right-radius: 22px;
 }
 
 .sidebar-header {
-  padding: 20px;
-  border-bottom: @border;
+  padding: 10px 10px 12px;
+  border-bottom: 1px solid var(--stroke);
 }
 
 .app-logo {
-  font-size: 18px;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 12px;
+
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--ink);
+
   .logo-icon {
-    color: @accent;
+    color: var(--accent-2);
+    font-size: 18px;
   }
 }
 
 .role-selector {
-  display: flex;
-  justify-content: space-between;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 4px;
-  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--stroke);
 }
 
 .role-item {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 18px;
-  transition: all 0.2s;
+  font-size: 16px;
+  transition: all 0.25s var(--transition-easing);
+  color: var(--muted);
+  border: 1px solid transparent;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    background: rgba(212, 91, 45, 0.08);
+    border-color: rgba(212, 91, 45, 0.18);
+    color: var(--accent);
   }
+
   &.active {
-    background: @accent;
-    color: #000;
-    box-shadow: 0 2px 8px rgba(0, 210, 255, 0.4);
+    background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 10px 20px rgba(212, 91, 45, 0.25);
   }
 }
 
 .sidebar-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 20px;
+  padding: 12px 8px 8px;
+  overflow: hidden;
 }
 
 .section-label {
-  font-size: 12px;
-  color: @text-sub;
-  margin-bottom: 12px;
+  font-size: 11px;
+  color: var(--accent-2);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.18em;
+  margin: 8px 6px 10px;
+}
+
+.inspiration-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .inspire-item {
-  padding: 10px;
-  border-radius: 6px;
-  color: @text-sub;
+  padding: 8px 10px;
+  border-radius: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  margin-bottom: 4px;
+
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(31, 26, 21, 0.06);
+  color: var(--muted);
+  transition: all 0.25s var(--transition-easing);
+  font-size: 12px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: @accent;
+    transform: translateY(-2px);
+    border-color: rgba(212, 91, 45, 0.22);
+    box-shadow: 0 14px 24px rgba(31, 26, 21, 0.08);
+    color: var(--ink);
   }
+
   .icon-small {
     font-size: 12px;
+    color: var(--accent);
   }
+
   .text-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    flex: 1;
   }
 }
 
 .sidebar-footer {
-  padding: 16px;
-  border-top: @border;
+  padding: 12px 10px 8px;
+  border-top: 1px solid var(--stroke);
+
   .user-info {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
   }
 }
 
-/* --- 主聊天区 (关键布局) --- */
+/* ====== Main Chat ====== */
 .main-chat-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%; /* 占满高度 */
+  height: 100%;
+  padding: 18px 18px 14px;
   position: relative;
-  background-image: radial-gradient(circle at top right, rgba(0, 210, 255, 0.05), transparent 40%);
+  z-index: 1;
 }
 
 .chat-header {
-  height: 50px;
+  height: 46px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  border-bottom: @border;
-  background: rgba(18, 18, 28, 0.8);
+
+  padding: 0 16px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 18px 36px rgba(31, 26, 21, 0.08);
   backdrop-filter: blur(10px);
-  z-index: 10;
 
   .current-role-tag {
     font-size: 13px;
-    color: @text-sub;
+    color: var(--muted);
+
     .role-icon {
       margin-right: 6px;
     }
     strong {
-      color: @text-main;
+      color: var(--ink);
+      font-weight: 700;
     }
   }
 }
 
-/* 消息容器：唯一可滚动的区域 */
-.messages-container {
-  flex: 1; /* 占据剩余空间 */
-  overflow-y: auto; /* 允许内部滚动 */
-  padding: 20px;
-  scroll-behavior: smooth;
+.header-icon-btn {
+  border-radius: 12px;
+  transition: all 0.25s var(--transition-easing);
+  color: var(--muted);
 
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
+  &:hover {
+    background: rgba(212, 91, 45, 0.08);
+    color: var(--accent);
+    transform: translateY(-1px);
   }
 }
 
-/* 消息气泡 */
+/* ====== Messages：唯一可滚动区域 ====== */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px 0;
+  scroll-behavior: smooth;
+  border-radius: 22px;
+
+  /* 轻柔边缘，让内容像“嵌入式卡片” */
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(31, 26, 21, 0.06);
+  backdrop-filter: blur(6px);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(31, 26, 21, 0.12);
+    border-radius: 999px;
+  }
+}
+
+.message-list {
+  padding: 10px 8px 6px;
+}
+
 .message-row {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  gap: 10px;
+  margin: 0 auto 14px;
+  max-width: 880px;
 
   &.user {
     flex-direction: row-reverse;
   }
 
   .content-col {
-    max-width: 80%;
+    max-width: 78%;
   }
 
   .bubble {
-    padding: 10px 16px;
-    border-radius: 12px;
+    padding: 10px 14px;
+    border-radius: 18px;
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.65;
     word-break: break-word;
+
+    border: 1px solid rgba(31, 26, 21, 0.06);
+    box-shadow: 0 16px 28px rgba(31, 26, 21, 0.06);
+    transition: transform 0.25s var(--transition-easing);
   }
 }
 
 .user .bubble {
-  background: @accent;
-  color: #000;
-  border-radius: 12px 12px 2px 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 16px 28px rgba(212, 91, 45, 0.22);
+  border-radius: 18px 18px 6px 18px;
 }
+
 .ai .bubble {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 12px 12px 12px 2px;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
+  border-radius: 18px 18px 18px 6px;
+  backdrop-filter: blur(8px);
 }
 
 .chat-img {
-  border-radius: 8px;
-  margin-bottom: 8px;
+  border-radius: 14px;
+  margin-bottom: 10px;
   display: block;
-}
-.loading-dots {
-  color: @text-sub;
-  font-size: 12px;
-  margin-top: 4px;
+  border: 1px solid rgba(31, 26, 21, 0.08);
+  box-shadow: 0 14px 24px rgba(31, 26, 21, 0.08);
 }
 
-/* 空状态 */
+.loading-dots {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 6px;
+  letter-spacing: 2px;
+}
+
+/* ====== Empty State ====== */
 .empty-state {
-  height: 100%;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 18px 0;
+}
+
+.empty-card {
+  width: min(720px, 92%);
+  padding: 24px 22px;
+  border-radius: 26px;
+
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: @text-sub;
+  text-align: center;
 
-  .empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.8;
-  }
-  h3 {
-    color: @text-main;
-    margin-bottom: 8px;
-    font-size: 20px;
-  }
-  .tags-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 24px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .tag {
-    font-size: 12px;
-    padding: 6px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.2s;
-    &:hover {
-      border-color: @accent;
-      color: @accent;
-      background: rgba(0, 210, 255, 0.1);
-    }
+  animation: fadeUp 0.6s var(--transition-easing) both;
+}
+
+.empty-icon {
+  font-size: 52px;
+  margin-bottom: 14px;
+  opacity: 0.95;
+  filter: drop-shadow(0 12px 20px rgba(31, 26, 21, 0.1));
+}
+
+.empty-card h3 {
+  font-family: var(--font-display);
+  color: var(--ink);
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.empty-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.tags-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tag {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(31, 26, 21, 0.1);
+  color: var(--muted);
+
+  transition: all 0.25s var(--transition-easing);
+
+  &:hover {
+    border-color: rgba(212, 91, 45, 0.25);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 22px rgba(31, 26, 21, 0.08);
   }
 }
 
-/* --- 输入区域 (固定底部) --- */
+/* ====== Input Area（固定底部）====== */
 .input-wrapper {
-  flex-shrink: 0; /* 禁止被压缩 */
-  padding: 20px;
+  flex-shrink: 0;
+  padding: 12px 10px 14px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   position: relative;
-  background: linear-gradient(to top, @bg-dark 80%, transparent); /* 渐变遮罩 */
-  z-index: 20;
+
+  background: linear-gradient(to top, rgba(246, 239, 230, 0.92) 70%, transparent);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 26, 21, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .input-box {
   width: 100%;
-  max-width: 800px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 8px;
+  max-width: 880px;
+  border-radius: 22px;
+  padding: 10px 10px;
   display: flex;
   align-items: flex-end;
-  gap: 8px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-  transition: border-color 0.3s;
+  gap: 10px;
+
+  box-shadow: 0 18px 36px rgba(31, 26, 21, 0.1);
+  transition: all 0.25s var(--transition-easing);
 
   &:focus-within {
-    border-color: @accent;
-    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(42, 157, 143, 0.45);
+    box-shadow:
+      0 0 0 3px rgba(42, 157, 143, 0.16),
+      0 18px 36px rgba(31, 26, 21, 0.1);
   }
 }
 
@@ -715,43 +906,75 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: white !important;
-  padding: 6px 0;
-  font-size: 15px;
+  color: var(--ink) !important;
+  padding: 6px 2px;
+  font-size: 14px;
   resize: none;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(122, 111, 102, 0.75);
   }
 }
 
 .icon-btn {
-  color: @text-sub;
+  color: var(--muted);
+  border-radius: 14px;
+  transition: all 0.25s var(--transition-easing);
+
   &:hover {
-    color: @text-main;
+    color: var(--accent);
+    background: rgba(212, 91, 45, 0.08);
+    transform: translateY(-1px);
   }
 }
+
 .send-btn {
   flex-shrink: 0;
-  background: @accent;
-  border-color: @accent;
-  box-shadow: 0 2px 10px rgba(0, 210, 255, 0.3);
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+  border: none;
+  box-shadow: 0 12px 22px rgba(212, 91, 45, 0.25);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 26px rgba(212, 91, 45, 0.32);
+  }
+}
+
+.input-hint {
+  width: 100%;
+  max-width: 880px;
+  font-size: 12px;
+  color: rgba(122, 111, 102, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(42, 157, 143, 0.7);
+    box-shadow: 0 10px 18px rgba(42, 157, 143, 0.18);
+  }
 }
 
 .image-preview-mini {
   position: absolute;
-  top: -60px;
+  top: -46px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 800px;
-  padding-left: 20px;
+  max-width: 880px;
+  padding-left: 14px;
 
   img {
-    height: 50px;
-    border-radius: 4px;
-    border: 2px solid @accent;
+    height: 44px;
+    border-radius: 12px;
+    border: 2px solid rgba(42, 157, 143, 0.6);
+    box-shadow: 0 14px 24px rgba(31, 26, 21, 0.1);
   }
+
   .del-btn {
     position: absolute;
     top: -8px;
@@ -766,51 +989,212 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
     justify-content: center;
     cursor: pointer;
     font-size: 10px;
+    box-shadow: 0 12px 22px rgba(255, 77, 79, 0.22);
   }
 }
 
-/* 移动端适配 */
+/* ====== Mobile ====== */
 .mobile-header {
   height: 50px;
-  background: @bg-panel;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 16px;
-  border-bottom: @border;
-  color: white;
+  padding: 0 14px;
   flex-shrink: 0;
-}
-.is-mobile {
-  flex-direction: column;
-  .main-chat-area {
-    height: calc(100vh - 50px);
+
+  background: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: var(--ink);
+  }
+
+  .logo-icon {
+    color: var(--accent-2);
+    font-size: 18px;
+  }
+
+  :deep(.ant-btn) {
+    color: var(--ink);
+    border-radius: 12px;
   }
 }
-.mobile-role-item {
-  padding: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #fff;
+
+.is-mobile {
+  flex-direction: column;
+
+  .main-chat-area {
+    height: calc(100vh - 50px);
+    padding: 14px 12px 12px;
+  }
+
+  .messages-container {
+    border-radius: 18px;
+  }
 }
 
-/* Markdown 样式 */
+/* ====== Drawer（移动端）====== */
+.drawer-shell {
+  height: 100%;
+  padding: 14px;
+  background:
+    radial-gradient(700px 320px at 8% -10%, rgba(240, 181, 128, 0.35), transparent 65%),
+    radial-gradient(620px 300px at 92% 5%, rgba(122, 210, 196, 0.28), transparent 60%),
+    linear-gradient(180deg, #fbf7f1 0%, #ffffff 60%, #f6efe6 100%);
+}
+
+.drawer-head {
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 18px 36px rgba(31, 26, 21, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+
+  .logo-icon {
+    color: var(--accent-2);
+  }
+}
+
+.drawer-sub {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.drawer-menu {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--stroke);
+  backdrop-filter: blur(10px);
+}
+
+.role-list-mobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.mobile-role-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 26, 21, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: all 0.25s var(--transition-easing);
+
+  .emoji {
+    width: 22px;
+    display: inline-flex;
+    justify-content: center;
+  }
+  .name {
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 91, 45, 0.22);
+    box-shadow: 0 14px 24px rgba(31, 26, 21, 0.08);
+  }
+
+  &.active {
+    background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+    border-color: transparent;
+
+    .name {
+      color: #fff;
+    }
+  }
+}
+
+.drawer-divider {
+  height: 1px;
+  margin: 12px 0;
+  background: rgba(31, 26, 21, 0.08);
+}
+
+/* ===== Markdown ===== */
 :deep(.markdown-body) {
   p {
     margin: 0;
   }
   ul,
   ol {
-    margin: 4px 0 4px 20px;
+    margin: 6px 0 6px 20px;
     padding: 0;
   }
   li {
-    margin-bottom: 2px;
+    margin-bottom: 3px;
   }
   h2,
   h3 {
     margin: 12px 0 8px 0;
-    color: @accent;
-    font-size: 16px;
+    color: var(--accent-2);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(212, 91, 45, 0.25);
+    &:hover {
+      border-bottom-color: rgba(212, 91, 45, 0.5);
+    }
+  }
+}
+
+/* ===== Ant Design Vue 轻度覆盖（保持统一）===== */
+:deep(.ant-btn-primary) {
+  border-radius: 999px;
+}
+:deep(.ant-avatar) {
+  box-shadow: 0 12px 22px rgba(31, 26, 21, 0.08);
+}
+:deep(.ant-drawer-content) {
+  background: transparent;
+}
+:deep(.ant-drawer-body) {
+  background: transparent;
+}
+
+/* ===== Animation ===== */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>
