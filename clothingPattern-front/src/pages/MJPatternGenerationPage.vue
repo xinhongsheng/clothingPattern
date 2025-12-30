@@ -1,5 +1,14 @@
 ﻿<template>
   <div class="mj-pattern-generation-page">
+    <!-- 背景层：霓虹渐变 + 网格 + 噪点 + 浮动光团 -->
+    <div class="bg-layer" aria-hidden="true">
+      <span class="blob b1" />
+      <span class="blob b2" />
+      <span class="blob b3" />
+      <span class="grid" />
+      <span class="noise" />
+    </div>
+
     <!-- 未登录提示 -->
     <a-alert
       v-if="!isUserLoggedIn"
@@ -19,23 +28,44 @@
     <div class="main-layout">
       <!-- 左侧操作面板 -->
       <div class="left-panel">
+        <!-- 顶部标题/状态 -->
+        <div class="left-hero">
+          <div class="hero-badge">
+            <span class="dot" />
+            MJ Pattern Studio
+            <span class="chip">Neon · Trend · Glass</span>
+          </div>
+          <div class="hero-title">
+            智能创作工作台
+            <span class="shine" />
+          </div>
+          <div class="hero-subtitle">像调色一样精确，像灵感一样自由。</div>
+        </div>
+
         <!-- 输入描述区域 -->
         <div class="panel-section">
-          <div class="section-header">请输入关键词描述</div>
+          <div class="section-header">
+            请输入关键词描述
+            <span class="mini-tip">（建议：主体 + 材质/光泽 + 构图 + 风格）</span>
+          </div>
+
           <a-textarea
             v-model:value="formState.prompt"
-            placeholder="请简要输入关键词描述，例如：卡通小熊，并使用自动扩写功能完成完整关键词扩写"
+            placeholder="例：赛博霓虹小熊，镭射反光，T恤胸口居中，潮流街头涂鸦质感，无缝可平铺"
             :rows="4"
             :maxlength="1000"
             class="prompt-textarea"
           />
+
           <div class="prompt-footer">
             <span class="char-count">{{ formState.prompt?.length || 0 }} / 1000</span>
+
             <div class="prompt-actions-inline">
               <a-button type="text" size="small" @click="resetPrompt">
                 <template #icon><ReloadOutlined /></template>
                 重置
               </a-button>
+
               <a-button
                 type="text"
                 size="small"
@@ -53,9 +83,14 @@
 
         <!-- 风格引擎区域 -->
         <div class="panel-section">
-          <div class="section-header style-header">风格引擎：</div>
+          <div class="section-header style-header">
+            风格引擎
+            <span v-if="selectedStyleEngine" class="style-pill">
+              已选：{{ selectedStyleEngine.name }}
+              <span class="x" @click.stop="clearStyleEngine">×</span>
+            </span>
+          </div>
 
-          <!-- 风格选择器 -->
           <div class="style-grid">
             <div
               v-for="style in styleEngines"
@@ -66,6 +101,7 @@
             >
               <div class="style-icon">{{ style.icon }}</div>
               <div class="style-name">{{ style.name }}</div>
+              <div class="style-glow" />
             </div>
           </div>
         </div>
@@ -73,9 +109,10 @@
         <!-- 选择标签区域 -->
         <div class="panel-section">
           <div class="section-header">选择标签</div>
+
           <div class="tags-group">
             <div class="tag-row">
-              <span class="tag-label">季节：</span>
+              <span class="tag-label">季节</span>
               <div class="tag-options">
                 <span
                   v-for="season in seasonOptions"
@@ -88,8 +125,9 @@
                 </span>
               </div>
             </div>
+
             <div class="tag-row">
-              <span class="tag-label">受众：</span>
+              <span class="tag-label">受众</span>
               <div class="tag-options">
                 <span
                   v-for="audience in audienceOptions"
@@ -114,31 +152,80 @@
             :loading="generating"
             :disabled="generating || !formState.prompt"
             @click="handleGenerate"
-            class="generate-btn"
+            class="generate-btn neon-primary"
           >
-            <span class="btn-text">智能生成</span>
+            <span class="btn-text">{{ generating ? '创作中…' : '智能生成' }}</span>
           </a-button>
+
+          <div class="footer-hint">
+            <span class="pulse" />
+            生成后在右侧选择 1-4 号图可进行「放大 / 变体 / 重生成」
+          </div>
         </div>
       </div>
 
       <!-- 右侧结果展示区 -->
       <div class="right-panel">
-        <!-- 生成中状态 -->
+        <!-- 生成中状态：骨架屏 + shimmer + 阶段节奏 + 文案轮播 -->
         <div v-if="generating" class="result-loading">
-          <div class="loading-grid">
-            <div class="loading-item" v-for="i in 4" :key="i">
-              <a-spin size="large" />
+          <div class="loading-head">
+            <div class="loading-badge">
+              <span class="live-dot" />
+              创作进行时
+            </div>
+            <div class="loading-title">
+              {{ loadingCopy.main }}<span class="dots">{{ dots }}</span>
+            </div>
+            <div class="loading-sub">
+              {{ loadingCopy.sub }}
             </div>
           </div>
-          <div class="loading-text">
-            <p class="loading-title">🎨 AI 正在创作中...</p>
-            <p class="loading-desc">预计需要 1-2 分钟，请耐心等待</p>
+
+          <div class="phase-bar">
+            <div
+              v-for="(p, idx) in phaseList"
+              :key="p"
+              class="phase-item"
+              :class="{ active: idx === phaseIndex }"
+            >
+              <span class="phase-icon">✦</span>
+              <span class="phase-text">{{ p }}</span>
+            </div>
+          </div>
+
+          <!-- 2x2 骨架网格 -->
+          <div class="skeleton-grid shimmer">
+            <div class="sk-tile" v-for="i in 4" :key="i">
+              <div class="sk-img" />
+              <div class="sk-meta">
+                <div class="sk-line w70" />
+                <div class="sk-line w55" />
+              </div>
+            </div>
+          </div>
+
+          <div class="loading-footer">
+            <div class="fake-progress">
+              <span class="bar" />
+            </div>
+            <div class="mini-note">
+              小提示：加入「材质/光泽/边缘干净/无缝平铺」关键词，会更像专业服装印花。
+            </div>
           </div>
         </div>
 
         <!-- 已生成结果 - 2x2 网格 -->
         <div v-else-if="currentStep === 2 && mjResponse" class="result-grid">
-          <div class="result-images">
+          <div class="result-topline">
+            <div class="result-title">
+              <span class="spark">⚡</span> 选择你想继续精修的方案
+            </div>
+            <div class="result-sub">
+              点击任意格选中（1-4），再执行「放大 / 变体」；或直接「重新生成」。
+            </div>
+          </div>
+
+          <div class="result-images frame-grid">
             <div
               v-for="i in 4"
               :key="i"
@@ -146,11 +233,14 @@
               :class="{ selected: selectedImageIndex === i }"
               @click="selectImage(i)"
             >
-              <a-image
-                :src="getQuadrantImage(mjResponse.imageUrl, i)"
-                :preview="{ src: mjResponse.rawImageUrl }"
-                :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7lm77niYc8L3RleHQ+PC9zdmc+'"
-              />
+              <div class="thumb-frame">
+                <a-image
+                  :src="getQuadrantImage(mjResponse.imageUrl, i)"
+                  :preview="{ src: mjResponse.rawImageUrl }"
+                  :fallback="fallbackSvgSmall"
+                />
+                <span class="glow-ring" />
+              </div>
               <div class="image-index">{{ i }}</div>
             </div>
           </div>
@@ -158,14 +248,15 @@
           <!-- 操作按钮区域 -->
           <div class="result-actions" v-if="selectedImageIndex">
             <div class="action-row">
-              <a-button @click="handleUpsample(selectedImageIndex)" :loading="executing">
-                🔍 放大图片 {{ selectedImageIndex }}
+              <a-button class="ghost-btn" @click="handleUpsample(selectedImageIndex)" :loading="executing">
+                🔍 放大 {{ selectedImageIndex }}
               </a-button>
-              <a-button @click="handleVariation(selectedImageIndex)" :loading="executing">
-                🎨 变体图片 {{ selectedImageIndex }}
+              <a-button class="ghost-btn" @click="handleVariation(selectedImageIndex)" :loading="executing">
+                🎨 变体 {{ selectedImageIndex }}
               </a-button>
             </div>
-            <a-button @click="handleReroll" :loading="executing" block>
+
+            <a-button class="ghost-btn" @click="handleReroll" :loading="executing" block>
               🔄 重新生成
             </a-button>
           </div>
@@ -175,22 +266,25 @@
         <div v-else-if="currentStep === 3 && finalResult" class="result-final">
           <!-- 单图结果（放大后） -->
           <div v-if="!isVariationResult" class="final-single">
-            <div class="final-image-container">
+            <div class="final-image-container frame-single">
+              <span class="frame-glow" />
               <a-image
                 :src="finalResult.imageUrl"
                 :preview="{ src: finalResult.rawImageUrl }"
                 class="final-image"
               />
             </div>
+
             <div class="final-info">
               <div class="info-text">✅ 已放大为高清图片</div>
+              <div class="info-sub">建议：命名更具体（系列/季节/风格/编号）便于后续管理</div>
             </div>
 
             <!-- 保存表单 -->
             <div class="save-section">
               <a-input
                 v-model:value="saveForm.patternName"
-                placeholder="输入图案名称"
+                placeholder="输入图案名称（必填）"
                 class="save-input"
               />
               <a-button
@@ -198,9 +292,9 @@
                 @click="saveToDatabase"
                 :loading="saving"
                 :disabled="!saveForm.patternName"
-                class="save-btn"
+                class="save-btn neon-primary"
               >
-                💾 保存图案
+                💾 保存
               </a-button>
             </div>
 
@@ -211,6 +305,7 @@
                 <a-button
                   v-for="i in 4"
                   :key="i"
+                  class="ghost-btn"
                   @click="handleContinueVariation(i)"
                   :loading="executing"
                 >
@@ -224,7 +319,16 @@
 
           <!-- 四图结果（变体重生成后） -->
           <div v-else class="final-grid">
-            <div class="result-images">
+            <div class="result-topline">
+              <div class="result-title">
+                <span class="spark">🎛</span> 变体/重生成结果
+              </div>
+              <div class="result-sub">
+                继续选择 1-4 号图，执行「放大 / 变体」或「重新生成」。
+              </div>
+            </div>
+
+            <div class="result-images frame-grid">
               <div
                 v-for="i in 4"
                 :key="i"
@@ -232,11 +336,14 @@
                 :class="{ selected: selectedImageIndex === i }"
                 @click="selectImage(i)"
               >
-                <a-image
-                  :src="getQuadrantImage(finalResult.imageUrl, i)"
-                  :preview="{ src: finalResult.rawImageUrl }"
-                  :fallback="'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YwZjBmMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij7lm77niYc8L3RleHQ+PC9zdmc+'"
-                />
+                <div class="thumb-frame">
+                  <a-image
+                    :src="getQuadrantImage(finalResult.imageUrl, i)"
+                    :preview="{ src: finalResult.rawImageUrl }"
+                    :fallback="fallbackSvgSmall"
+                  />
+                  <span class="glow-ring" />
+                </div>
                 <div class="image-index">{{ i }}</div>
               </div>
             </div>
@@ -244,14 +351,14 @@
             <!-- 操作按钮区域 -->
             <div class="result-actions" v-if="selectedImageIndex">
               <div class="action-row">
-                <a-button @click="handleContinueUpsample(selectedImageIndex)" :loading="executing">
-                  🔍 放大图片 {{ selectedImageIndex }}
+                <a-button class="ghost-btn" @click="handleContinueUpsample(selectedImageIndex)" :loading="executing">
+                  🔍 放大 {{ selectedImageIndex }}
                 </a-button>
-                <a-button @click="handleContinueVariation(selectedImageIndex)" :loading="executing">
-                  🎨 变体图片 {{ selectedImageIndex }}
+                <a-button class="ghost-btn" @click="handleContinueVariation(selectedImageIndex)" :loading="executing">
+                  🎨 变体 {{ selectedImageIndex }}
                 </a-button>
               </div>
-              <a-button @click="handleContinueReroll" :loading="executing" block>
+              <a-button class="ghost-btn" @click="handleContinueReroll" :loading="executing" block>
                 🔄 重新生成
               </a-button>
             </div>
@@ -262,16 +369,22 @@
 
         <!-- 空状态 -->
         <div v-else class="result-empty">
-          <div class="empty-preview">
-            <div class="preview-grid">
-              <div class="preview-item" v-for="i in 4" :key="i">
-                <div class="preview-placeholder"></div>
-              </div>
+          <div class="empty-preview frame-grid">
+            <div class="preview-item" v-for="i in 4" :key="i">
+              <div class="preview-placeholder shimmer-soft"></div>
+              <div class="preview-index">{{ i }}</div>
             </div>
           </div>
+
           <div class="empty-text">
-            <h3>您还未生成作品？</h3>
-            <p>在左侧操作面板选择提示词即可开始创作~</p>
+            <h3>还没有作品</h3>
+            <p>在左侧输入提示词并选择风格/标签，然后点击「智能生成」开始创作。</p>
+            <div class="empty-tags">
+              <span class="t">霓虹渐变</span>
+              <span class="t">街头涂鸦</span>
+              <span class="t">金属光泽</span>
+              <span class="t">无缝平铺</span>
+            </div>
           </div>
         </div>
       </div>
@@ -280,7 +393,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { EditOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import {
@@ -301,14 +414,13 @@ const mjTaskStore = useMJTaskStore()
 const storageKey = 'mj_generate_task'
 const pollIntervalMs = 2000
 
+// 小型 fallback（更契合暗色背景）
+const fallbackSvgSmall =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzEwMTQyNSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOEE5M0I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UGxhY2Vob2xkZXI8L3RleHQ+PC9zdmc+'
+
 // 判断用户是否已登录
 const isUserLoggedIn = computed(() => {
   return loginUserStore.loginUser && loginUserStore.loginUser.id
-})
-
-// 页面加载时获取登录用户信息
-onMounted(async () => {
-  await loginUserStore.fetchLoginUser()
 })
 
 // 当前步骤：1=输入提示词，2=已生成图片
@@ -343,17 +455,16 @@ const currentTaskId = ref<string | null>(null)
 const selectedAction = ref<string | null>(null)
 // 最后执行的操作（用于显示）
 const lastExecutedAction = ref<string>('')
+
 // 判断当前结果是否为变体结果（4张图）
 const isVariationResult = ref(true)
 
 // 新布局需要的变量
 const selectedImageIndex = ref<number | null>(null)
-const showStyleSelector = ref(false)
 const selectedStyleEngine = ref<any>(null)
 
 // 季节选项
 const seasonOptions = ['春季', '夏季', '秋季', '冬季', '四季']
-
 // 受众选项
 const audienceOptions = ['儿童', '青少年', '成人', '中老年', '通用']
 
@@ -389,20 +500,12 @@ const clearStyleEngine = () => {
 
 // 切换季节选择
 const toggleSeason = (season: string) => {
-  if (formState.season === season) {
-    formState.season = undefined
-  } else {
-    formState.season = season
-  }
+  formState.season = formState.season === season ? undefined : season
 }
 
 // 切换受众选择
 const toggleAudience = (audience: string) => {
-  if (formState.targetAudience === audience) {
-    formState.targetAudience = undefined
-  } else {
-    formState.targetAudience = audience
-  }
+  formState.targetAudience = formState.targetAudience === audience ? undefined : audience
 }
 
 // 重置提示词
@@ -412,18 +515,11 @@ const resetPrompt = () => {
 
 // 选择图片
 const selectImage = (index: number) => {
-  if (selectedImageIndex.value === index) {
-    selectedImageIndex.value = null
-  } else {
-    selectedImageIndex.value = index
-  }
+  selectedImageIndex.value = selectedImageIndex.value === index ? null : index
 }
 
-// 获取四象限图片（模拟2x2网格中的单张图片）
-const getQuadrantImage = (imageUrl: string, index: number) => {
-  // 实际项目中这里可能需要处理图片裁剪，这里直接返回原图
-  return imageUrl
-}
+// 获取四象限图片（项目如有裁剪可在此实现）
+const getQuadrantImage = (imageUrl: string) => imageUrl
 
 // 放大图片操作
 const handleUpsample = async (index: number) => {
@@ -468,28 +564,56 @@ const backToStep2 = () => {
   finalResult.value = null
 }
 
-// 快捷提示词
-const quickPrompts = ref([
-  '可爱的卡通小猫图案',
-  '复古花草印花设计',
-  '简约几何线条图案',
-  '森系小清新植物',
-  '赛博朋克科技风',
-  '中国风水墨山水',
-  '波普艺术风格',
-  '极简主义条纹',
-])
+// ====== 生成中：情绪化节奏（阶段 + 文案轮播 + 跳动省略号） ======
+const phaseList = ['解构关键词', '构建构图', '渲染纹理', '输出四宫格']
+const phaseIndex = ref(0)
+const dots = ref('')
+const loadingCopyIndex = ref(0)
 
-// 灵感示例
-const inspirationExamples = ref([
-  { icon: '🌳', name: '花草印花', desc: '适合春夏季节' },
-  { icon: '🦋', name: '蝴蝶元素', desc: '轻盈浪漫风格' },
-  { icon: '⭐', name: '星空图案', desc: '梦幻神秘感' },
-  { icon: '🍀', name: '植物叶子', desc: '自然清新风' },
-  { icon: '🎨', name: '抽象艺术', desc: '独特个性化' },
-  { icon: '🔺', name: '几何形状', desc: '现代简约风' },
-])
+const loadingCopies = [
+  { main: 'AI 正在把你的灵感翻译成「可穿的视觉」', sub: '建议：加上材质（丝绸/牛仔/金属光泽）会更像服装印花。' },
+  { main: '正在生成纹理层与光影层', sub: '想更潮：加“霓虹渐变 / 镭射反光 / 街头涂鸦”。' },
+  { main: '正在优化构图与边缘干净度', sub: '想做平铺：写“seamless repeat / tileable”。' },
+  { main: '最后一笔：提升细节与对比', sub: '如果太杂：可用“clean, minimal, no blur”类负面词。' },
+]
+const loadingCopy = computed(() => loadingCopies[loadingCopyIndex.value])
 
+let dotsTimer: ReturnType<typeof setInterval> | null = null
+let phaseTimer: ReturnType<typeof setInterval> | null = null
+let copyTimer: ReturnType<typeof setInterval> | null = null
+
+const startLoadingMood = () => {
+  stopLoadingMood()
+
+  dotsTimer = setInterval(() => {
+    dots.value = dots.value.length >= 3 ? '' : dots.value + '.'
+  }, 420)
+
+  phaseTimer = setInterval(() => {
+    phaseIndex.value = (phaseIndex.value + 1) % phaseList.length
+  }, 1500)
+
+  copyTimer = setInterval(() => {
+    loadingCopyIndex.value = (loadingCopyIndex.value + 1) % loadingCopies.length
+  }, 2400)
+}
+
+const stopLoadingMood = () => {
+  if (dotsTimer) clearInterval(dotsTimer)
+  if (phaseTimer) clearInterval(phaseTimer)
+  if (copyTimer) clearInterval(copyTimer)
+  dotsTimer = phaseTimer = copyTimer = null
+  dots.value = ''
+  phaseIndex.value = 0
+  loadingCopyIndex.value = 0
+}
+
+watch(generating, (v) => {
+  if (v) startLoadingMood()
+  else stopLoadingMood()
+})
+
+// ====== 任务快照/轮询逻辑（原样保留） ======
 type MjTaskSnapshot = {
   taskId: string
   status: string
@@ -509,9 +633,7 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null
 
 const readTaskSnapshot = (): MjTaskSnapshot | null => {
   const raw = localStorage.getItem(storageKey)
-  if (!raw) {
-    return null
-  }
+  if (!raw) return null
   try {
     return JSON.parse(raw) as MjTaskSnapshot
   } catch {
@@ -549,15 +671,9 @@ const applyCreationParams = (params: {
     originalPrompt.value = params.prompt
     formState.prompt = params.prompt
   }
-  if (params.style !== undefined) {
-    formState.style = params.style
-  }
-  if (params.season !== undefined) {
-    formState.season = params.season
-  }
-  if (params.targetAudience !== undefined) {
-    formState.targetAudience = params.targetAudience
-  }
+  if (params.style !== undefined) formState.style = params.style
+  if (params.season !== undefined) formState.season = params.season
+  if (params.targetAudience !== undefined) formState.targetAudience = params.targetAudience
   syncStyleEngineSelection(formState.style)
 }
 
@@ -574,13 +690,10 @@ const applySnapshot = (snapshot: MjTaskSnapshot) => {
 const pollGenerateStatus = async (taskId: string) => {
   try {
     const res = await getImagineStatus({ taskId })
-    if (res.data.code !== 0) {
-      throw new Error(res.data.message || '获取任务状态失败')
-    }
+    if (res.data.code !== 0) throw new Error(res.data.message || '获取任务状态失败')
+
     const taskData = res.data.data
-    if (!taskData) {
-      throw new Error('任务状态为空')
-    }
+    if (!taskData) throw new Error('任务状态为空')
     currentTaskId.value = taskData.taskId || taskId
 
     if (taskData.status === 'SUCCEEDED' && taskData.result) {
@@ -604,7 +717,6 @@ const pollGenerateStatus = async (taskId: string) => {
       }
       saveTaskSnapshot(snapshot)
 
-      // 更新通知store，显示未读通知
       mjTaskStore.markSucceeded(taskId, taskData.result)
 
       message.success({
@@ -617,6 +729,7 @@ const pollGenerateStatus = async (taskId: string) => {
     if (taskData.status === 'FAILED') {
       generating.value = false
       stopPolling()
+
       const snapshot: MjTaskSnapshot = {
         taskId,
         status: taskData.status,
@@ -631,7 +744,6 @@ const pollGenerateStatus = async (taskId: string) => {
       }
       saveTaskSnapshot(snapshot)
 
-      // 更新通知store，显示失败通知
       mjTaskStore.markFailed(taskId, taskData.errorMessage || '图案生成失败')
 
       message.error({
@@ -642,9 +754,7 @@ const pollGenerateStatus = async (taskId: string) => {
     }
 
     stopPolling()
-    pollTimer = setTimeout(() => {
-      pollGenerateStatus(taskId)
-    }, pollIntervalMs)
+    pollTimer = setTimeout(() => pollGenerateStatus(taskId), pollIntervalMs)
   } catch (error: any) {
     generating.value = false
     stopPolling()
@@ -655,15 +765,15 @@ const pollGenerateStatus = async (taskId: string) => {
   }
 }
 
-onMounted(() => {
-  // 进入页面时标记通知为已读
+// 页面初始化：合并为一次 onMounted（更干净）
+onMounted(async () => {
+  await loginUserStore.fetchLoginUser()
   mjTaskStore.markRead()
 
   const snapshot = readTaskSnapshot()
   const creationParams = mjTaskStore.getCreationParams()
-  if (snapshot) {
-    applySnapshot(snapshot)
-  }
+
+  if (snapshot) applySnapshot(snapshot)
   if (creationParams) {
     applyCreationParams({
       prompt: snapshot?.originalPrompt ?? creationParams.prompt,
@@ -672,15 +782,16 @@ onMounted(() => {
       targetAudience: snapshot?.formState?.targetAudience ?? creationParams.targetAudience,
     })
   }
-  if (!snapshot) {
-    return
-  }
+
+  if (!snapshot) return
+
   if (snapshot.status === 'SUCCEEDED' && snapshot.result) {
     mjResponse.value = snapshot.result
     currentStep.value = 2
     generating.value = false
     return
   }
+
   if (snapshot.status === 'PENDING' || snapshot.status === 'PROCESSING') {
     generating.value = true
     pollGenerateStatus(snapshot.taskId)
@@ -689,6 +800,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   stopPolling()
+  stopLoadingMood()
 })
 
 // 步骤1：生成图片
@@ -697,9 +809,7 @@ const handleGenerate = async () => {
     message.warning('请先登录后再使用智能创作功能')
     router.push({
       path: '/user/login',
-      query: {
-        redirect: '/mj/generation',
-      },
+      query: { redirect: '/mj/generation' },
     })
     return
   }
@@ -730,6 +840,7 @@ const handleGenerate = async () => {
     if (res.data.code === 0 && res.data.data?.taskId) {
       const taskId = res.data.data.taskId
       currentTaskId.value = taskId
+
       saveTaskSnapshot({
         taskId,
         status: res.data.data.status || 'PENDING',
@@ -742,7 +853,6 @@ const handleGenerate = async () => {
         },
       })
 
-      // 创建任务通知，保存创作参数
       mjTaskStore.createTask({
         taskId,
         prompt: originalPrompt.value,
@@ -754,24 +864,14 @@ const handleGenerate = async () => {
       pollGenerateStatus(taskId)
       return
     }
+
     throw new Error(res.data.message || '生成失败')
   } catch (error: any) {
-    console.error('生成失败:', error)
     message.error({
       content: error.message || '生成失败',
       key: 'generating',
     })
     generating.value = false
-  }
-}
-
-// 选择操作
-const selectAction = (action: string) => {
-  // 如果点击的是已选中的操作，则取消选择
-  if (selectedAction.value === action) {
-    selectedAction.value = null
-  } else {
-    selectedAction.value = action
   }
 }
 
@@ -784,7 +884,6 @@ const executeAction = async () => {
 
   try {
     executing.value = true
-
     message.loading({
       content: `正在执行 ${getActionName(selectedAction.value)}...`,
       key: 'executing',
@@ -800,15 +899,12 @@ const executeAction = async () => {
     if (res.data.code === 0 && res.data.data) {
       const newResult = res.data.data
 
-      if (newResult.imageUrl) {
-        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
-      }
-      if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
-      }
+      if (newResult.imageUrl) newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
+      if (newResult.rawImageUrl) newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
 
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
+
       isVariationResult.value =
         selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
 
@@ -819,13 +915,11 @@ const executeAction = async () => {
 
       selectedAction.value = null
       currentStep.value = 3
-      // 成功后关闭loading
       message.destroy('executing')
     } else {
       throw new Error(res.data.message || '操作失败')
     }
   } catch (error: any) {
-    console.error('操作失败:', error)
     message.error({
       content: error.message || '操作失败',
       key: 'executing',
@@ -845,7 +939,6 @@ const executeContinueAction = async () => {
 
   try {
     executing.value = true
-
     message.loading({
       content: `正在执行 ${getActionName(selectedAction.value)}...`,
       key: 'executing',
@@ -861,15 +954,12 @@ const executeContinueAction = async () => {
     if (res.data.code === 0 && res.data.data) {
       const newResult = res.data.data
 
-      if (newResult.imageUrl) {
-        newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
-      }
-      if (newResult.rawImageUrl) {
-        newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
-      }
+      if (newResult.imageUrl) newResult.imageUrl = newResult.imageUrl.replace(/:\d+$/, '')
+      if (newResult.rawImageUrl) newResult.rawImageUrl = newResult.rawImageUrl.replace(/:\d+$/, '')
 
       finalResult.value = newResult
       lastExecutedAction.value = selectedAction.value
+
       isVariationResult.value =
         selectedAction.value.startsWith('variation') || selectedAction.value === 'reroll'
 
@@ -879,13 +969,11 @@ const executeContinueAction = async () => {
       }
 
       selectedAction.value = null
-      // 成功后关闭loading
       message.destroy('executing')
     } else {
       throw new Error(res.data.message || '操作失败')
     }
   } catch (error: any) {
-    console.error('操作失败:', error)
     message.error({
       content: error.message || '操作失败',
       key: 'executing',
@@ -905,14 +993,12 @@ const saveToDatabase = async () => {
 
   try {
     saving.value = true
-
     message.loading({
       content: '正在保存图案...',
       key: 'saving',
       duration: 0,
     })
 
-    // 准备保存数据，包含所有字段
     const saveData = {
       ...finalResult.value,
       patternName: saveForm.patternName,
@@ -922,7 +1008,6 @@ const saveToDatabase = async () => {
       targetAudience: formState.targetAudience,
     }
 
-    // 调用后端保存接口
     const res = await savePattern(saveData)
 
     if (res.data.code === 0) {
@@ -931,11 +1016,9 @@ const saveToDatabase = async () => {
         key: 'saving',
       })
 
-      // 清除任务数据，避免刷新页面后数据残留
       localStorage.removeItem(storageKey)
       mjTaskStore.clearTask()
 
-      // 重置页面状态
       currentStep.value = 1
       mjResponse.value = null
       finalResult.value = null
@@ -947,15 +1030,11 @@ const saveToDatabase = async () => {
       originalPrompt.value = ''
       saveForm.patternName = ''
 
-      // 跳转到我的作品页面
-      setTimeout(() => {
-        router.push('/my_idea')
-      }, 1000)
+      setTimeout(() => router.push('/my_idea'), 1000)
     } else {
       throw new Error(res.data.message || '保存失败')
     }
   } catch (error: any) {
-    console.error('保存图案失败:', error)
     message.error({
       content: error.message || '保存失败，请重试',
       key: 'saving',
@@ -963,12 +1042,6 @@ const saveToDatabase = async () => {
   } finally {
     saving.value = false
   }
-}
-
-// 返回步骤1
-const backToStep1 = () => {
-  currentStep.value = 1
-  selectedAction.value = null
 }
 
 // 获取操作名称
@@ -996,7 +1069,6 @@ const handleExpandPrompt = async () => {
 
   try {
     expanding.value = true
-
     message.loading({
       content: '正在扩写中...',
       key: 'expanding',
@@ -1004,7 +1076,6 @@ const handleExpandPrompt = async () => {
     })
 
     const res = await expandPrompt({ prompt: formState.prompt })
-
     if (res.data.code === 0 && res.data.data) {
       formState.prompt = res.data.data
       message.success({
@@ -1015,7 +1086,6 @@ const handleExpandPrompt = async () => {
       throw new Error(res.data.message || '扩写失败')
     }
   } catch (error: any) {
-    console.error('Prompt expand failed:', error)
     message.error({
       content: error.message || '扩写失败',
       key: 'expanding',
@@ -1026,126 +1096,286 @@ const handleExpandPrompt = async () => {
 }
 </script>
 
-<style scoped>
-/* 全局基础样式 */
+<style scoped lang="scss">
+/* ========= 霓虹主题变量 ========= */
 .mj-pattern-generation-page {
+  --bg0: #050614;
+  --bg1: #0b0d22;
+  --panel: rgba(18, 18, 44, 0.78);
+  --panel2: rgba(10, 10, 26, 0.55);
+  --line: rgba(255, 255, 255, 0.12);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.64);
+  --muted2: rgba(255, 255, 255, 0.46);
+  --c1: rgba(0, 255, 209, 0.95);
+  --c2: rgba(255, 70, 218, 0.88);
+  --c3: rgba(72, 133, 255, 0.88);
+  --shadow: 0 26px 90px rgba(0, 0, 0, 0.55);
+  --r12: 12px;
+  --r16: 16px;
+  --r18: 18px;
+
   height: 100vh;
   overflow: hidden;
-  background-color: #ffffff;
+  position: relative;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 700px at 18% 10%, rgba(0, 255, 209, 0.20), transparent 60%),
+    radial-gradient(900px 650px at 86% 18%, rgba(255, 70, 218, 0.18), transparent 60%),
+    radial-gradient(900px 700px at 55% 105%, rgba(72, 133, 255, 0.16), transparent 55%),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg0) 42%, #04030d 100%);
 }
 
-/* 未登录提示 */
+/* ========= 背景层 ========= */
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+
+  .blob {
+    position: absolute;
+    width: 560px;
+    height: 560px;
+    filter: blur(44px);
+    opacity: 0.65;
+    border-radius: 999px;
+    mix-blend-mode: screen;
+    animation: floaty 8s ease-in-out infinite;
+  }
+  .b1 {
+    left: -140px;
+    top: -160px;
+    background: radial-gradient(circle at 30% 30%, rgba(0, 255, 209, 0.85), rgba(0, 255, 209, 0) 60%);
+  }
+  .b2 {
+    right: -170px;
+    top: -110px;
+    background: radial-gradient(circle at 40% 40%, rgba(255, 70, 218, 0.85), rgba(255, 70, 218, 0) 62%);
+    animation-delay: -2s;
+  }
+  .b3 {
+    left: 18%;
+    bottom: -300px;
+    background: radial-gradient(circle at 40% 40%, rgba(72, 133, 255, 0.85), rgba(72, 133, 255, 0) 62%);
+    animation-delay: -4s;
+  }
+
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(circle at 50% 20%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+    opacity: 0.35;
+  }
+
+  .noise {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity: 0.18;
+  }
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(12px, 20px, 0) scale(1.04); }
+}
+
+/* ========= 未登录提示 ========= */
 .login-alert {
   margin: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
+  position: relative;
+  z-index: 2;
 }
 
-/* 主布局 - 左右分栏 */
+/* ========= 主布局 ========= */
 .main-layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
-/* 左侧操作面板 */
+/* ========= 左侧面板 ========= */
 .left-panel {
-  width: 400px;
-  min-width: 400px;
-  background-color: #252540;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid #3a3a5c;
+  width: 410px;
+  min-width: 410px;
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
+
+  background: linear-gradient(180deg, rgba(22, 22, 52, 0.82), rgba(12, 12, 30, 0.72));
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(14px);
+
+  /* 滚动条美化 */
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.25); }
+  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); border-radius: 6px; }
+  &::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.26); }
 }
 
-/* 左侧滚动条美化 */
-.left-panel::-webkit-scrollbar {
-  width: 6px;
+.left-hero {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  position: relative;
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 12px;
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--c1);
+      box-shadow: 0 0 14px rgba(0, 255, 209, 0.85);
+    }
+    .chip {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: rgba(255, 255, 255, 0.72);
+    }
+  }
+
+  .hero-title {
+    position: relative;
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.1px;
+
+    .shine {
+      position: absolute;
+      inset: -8px -10px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+      transform: skewX(-14deg);
+      animation: shine 2.8s ease-in-out infinite;
+      pointer-events: none;
+      opacity: 0.65;
+    }
+  }
+
+  .hero-subtitle {
+    margin-top: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.62);
+  }
 }
 
-.left-panel::-webkit-scrollbar-track {
-  background: #1a1a2e;
+@keyframes shine {
+  0% { transform: translateX(-45%) skewX(-14deg); opacity: 0; }
+  35% { opacity: 0.8; }
+  100% { transform: translateX(45%) skewX(-14deg); opacity: 0; }
 }
 
-.left-panel::-webkit-scrollbar-thumb {
-  background: #3a3a5c;
-  border-radius: 3px;
-}
-
-.left-panel::-webkit-scrollbar-thumb:hover {
-  background: #4a4a6c;
-}
-
-/* 面板区块 */
 .panel-section {
-  padding: 20px;
-  border-bottom: 1px solid #3a3a5c;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-/* 区块标题 */
 .section-header {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.92);
   margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+
+  .mini-tip {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.52);
+  }
 }
 
 .section-header.style-header {
-  color: #ff6b6b;
+  color: rgba(255, 70, 218, 0.92);
+  .style-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 11px;
+    .x {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+    .x:hover {
+      border-color: rgba(255, 70, 218, 0.35);
+      color: rgba(255, 70, 218, 0.95);
+    }
+  }
 }
 
-/* 提示词输入框 */
+/* 输入框皮肤 */
 .prompt-textarea {
-  background-color: #1a1a2e !important;
-  border: 1px solid #3a3a5c !important;
-  border-radius: 8px !important;
-  color: #ffffff !important;
-  font-size: 14px;
+  background-color: rgba(10, 10, 26, 0.70) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 14px !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: 13px;
   resize: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
 }
 
-.prompt-textarea::placeholder {
-  color: #666680 !important;
-}
+.prompt-textarea::placeholder { color: rgba(255, 255, 255, 0.42) !important; }
 
 .prompt-textarea:focus {
-  border-color: #667eea !important;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+  border-color: rgba(0, 255, 209, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10) !important;
 }
 
-/* 提示词底部 */
 .prompt-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
-.char-count {
-  font-size: 12px;
-  color: #666680;
-}
+.char-count { font-size: 12px; color: rgba(255, 255, 255, 0.48); }
 
-.prompt-actions-inline {
-  display: flex;
-  gap: 8px;
-}
+.prompt-actions-inline { display: flex; gap: 10px; }
 
 .prompt-actions-inline :deep(.ant-btn) {
-  color: #888;
+  color: rgba(255, 255, 255, 0.70);
   font-size: 13px;
+  border-radius: 10px;
 }
+.prompt-actions-inline :deep(.ant-btn:hover) { color: rgba(255, 255, 255, 0.95); }
 
-.prompt-actions-inline :deep(.ant-btn:hover) {
-  color: #fff;
-}
-
-.expand-action-btn {
-  color: #667eea !important;
-}
+.expand-action-btn { color: rgba(0, 255, 209, 0.90) !important; }
 
 /* 风格网格 */
 .style-grid {
@@ -1158,515 +1388,676 @@ const handleExpandPrompt = async () => {
   cursor: pointer;
   text-align: center;
   padding: 12px 8px;
-  background: #1a1a2e;
-  border: 1px solid #3a3a5c;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  background: rgba(10, 10, 26, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  position: relative;
+  overflow: hidden;
+
+  .style-glow {
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(circle at 30% 20%, rgba(0, 255, 209, 0.18), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(255, 70, 218, 0.14), transparent 55%);
+    filter: blur(18px);
+    opacity: 0;
+    transition: opacity .18s ease;
+    pointer-events: none;
+  }
 }
 
 .style-item:hover {
   transform: translateY(-2px);
-  border-color: #667eea;
+  border-color: rgba(0, 255, 209, 0.28);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
+  .style-glow { opacity: 1; }
 }
 
 .style-item.active {
-  background: rgba(102, 126, 234, 0.15);
-  border-color: #667eea;
+  background: rgba(0, 255, 209, 0.10);
+  border-color: rgba(0, 255, 209, 0.40);
+  box-shadow: 0 22px 80px rgba(0, 255, 209, 0.08);
+  .style-glow { opacity: 1; }
 }
 
-.style-icon {
-  font-size: 24px;
-  margin-bottom: 4px;
-}
-
-.style-name {
-  font-size: 12px;
-  color: #888;
-}
-
-.style-item.active .style-name {
-  color: #667eea;
-}
+.style-icon { font-size: 22px; margin-bottom: 4px; }
+.style-name { font-size: 12px; color: rgba(255, 255, 255, 0.70); font-weight: 800; }
 
 /* 标签选择 */
-.tags-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tag-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+.tags-group { display: flex; flex-direction: column; gap: 12px; }
+.tag-row { display: flex; align-items: flex-start; gap: 10px; }
 .tag-label {
-  font-size: 13px;
-  color: #888;
-  min-width: 45px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.58);
+  min-width: 44px;
+  margin-top: 2px;
+  font-weight: 700;
 }
-
-.tag-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+.tag-options { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .tag-option {
-  padding: 4px 12px;
+  padding: 6px 12px;
   font-size: 12px;
-  color: #888;
-  background: #1a1a2e;
-  border: 1px solid #3a3a5c;
-  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.70);
+  background: rgba(10, 10, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
 }
 
 .tag-option:hover {
-  border-color: #667eea;
-  color: #667eea;
+  transform: translateY(-1px);
+  border-color: rgba(72, 133, 255, 0.35);
 }
 
 .tag-option.active {
-  background: #667eea;
-  border-color: #667eea;
-  color: #fff;
+  background: linear-gradient(135deg, rgba(72, 133, 255, 0.28), rgba(255, 70, 218, 0.18));
+  border-color: rgba(72, 133, 255, 0.42);
+  color: rgba(255, 255, 255, 0.92);
 }
 
-/* 底部按钮区域 */
+/* 底部按钮 */
 .panel-footer {
-  padding: 20px;
+  padding: 18px 20px 20px;
   margin-top: auto;
-  background: #252540;
+  background: linear-gradient(180deg, rgba(18, 18, 44, 0.35), rgba(18, 18, 44, 0.60));
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
 }
 
 .generate-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  height: 50px;
-  font-size: 18px;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 900;
   border: none !important;
-  border-radius: 25px !important;
+  border-radius: 999px !important;
 }
 
-.generate-btn:hover {
-  background: linear-gradient(135deg, #7b8ff0 0%, #8a5db5 100%) !important;
+.neon-primary {
+  background: linear-gradient(90deg, rgba(0, 255, 209, 0.95), rgba(255, 70, 218, 0.88)) !important;
+  box-shadow: 0 18px 60px rgba(0, 255, 209, 0.16), 0 18px 60px rgba(255, 70, 218, 0.12);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    transform: translateX(-60%);
+    animation: btnShine 2.2s ease-in-out infinite;
+  }
+}
+@keyframes btnShine {
+  0% { transform: translateX(-60%); opacity: 0; }
+  30% { opacity: 0.9; }
+  100% { transform: translateX(60%); opacity: 0; }
 }
 
-.btn-text {
-  font-size: 18px;
-}
-
-.btn-coin {
+.footer-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  font-size: 14px;
+  gap: 8px;
+
+  .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 70, 218, 0.95);
+    box-shadow: 0 0 14px rgba(255, 70, 218, 0.85);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.35); opacity: 1; }
 }
 
-/* 右侧结果区域 */
+/* ========= 右侧结果区 ========= */
 .right-panel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  background-color: #1a1a2e;
   height: 100vh;
   overflow: hidden;
   position: sticky;
   top: 0;
-}
 
-/* 加载状态 */
-.result-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  justify-content: center;
+
+  padding: 34px;
+  background: radial-gradient(900px 650px at 60% 25%, rgba(255, 70, 218, 0.10), transparent 58%),
+    radial-gradient(900px 650px at 30% 60%, rgba(0, 255, 209, 0.10), transparent 58%),
+    rgba(10, 10, 26, 0.60);
+  backdrop-filter: blur(14px);
 }
 
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* ========= 生成中状态（情绪化 loading） ========= */
+.result-loading {
+  width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.loading-item {
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.loading-head {
+  text-align: center;
+  display: grid;
+  gap: 8px;
 }
 
-.loading-text {
-  text-align: center;
+.loading-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+  width: fit-content;
+  margin: 0 auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+
+  .live-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--c1);
+    box-shadow: 0 0 14px rgba(0, 255, 209, 0.85);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
 }
 
 .loading-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 1000;
+  color: rgba(255, 255, 255, 0.92);
+  .dots {
+    display: inline-block;
+    width: 18px;
+    text-align: left;
+  }
 }
 
-.loading-desc {
-  font-size: 14px;
-  color: #888;
-  margin: 0;
+.loading-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.66);
 }
 
-/* 结果网格 */
-.result-grid {
+/* 阶段条 */
+.phase-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+
+  .phase-item {
+    border-radius: 14px;
+    padding: 10px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.62);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+
+    .phase-text { font-size: 12px; font-weight: 900; white-space: nowrap; }
+    .phase-icon { opacity: 0.9; }
+  }
+
+  .phase-item.active {
+    color: rgba(255, 255, 255, 0.94);
+    border-color: rgba(0, 255, 209, 0.35);
+    background: rgba(0, 255, 209, 0.10);
+    transform: translateY(-1px);
+    box-shadow: 0 18px 55px rgba(0, 255, 209, 0.10);
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* shimmer 骨架 */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--shadow);
+}
+
+.sk-tile {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sk-img {
+  height: 220px;
+  background: linear-gradient(135deg, rgba(0, 255, 209, 0.08), rgba(255, 70, 218, 0.06));
+}
+
+.sk-meta { padding: 12px; }
+.sk-line {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 10px;
+}
+.sk-line.w70 { width: 70%; }
+.sk-line.w55 { width: 55%; }
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+  transform: translateX(-60%);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-60%); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+.loading-footer {
+  display: grid;
+  gap: 10px;
+}
+
+.fake-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+
+  .bar {
+    display: block;
+    height: 100%;
+    width: 38%;
+    background: linear-gradient(90deg, rgba(0, 255, 209, 0.85), rgba(255, 70, 218, 0.65));
+    border-radius: 999px;
+    animation: progressSlide 1.4s ease-in-out infinite;
+  }
+}
+@keyframes progressSlide {
+  0% { transform: translateX(-60%); opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { transform: translateX(220%); opacity: 0.6; }
+}
+
+.mini-note {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
+}
+
+/* ========= 结果区（2x2） ========= */
+.result-grid, .final-grid {
+  width: min(720px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
 }
 
-.result-images {
+.result-topline {
+  width: 100%;
+  text-align: center;
+  display: grid;
+  gap: 8px;
+}
+.result-title {
+  font-size: 16px;
+  font-weight: 1000;
+  .spark { margin-right: 6px; filter: drop-shadow(0 0 10px rgba(0, 255, 209, 0.45)); }
+}
+.result-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.frame-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 24px;
-  border-radius: 20px;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--shadow);
 }
 
 .result-image-item {
   position: relative;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: 3px solid transparent;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  border: 2px solid rgba(255, 255, 255, 0.06);
 }
 
-.result-image-item:hover {
-  transform: scale(1.02);
-}
+.result-image-item:hover { transform: translateY(-2px); }
 
 .result-image-item.selected {
-  border-color: #667eea;
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+  border-color: rgba(0, 255, 209, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10), 0 24px 80px rgba(0, 255, 209, 0.08);
 }
 
-.result-image-item :deep(.ant-image) {
-  width: 200px;
-  height: 200px;
+.thumb-frame {
+  position: relative;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.20);
 }
 
-.result-image-item :deep(.ant-image img) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.result-image-item :deep(.ant-image) { width: 210px; height: 210px; }
+.result-image-item :deep(.ant-image img) { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
+
+.glow-ring {
+  position: absolute;
+  inset: 10px;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  pointer-events: none;
 }
 
 .image-index {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
+  bottom: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.60);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* 操作按钮 */
 .result-actions {
+  width: 100%;
+  max-width: 520px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 100%;
-  max-width: 440px;
 }
 
-.action-row {
-  display: flex;
-  gap: 12px;
-}
+.action-row { display: flex; gap: 12px; }
 
-.action-row :deep(.ant-btn) {
-  flex: 1;
+.ghost-btn {
   height: 42px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.90) !important;
+}
+.ghost-btn:hover {
+  border-color: rgba(0, 255, 209, 0.28) !important;
+  background: rgba(0, 255, 209, 0.10) !important;
 }
 
-.action-row :deep(.ant-btn:hover) {
-  background: rgba(102, 126, 234, 0.3);
-  border-color: #667eea;
-}
-
-.result-actions > :deep(.ant-btn) {
-  height: 42px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.result-actions > :deep(.ant-btn:hover) {
-  background: rgba(102, 126, 234, 0.3);
-  border-color: #667eea;
-}
-
-/* 空状态 */
-.result-empty {
+/* ========= 放大后单图 ========= */
+.result-final {
+  width: min(720px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32px;
-}
-
-.empty-preview {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 24px;
-  border-radius: 20px;
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
-.preview-item {
-  width: 200px;
-  height: 200px;
-}
-
-.preview-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border-radius: 16px;
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-}
-
-.empty-text {
-  text-align: center;
-}
-
-.empty-text h3 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #fff;
-  margin: 0 0 8px;
-}
-
-.empty-text p {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-}
-
-/* 放大后结果展示 */
-.result-final {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  width: 100%;
-  max-width: 600px;
-}
-
 .final-single {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
+}
+
+.frame-single {
   width: 100%;
-}
-
-.final-image-container {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 24px;
-  border-radius: 20px;
-}
-
-.final-image-container :deep(.ant-image) {
-  max-width: 400px;
-  max-height: 400px;
-  border-radius: 16px;
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow);
+  position: relative;
   overflow: hidden;
-}
 
-.final-image-container :deep(.ant-image img) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  .frame-glow {
+    position: absolute;
+    inset: -2px;
+    background: conic-gradient(
+      from 180deg,
+      rgba(0, 255, 209, 0.35),
+      rgba(255, 70, 218, 0.28),
+      rgba(72, 133, 255, 0.28),
+      rgba(0, 255, 209, 0.35)
+    );
+    filter: blur(18px);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  :deep(.ant-image) {
+    width: 100%;
+    display: block;
+  }
+
+  :deep(.ant-image-img) {
+    width: 100%;
+    border-radius: 16px;
+    object-fit: contain;
+    background: rgba(0, 0, 0, 0.25);
+  }
 }
 
 .final-info {
   text-align: center;
+  display: grid;
+  gap: 6px;
 }
-
-.info-text {
-  font-size: 16px;
-  color: #52c41a;
-  font-weight: 500;
-}
+.info-text { font-size: 14px; font-weight: 1000; color: rgba(0, 255, 209, 0.85); }
+.info-sub { font-size: 12px; color: rgba(255, 255, 255, 0.62); }
 
 /* 保存表单 */
 .save-section {
   display: flex;
   gap: 12px;
   width: 100%;
-  max-width: 400px;
+  max-width: 520px;
 }
 
 .save-input {
   flex: 1;
   height: 42px;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 8px !important;
-  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 14px !important;
+  color: rgba(255, 255, 255, 0.92) !important;
 }
-
+.save-input::placeholder { color: rgba(255, 255, 255, 0.42) !important; }
 .save-input:focus {
-  border-color: #667eea !important;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-}
-
-.save-input::placeholder {
-  color: #888 !important;
+  border-color: rgba(0, 255, 209, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.10) !important;
 }
 
 .save-btn {
   height: 42px;
-  border-radius: 8px !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border: none !important;
-  font-weight: 500;
+  border-radius: 14px !important;
+  font-weight: 1000;
 }
 
-.save-btn:hover {
-  background: linear-gradient(135deg, #7b8ff0 0%, #8a5db5 100%) !important;
-}
-
-/* 继续优化操作 */
+/* 继续优化 */
 .continue-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   width: 100%;
-  max-width: 400px;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  max-width: 520px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 10px;
 }
-
 .action-title {
-  font-size: 14px;
-  color: #888;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
   text-align: center;
-  margin-bottom: 4px;
+  font-weight: 900;
 }
+.continue-actions .action-row { flex-wrap: wrap; justify-content: center; }
+.continue-actions .ghost-btn { min-width: 110px; }
 
-.continue-actions .action-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.continue-actions .action-row :deep(.ant-btn) {
-  flex: 0 0 auto;
-  min-width: 80px;
-  height: 36px;
-  font-size: 13px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.continue-actions .action-row :deep(.ant-btn:hover) {
-  background: rgba(102, 126, 234, 0.3);
-  border-color: #667eea;
-}
-
+/* 返回按钮 */
 .back-btn {
-  height: 36px;
-  border-radius: 8px !important;
+  height: 38px;
+  border-radius: 14px !important;
   background: transparent !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: #888 !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: rgba(255, 255, 255, 0.62) !important;
 }
-
 .back-btn:hover {
-  border-color: #667eea !important;
-  color: #667eea !important;
+  border-color: rgba(72, 133, 255, 0.35) !important;
+  color: rgba(72, 133, 255, 0.92) !important;
 }
 
-.final-grid {
+/* ========= 空状态 ========= */
+.result-empty {
+  width: min(720px, 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
 }
 
-/* 响应式 */
+.empty-preview {
+  width: 100%;
+  box-shadow: var(--shadow);
+}
+
+.preview-item {
+  width: 210px;
+  height: 210px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-radius: 18px;
+}
+
+.preview-index {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.empty-text {
+  text-align: center;
+  h3 {
+    font-size: 18px;
+    font-weight: 1000;
+    margin: 0 0 8px;
+    color: rgba(255, 255, 255, 0.92);
+  }
+  p {
+    font-size: 12px;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.62);
+  }
+}
+
+.empty-tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+
+  .t {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.76);
+  }
+}
+
+/* 空状态轻 shimmer */
+.shimmer-soft {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-soft::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.10) 50%, transparent 100%);
+  transform: translateX(-60%);
+  animation: shimmerSoft 2.2s ease-in-out infinite;
+}
+@keyframes shimmerSoft {
+  0% { transform: translateX(-60%); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+/* ========= 响应式 ========= */
 @media (max-width: 1200px) {
-  .left-panel {
-    width: 360px;
-    min-width: 360px;
-  }
-
-  .result-image-item :deep(.ant-image) {
-    width: 180px;
-    height: 180px;
-  }
-
-  .preview-item {
-    width: 180px;
-    height: 180px;
-  }
-
-  .loading-item {
-    width: 180px;
-    height: 180px;
-  }
+  .left-panel { width: 360px; min-width: 360px; }
+  .result-image-item :deep(.ant-image),
+  .preview-item { width: 190px; height: 190px; }
+  .sk-img { height: 200px; }
 }
 
 @media (max-width: 992px) {
-  .main-layout {
-    flex-direction: column;
-    height: auto;
-    overflow: visible;
-  }
-
+  .main-layout { flex-direction: column; height: auto; overflow: visible; }
   .left-panel {
     width: 100%;
     min-width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #3a3a5c;
     height: auto;
     overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
   }
-
   .right-panel {
     min-height: 60vh;
     height: auto;
@@ -1676,23 +2067,10 @@ const handleExpandPrompt = async () => {
 }
 
 @media (max-width: 576px) {
-  .style-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .result-image-item :deep(.ant-image) {
-    width: 140px;
-    height: 140px;
-  }
-
-  .preview-item {
-    width: 140px;
-    height: 140px;
-  }
-
-  .loading-item {
-    width: 140px;
-    height: 140px;
-  }
+  .style-grid { grid-template-columns: repeat(3, 1fr); }
+  .frame-grid { padding: 14px; gap: 12px; }
+  .result-image-item :deep(.ant-image),
+  .preview-item { width: 150px; height: 150px; }
+  .sk-img { height: 160px; }
 }
 </style>
