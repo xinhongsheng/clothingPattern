@@ -13,11 +13,13 @@ import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.mj.WanQueryRequest;
 import com.xhs.clothingpatternbackend.model.dto.pattern.PatternQueryRequest;
+import com.xhs.clothingpatternbackend.model.dto.imagefusion.ImageFusionGenerateMessage;
 import com.xhs.clothingpatternbackend.model.entity.ImageFusionTask;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.model.vo.WanQueryVO;
+import com.xhs.clothingpatternbackend.mq.ImageFusionGenerateProducer;
 import com.xhs.clothingpatternbackend.service.ImageFusionTaskService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
@@ -60,6 +62,9 @@ public class ImageFusionController {
 
     @Resource
     private  ImageFusionTaskService imageFusionTaskService;
+
+    @Resource
+    private ImageFusionGenerateProducer imageFusionGenerateProducer;
     // 改为公共静态变量，方便其他服务清空缓存
     public static final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -117,6 +122,11 @@ public class ImageFusionController {
             List<String> imageUrlList = List.of(imageUrls.split(","));
             // 使用后端固定的融合提示词，前端无需再传 prompt
             String dashscopeTaskId = fusionTaskService.submitTask(userId, FUSION_PROMPT, null, imageUrlList, parameters);
+            try {
+                imageFusionGenerateProducer.send(new ImageFusionGenerateMessage(dashscopeTaskId, userId));
+            } catch (Exception e) {
+                log.error("提交队列失败：DashScopeID={}", dashscopeTaskId, e);
+            }
             return ResultUtils.success(dashscopeTaskId);
         } catch (Exception e) {
             log.error("任务提交失败", e);

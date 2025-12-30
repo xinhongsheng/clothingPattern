@@ -58,7 +58,7 @@ const getChartOption = () => {
   return {
     backgroundColor: 'transparent',
     title: {
-      text: '中国省级数据可视化',
+      text: "中国服装风格趋势数据可视化",
       left: 'center',
       textStyle: {
         color: '#00f2ff',

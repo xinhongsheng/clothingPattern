@@ -6,15 +6,21 @@
 <script setup lang="ts">
 import BasicLayout from "@/layout/BasicLayout.vue"
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { useMJTaskStore } from '@/stores/useMJTaskStore'
+import { useImageFusionTaskStore } from '@/stores/useImageFusionTaskStore'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { getImagineStatus } from '@/api/midjourneyjiekou'
+import { getResults, queryStatus } from '@/api/imageFusionController'
 
 const loginUserStore = useLoginUserStore()
+const mjTaskStore = useMJTaskStore()
+const fusionTaskStore = useImageFusionTaskStore()
 const route = useRoute()
 
-const storageKey = 'mj_generate_task'
+const mjStorageKey = 'mj_generate_task'
+const fusionStorageKey = 'image_fusion_task'
 const pollIntervalMs = 2000
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -27,8 +33,8 @@ type MjTaskSnapshot = {
   notified?: boolean
 }
 
-const readTaskSnapshot = (): MjTaskSnapshot | null => {
-  const raw = localStorage.getItem(storageKey)
+const readMjTaskSnapshot = (): MjTaskSnapshot | null => {
+  const raw = localStorage.getItem(mjStorageKey)
   if (!raw) {
     return null
   }
@@ -39,12 +45,40 @@ const readTaskSnapshot = (): MjTaskSnapshot | null => {
   }
 }
 
-const saveTaskSnapshot = (snapshot: MjTaskSnapshot) => {
-  localStorage.setItem(storageKey, JSON.stringify(snapshot))
+const saveMjTaskSnapshot = (snapshot: MjTaskSnapshot) => {
+  localStorage.setItem(mjStorageKey, JSON.stringify(snapshot))
+}
+
+type FusionTaskSnapshot = {
+  taskId: string
+  status: string
+  resultUrls?: string[]
+  errorMessage?: string
+  updateTime?: number
+  notified?: boolean
+  garmentUrl?: string
+  patternUrls?: string[]
+  similarity?: number
+}
+
+const readFusionTaskSnapshot = (): FusionTaskSnapshot | null => {
+  const raw = localStorage.getItem(fusionStorageKey)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as FusionTaskSnapshot
+  } catch {
+    return null
+  }
+}
+
+const saveFusionTaskSnapshot = (snapshot: FusionTaskSnapshot) => {
+  localStorage.setItem(fusionStorageKey, JSON.stringify(snapshot))
 }
 
 const pollMjTaskStatus = async () => {
-  const snapshot = readTaskSnapshot()
+  const snapshot = readMjTaskSnapshot()
   if (!snapshot) {
     return
   }
@@ -61,34 +95,112 @@ const pollMjTaskStatus = async () => {
     }
     const taskData = res.data.data
     if (taskData.status === 'SUCCEEDED' && taskData.result) {
-      saveTaskSnapshot({
+      saveMjTaskSnapshot({
         taskId: snapshot.taskId,
         status: taskData.status,
         result: taskData.result,
         updateTime: taskData.updateTime,
         notified: true,
       })
+      mjTaskStore.markSucceeded(snapshot.taskId, taskData.result)
       if (!snapshot.notified) {
         message.success('图案生成完成，返回智能创作页可继续变体/放大/保存')
       }
       return
     }
     if (taskData.status === 'FAILED') {
-      saveTaskSnapshot({
+      saveMjTaskSnapshot({
         taskId: snapshot.taskId,
         status: taskData.status,
         errorMessage: taskData.errorMessage,
         updateTime: taskData.updateTime,
         notified: true,
       })
+      mjTaskStore.markFailed(snapshot.taskId, taskData.errorMessage || '图案生成失败')
       if (!snapshot.notified) {
         message.error(taskData.errorMessage || '图案生成失败，请稍后重试')
       }
       return
     }
-    saveTaskSnapshot({
+    if (taskData.status === 'PROCESSING') {
+      mjTaskStore.markProcessing(snapshot.taskId)
+    }
+    saveMjTaskSnapshot({
       taskId: snapshot.taskId,
       status: taskData.status || snapshot.status,
+      updateTime: taskData.updateTime,
+      notified: snapshot.notified,
+    })
+  } catch {
+    return
+  }
+}
+
+const pollFusionTaskStatus = async () => {
+  const snapshot = readFusionTaskSnapshot()
+  if (!snapshot) {
+    return
+  }
+  if (route.path === '/image-fusion') {
+    return
+  }
+  if (snapshot.status === 'SUCCEEDED' || snapshot.status === 'FAILED') {
+    return
+  }
+  try {
+    const res = await queryStatus({ taskId: snapshot.taskId })
+    const taskData: any = res?.data?.data || res?.data
+    if (!taskData) {
+      return
+    }
+    const status = taskData.taskStatus
+    if (status === 'SUCCEEDED') {
+      const resultRes = await getResults({ taskId: snapshot.taskId })
+      const resultData: any = resultRes?.data?.data || resultRes?.data
+      let resultUrls: string[] = []
+
+      if (Array.isArray(resultData)) {
+        resultUrls = resultData
+      } else if (resultData?.results && Array.isArray(resultData.results)) {
+        resultUrls = resultData.results.map((item: any) => item.url || item)
+      } else if (Array.isArray(taskData?.localImageUrlList)) {
+        resultUrls = taskData.localImageUrlList
+      }
+
+      saveFusionTaskSnapshot({
+        ...snapshot,
+        status,
+        resultUrls,
+        updateTime: taskData.updateTime,
+        notified: true,
+      })
+      fusionTaskStore.markSucceeded(snapshot.taskId, resultUrls)
+      if (!snapshot.notified) {
+        message.success('图案融合完成，返回衣图智融页可查看最新效果')
+      }
+      return
+    }
+    if (status === 'FAILED') {
+      const errorMessage = taskData.errorMessage || '图案融合失败，请稍后重试'
+      saveFusionTaskSnapshot({
+        ...snapshot,
+        status,
+        errorMessage,
+        updateTime: taskData.updateTime,
+        notified: true,
+      })
+      fusionTaskStore.markFailed(snapshot.taskId, errorMessage)
+      if (!snapshot.notified) {
+        message.error(errorMessage)
+      }
+      return
+    }
+    if (status === 'PROCESSING') {
+      fusionTaskStore.markProcessing(snapshot.taskId)
+    }
+    saveFusionTaskSnapshot({
+      ...snapshot,
+      status: status || snapshot.status,
       updateTime: taskData.updateTime,
       notified: snapshot.notified,
     })
@@ -100,7 +212,10 @@ const pollMjTaskStatus = async () => {
 // 应用初始化时自动获取登录用户信息
 onMounted(async () => {
   await loginUserStore.fetchLoginUser()
-  pollTimer = setInterval(pollMjTaskStatus, pollIntervalMs)
+  pollTimer = setInterval(() => {
+    void pollMjTaskStatus()
+    void pollFusionTaskStatus()
+  }, pollIntervalMs)
 })
 
 onBeforeUnmount(() => {

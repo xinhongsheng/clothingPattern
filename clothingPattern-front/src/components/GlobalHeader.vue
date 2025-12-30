@@ -22,27 +22,37 @@
         <div class="user-login-status">
           <div v-if="loginUserStore.loginUser.id">
             <!-- 通知铃铛图标 -->
-            <a-popover 
-              v-if="mjTaskStore.notification" 
-              placement="bottomRight"
-              trigger="click"
-            >
+            <a-popover v-if="hasAnyNotification" placement="bottomRight" trigger="click">
               <template #content>
-                <div class="notification-content" @click="goToMJGeneration">
-                  <div class="notification-item">
+                <div class="notification-content">
+                  <div
+                    v-if="mjTaskStore.notification"
+                    class="notification-item"
+                    @click="goToMJGeneration"
+                  >
                     <HighlightOutlined style="color: #1890ff; margin-right: 8px" />
                     <span>{{ getMJTaskStatusText() }}</span>
                   </div>
+                  <div
+                    v-if="fusionTaskStore.notification"
+                    class="notification-item"
+                    @click="goToImageFusion"
+                  >
+                    <PicCenterOutlined style="color: #faad14; margin-right: 8px" />
+                    <span>{{ getFusionTaskStatusText() }}</span>
+                  </div>
                 </div>
               </template>
-              <a-badge :count="mjTaskStore.hasUnread ? 1 : 0" :offset="[-2, 2]" class="notification-badge">
+              <a-badge :count="unreadCount" :offset="[-2, 2]" class="notification-badge">
                 <BellOutlined class="notification-icon" />
               </a-badge>
             </a-popover>
             
             <a-dropdown>
               <a-space>
-                <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
+                <a-badge :dot="hasUnread" :offset="[2, 2]">
+                  <a-avatar :src="loginUserStore.loginUser.userAvatar"></a-avatar>
+                </a-badge>
                 {{ loginUserStore.loginUser.userName ?? '无名' }}
               </a-space>
               <template #overlay>
@@ -95,6 +105,7 @@ import {
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { useMJTaskStore } from '@/stores/useMJTaskStore.ts'
+import { useImageFusionTaskStore } from '@/stores/useImageFusionTaskStore'
 import { ref, h, computed } from 'vue' // 注意：h 函数需要导入（用于渲染图标）
 import { userLoginOut } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
@@ -103,6 +114,19 @@ import { useRouter } from 'vue-router' // 补充：导入 useRouter
 const router = useRouter() // 初始化 router（之前代码漏了，会导致 router.afterEach 报错）
 const loginUserStore = useLoginUserStore()
 const mjTaskStore = useMJTaskStore()
+const fusionTaskStore = useImageFusionTaskStore()
+
+const unreadCount = computed(() => {
+  let count = 0
+  if (mjTaskStore.hasUnread) count += 1
+  if (fusionTaskStore.hasUnread) count += 1
+  return count
+})
+
+const hasUnread = computed(() => unreadCount.value > 0)
+const hasAnyNotification = computed(
+  () => !!mjTaskStore.notification || !!fusionTaskStore.notification
+)
 
 // 获取MJ任务状态文本
 const getMJTaskStatusText = () => {
@@ -121,10 +145,31 @@ const getMJTaskStatusText = () => {
   }
 }
 
+const getFusionTaskStatusText = () => {
+  const notification = fusionTaskStore.notification
+  if (!notification) return ''
+  switch (notification.status) {
+    case 'PENDING':
+    case 'PROCESSING':
+      return '衣图融合中...'
+    case 'SUCCEEDED':
+      return '融合完成，点击查看'
+    case 'FAILED':
+      return '融合失败，点击重试'
+    default:
+      return '衣图融合'
+  }
+}
+
 // 跳转到智能创作页面
 const goToMJGeneration = () => {
   mjTaskStore.markRead()
   router.push('/mj/generation')
+}
+
+const goToImageFusion = () => {
+  fusionTaskStore.markRead()
+  router.push('/image-fusion')
 }
 
 const originItems = [
@@ -301,7 +346,9 @@ router.afterEach((to) => {
 /* 通知内容样式 */
 .notification-content {
   min-width: 200px;
-  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .notification-item {

@@ -165,9 +165,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { uploadImage, submitTask, queryStatus, getResults, saveSelectedImage } from '@/api/imageFusionController'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { useImageFusionTaskStore } from '@/stores/useImageFusionTaskStore'
+
+const loginUserStore = useLoginUserStore()
+const fusionTaskStore = useImageFusionTaskStore()
+
+const storageKey = 'image_fusion_task'
+const pollIntervalMs = 3000
 
 // 示例图片
 import exampleGarment from '@/assets/imagefusion/服装.png'
@@ -179,6 +187,8 @@ const garmentImageUrl = ref<string>('')
 const garmentImageFile = ref<File | null>(null)
 const patternImageUrls = ref<string[]>([])
 const patternImageFiles = ref<File[]>([])
+const uploadedGarmentUrl = ref<string>('')
+const uploadedPatternUrls = ref<string[]>([])
 
 // 相似度滑块
 const similarity = ref(44)
@@ -192,14 +202,47 @@ const resultUrls = ref<string[]>([])
 const selectedImageUrl = ref<string>('')
 const errorMessage = ref<string>('')
 
-let pollTimer: number | null = null
+let pollTimer: ReturnType<typeof window.setTimeout> | null = null
 
 const clearPollTimer = () => {
   if (pollTimer !== null) {
-    window.clearInterval(pollTimer)
+    window.clearTimeout(pollTimer)
     pollTimer = null
   }
 }
+
+onMounted(async () => {
+  await loginUserStore.fetchLoginUser()
+  fusionTaskStore.markRead()
+
+  const snapshot = readTaskSnapshot()
+  const creationParams = fusionTaskStore.getCreationParams()
+  if (snapshot) {
+    applySnapshot(snapshot)
+  } else if (creationParams) {
+    applyCreationParams(creationParams)
+  }
+
+  if (!snapshot) {
+    return
+  }
+
+  if (snapshot.status === 'SUCCEEDED') {
+    if (snapshot.resultUrls?.length) {
+      resultUrls.value = snapshot.resultUrls
+      polling.value = false
+      return
+    }
+    polling.value = true
+    pollFusionStatus(snapshot.taskId)
+    return
+  }
+
+  if (snapshot.status === 'PENDING' || snapshot.status === 'PROCESSING') {
+    polling.value = true
+    pollFusionStatus(snapshot.taskId)
+  }
+})
 
 onBeforeUnmount(() => {
   clearPollTimer()
@@ -222,6 +265,153 @@ const canSubmit = computed(() => {
     !polling.value
   )
 })
+
+type FusionTaskSnapshot = {
+  taskId: string
+  status: string
+  resultUrls?: string[]
+  errorMessage?: string
+  updateTime?: number
+  garmentUrl?: string
+  patternUrls?: string[]
+  similarity?: number
+}
+
+const readTaskSnapshot = (): FusionTaskSnapshot | null => {
+  const raw = localStorage.getItem(storageKey)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as FusionTaskSnapshot
+  } catch {
+    return null
+  }
+}
+
+const saveTaskSnapshot = (snapshot: FusionTaskSnapshot) => {
+  localStorage.setItem(storageKey, JSON.stringify(snapshot))
+}
+
+const stopPolling = () => {
+  clearPollTimer()
+}
+
+const applyCreationParams = (params: {
+  garmentUrl?: string
+  patternUrls?: string[]
+  similarity?: number
+}) => {
+  if (params.garmentUrl !== undefined) {
+    garmentImageUrl.value = params.garmentUrl
+    garmentImageFile.value = null
+    uploadedGarmentUrl.value = params.garmentUrl
+  }
+  if (params.patternUrls !== undefined) {
+    patternImageUrls.value = [...params.patternUrls]
+    patternImageFiles.value = []
+    uploadedPatternUrls.value = [...params.patternUrls]
+  }
+  if (params.similarity !== undefined) {
+    similarity.value = params.similarity
+  }
+}
+
+const applySnapshot = (snapshot: FusionTaskSnapshot) => {
+  currentTaskId.value = snapshot.taskId
+  applyCreationParams({
+    garmentUrl: snapshot.garmentUrl,
+    patternUrls: snapshot.patternUrls,
+    similarity: snapshot.similarity,
+  })
+  if (snapshot.resultUrls?.length) {
+    resultUrls.value = snapshot.resultUrls
+  }
+}
+
+const pollFusionStatus = async (taskId: string) => {
+  try {
+    const res = await queryStatus({ taskId })
+    const taskData: any = res?.data?.data || res?.data
+    if (!taskData) {
+      throw new Error('任务状态为空')
+    }
+    const status = taskData.taskStatus
+
+    if (status === 'SUCCEEDED') {
+      const resultRes = await getResults({ taskId })
+      const resultData: any = resultRes?.data?.data || resultRes?.data
+
+      if (Array.isArray(resultData)) {
+        resultUrls.value = resultData
+      } else if (resultData?.results && Array.isArray(resultData.results)) {
+        resultUrls.value = resultData.results.map((item: any) => item.url || item)
+      } else if (Array.isArray(taskData?.localImageUrlList)) {
+        resultUrls.value = taskData.localImageUrlList
+      } else {
+        resultUrls.value = []
+      }
+
+      polling.value = false
+      stopPolling()
+
+      saveTaskSnapshot({
+        taskId,
+        status,
+        resultUrls: resultUrls.value,
+        errorMessage: taskData.errorMessage,
+        updateTime: taskData.updateTime,
+        garmentUrl: uploadedGarmentUrl.value,
+        patternUrls: uploadedPatternUrls.value,
+        similarity: similarity.value,
+      })
+
+      fusionTaskStore.markSucceeded(taskId, resultUrls.value)
+      message.success('图案融合完成，返回衣图智融页可查看最新效果')
+      return
+    }
+
+    if (status === 'FAILED') {
+      errorMessage.value = taskData.errorMessage || '图案融合失败，请稍后重试'
+      polling.value = false
+      stopPolling()
+
+      saveTaskSnapshot({
+        taskId,
+        status,
+        errorMessage: errorMessage.value,
+        updateTime: taskData.updateTime,
+        garmentUrl: uploadedGarmentUrl.value,
+        patternUrls: uploadedPatternUrls.value,
+        similarity: similarity.value,
+      })
+
+      fusionTaskStore.markFailed(taskId, errorMessage.value)
+      return
+    }
+
+    polling.value = true
+    fusionTaskStore.markProcessing(taskId)
+    saveTaskSnapshot({
+      taskId,
+      status: status || 'PENDING',
+      updateTime: taskData.updateTime,
+      garmentUrl: uploadedGarmentUrl.value,
+      patternUrls: uploadedPatternUrls.value,
+      similarity: similarity.value,
+    })
+
+    stopPolling()
+    pollTimer = window.setTimeout(() => {
+      pollFusionStatus(taskId)
+    }, pollIntervalMs)
+  } catch (e: any) {
+    console.error('查询任务状态失败:', e)
+    errorMessage.value = e?.message || '查询任务状态失败'
+    polling.value = false
+    stopPolling()
+  }
+}
 
 // 验证图片尺寸（必须在 384-5000 像素之间）
 const validateImageSize = (file: File): Promise<boolean> => {
@@ -280,6 +470,7 @@ const handleUploadGarment = async (file: File) => {
   // 3. 保存文件对象，创建本地预览URL
   garmentImageFile.value = file
   garmentImageUrl.value = URL.createObjectURL(file)
+  uploadedGarmentUrl.value = ''
   message.success('服装图片已选择，点击"开始图案融合"按钮后将上传')
   return false
 }
@@ -304,6 +495,9 @@ const handleUploadPattern = async (file: File) => {
   }
 
   // 3. 保存文件对象，创建本地预览URL
+  if (uploadedPatternUrls.value.length) {
+    uploadedPatternUrls.value = []
+  }
   patternImageFiles.value.push(file)
   patternImageUrls.value.push(URL.createObjectURL(file))
   message.success('图案图片已选择')
@@ -316,6 +510,7 @@ const clearGarment = () => {
   }
   garmentImageUrl.value = ''
   garmentImageFile.value = null
+  uploadedGarmentUrl.value = ''
 }
 
 const removePattern = (index: number) => {
@@ -324,49 +519,9 @@ const removePattern = (index: number) => {
   }
   patternImageUrls.value.splice(index, 1)
   patternImageFiles.value.splice(index, 1)
-}
-
-const startPolling = (taskId: string) => {
-  clearPollTimer()
-  polling.value = true
-
-  pollTimer = window.setInterval(async () => {
-    try {
-      const res = await queryStatus({ taskId })
-      const data: any = res?.data?.data || res?.data
-      if (!data) return
-
-      const status = data.taskStatus
-      if (status === 'SUCCEEDED') {
-        // 成功后再获取结果图片列表
-        const resultRes = await getResults({ taskId })
-        const resultData: any = resultRes?.data?.data || resultRes?.data
-
-        // 后端返回的是数组或包含results字段的对象
-        if (Array.isArray(resultData)) {
-          resultUrls.value = resultData
-        } else if (resultData?.results && Array.isArray(resultData.results)) {
-          // 如果返回的是对象，从results字段中提取URL数组
-          resultUrls.value = resultData.results.map((item: any) => item.url || item)
-        } else {
-          resultUrls.value = []
-        }
-
-        polling.value = false
-        clearPollTimer()
-        message.success('图案融合完成')
-      } else if (status === 'FAILED') {
-        errorMessage.value = data.errorMessage || '图案融合失败，请稍后重试'
-        polling.value = false
-        clearPollTimer()
-      }
-    } catch (e: any) {
-      console.error('查询任务状态失败:', e)
-      errorMessage.value = e?.message || '查询任务状态失败'
-      polling.value = false
-      clearPollTimer()
-    }
-  }, 3000)
+  if (uploadedPatternUrls.value.length) {
+    uploadedPatternUrls.value.splice(index, 1)
+  }
 }
 
 const handleSubmit = async () => {
@@ -374,7 +529,9 @@ const handleSubmit = async () => {
     return
   }
 
+  stopPolling()
   submitting.value = true
+  polling.value = false
   errorMessage.value = ''
   resultUrls.value = []
   selectedImageUrl.value = '' // 清空选中的图片
@@ -384,36 +541,56 @@ const handleSubmit = async () => {
     message.loading({ content: '正在上传图片...', key: 'upload', duration: 0 })
 
     const uploadedUrls: string[] = []
+    let garmentUrl = ''
 
-    // 上传服装图片
+    // 上传服装图片（或复用已上传URL）
     if (garmentImageFile.value) {
       const formData = new FormData()
       formData.append('file', garmentImageFile.value)
       const res = await uploadImage(formData)
-      const url = (res as any)?.data?.data || (res as any)?.data?.url
-      if (!url) {
+      garmentUrl = (res as any)?.data?.data || (res as any)?.data?.url
+      if (!garmentUrl) {
         throw new Error('服装图片上传失败')
       }
-      uploadedUrls.push(url)
+    } else if (uploadedGarmentUrl.value) {
+      garmentUrl = uploadedGarmentUrl.value
     }
 
-    // 上传图案图片
-    for (let i = 0; i < patternImageFiles.value.length; i++) {
-      const formData = new FormData()
-      formData.append('file', patternImageFiles.value[i])
-      const res = await uploadImage(formData)
-      const url = (res as any)?.data?.data || (res as any)?.data?.url
-      if (!url) {
-        throw new Error(`图案图片 ${i + 1} 上传失败`)
-      }
-      uploadedUrls.push(url)
+    if (!garmentUrl) {
+      throw new Error('请先上传服装图片')
     }
+    uploadedUrls.push(garmentUrl)
+
+    const patternUrls: string[] = []
+    // 上传图案图片（或复用已上传URL）
+    if (patternImageFiles.value.length) {
+      for (let i = 0; i < patternImageFiles.value.length; i++) {
+        const formData = new FormData()
+        formData.append('file', patternImageFiles.value[i])
+        const res = await uploadImage(formData)
+        const url = (res as any)?.data?.data || (res as any)?.data?.url
+        if (!url) {
+          throw new Error(`图案图片 ${i + 1} 上传失败`)
+        }
+        patternUrls.push(url)
+      }
+    } else if (uploadedPatternUrls.value.length) {
+      patternUrls.push(...uploadedPatternUrls.value)
+    }
+
+    if (!patternUrls.length) {
+      throw new Error('请先上传图案图片')
+    }
+
+    uploadedUrls.push(...patternUrls)
+    uploadedGarmentUrl.value = garmentUrl
+    uploadedPatternUrls.value = patternUrls
 
     message.success({ content: '图片上传成功！', key: 'upload' })
 
     // 2. 提交融合任务
     const imageUrls = uploadedUrls.join(',')
-    const userId = 0 // TODO：根据项目实际登录逻辑替换 userId
+    const userId = loginUserStore.loginUser?.id ? Number(loginUserStore.loginUser.id) : 0
 
     const res = await submitTask({ userId, imageUrls } as any)
     const taskId = (res as any)?.data?.data || (res as any)?.data
@@ -422,8 +599,25 @@ const handleSubmit = async () => {
     }
 
     currentTaskId.value = String(taskId)
+    saveTaskSnapshot({
+      taskId: String(taskId),
+      status: 'PENDING',
+      updateTime: Date.now(),
+      garmentUrl: uploadedGarmentUrl.value,
+      patternUrls: uploadedPatternUrls.value,
+      similarity: similarity.value,
+    })
+
+    fusionTaskStore.createTask({
+      taskId: String(taskId),
+      garmentUrl: uploadedGarmentUrl.value,
+      patternUrls: uploadedPatternUrls.value,
+      similarity: similarity.value,
+    })
+
     message.success('任务提交成功，正在进行图案融合...')
-    startPolling(String(taskId))
+    polling.value = true
+    pollFusionStatus(String(taskId))
   } catch (e: any) {
     console.error('提交融合任务失败:', e)
     message.error({ content: e?.message || '提交融合任务失败，请稍后重试', key: 'upload' })
