@@ -256,13 +256,18 @@ onBeforeUnmount(() => {
 })
 
 const canSubmit = computed(() => {
+  const runningStatus = fusionTaskStore.notification?.status
+  const isTaskRunning =
+    submitting.value ||
+    polling.value ||
+    runningStatus === 'PENDING' ||
+    runningStatus === 'PROCESSING'
   // 至少需要 1 张服装图 + 1 张图案图，且总张数 <= 3
   return (
     !!garmentImageUrl.value &&
     patternImageUrls.value.length >= 1 &&
     1 + patternImageUrls.value.length <= 3 &&
-    !submitting.value &&
-    !polling.value
+    !isTaskRunning
   )
 })
 
