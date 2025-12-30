@@ -96,7 +96,7 @@
                 <a-button type="primary" size="large" @click="downloadPattern">
                   <DownloadOutlined /> 下载图案
                 </a-button>
-                <a-button size="large" v-if="isMyPattern" @click="showEditModal">
+                <a-button size="large" v-if="isMyPattern || isAdmin" @click="showEditModal">
                   <EditOutlined /> 编辑
                 </a-button>
                 <a-button size="large" v-if="isMyPattern || isAdmin" danger @click="handleDelete">
