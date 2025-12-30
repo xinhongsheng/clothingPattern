@@ -2045,6 +2045,19 @@ const handleExpandPrompt = async () => {
   .sk-img { height: 200px; }
 }
 
+@media (min-width: 1600px) {
+  .left-panel { width: 420px; min-width: 420px; }
+  .result-loading,
+  .result-grid,
+  .final-grid,
+  .result-final,
+  .result-empty { width: min(900px, 100%); }
+  .result-image-item :deep(.ant-image),
+  .preview-item { width: 260px; height: 260px; }
+  .frame-grid { padding: 22px; gap: 18px; }
+  .sk-img { height: 260px; }
+}
+
 @media (max-width: 992px) {
   .main-layout { flex-direction: column; height: auto; overflow: visible; }
   .left-panel {
