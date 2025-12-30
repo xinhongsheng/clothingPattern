@@ -654,6 +654,13 @@ const handleSaveResult = async () => {
 
     if ((res as any)?.data?.data || (res as any)?.code === 0) {
       message.success('保存成功！')
+      currentTaskId.value = null
+      resultUrls.value = []
+      selectedImageUrl.value = ''
+      errorMessage.value = ''
+      polling.value = false
+      localStorage.removeItem(storageKey)
+      fusionTaskStore.clearTask()
     } else {
       throw new Error('保存失败')
     }
@@ -681,8 +688,13 @@ const handleSaveSelected = async () => {
 
     if ((res as any)?.data?.data || (res as any)?.code === 0) {
       message.success('保存成功！')
-      // 保存成功后，只保留选中的图片
-      resultUrls.value = [selectedImageUrl.value]
+      currentTaskId.value = null
+      resultUrls.value = []
+      selectedImageUrl.value = ''
+      errorMessage.value = ''
+      polling.value = false
+      localStorage.removeItem(storageKey)
+      fusionTaskStore.clearTask()
     } else {
       throw new Error('保存失败')
     }
