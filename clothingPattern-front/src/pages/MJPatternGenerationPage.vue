@@ -10,7 +10,7 @@
     </div>
 
     <!-- 未登录提示 -->
-    <a-alert
+    <!-- <a-alert
       v-if="!isUserLoggedIn"
       message="需要登录才能使用智能创作功能"
       description="请先登录您的账号，然后即可开始创作属于您的独特图案。"
@@ -22,7 +22,7 @@
       <template #icon>
         <span style="font-size: 20px">🔔</span>
       </template>
-    </a-alert>
+    </a-alert> -->
 
     <!-- 主内容区域 - 左右分栏布局 -->
     <div class="main-layout">
@@ -30,7 +30,7 @@
       <div class="left-panel">
         <!-- 顶部标题/状态 -->
         <div class="left-hero">
-         
+
           <div class="hero-title">
             智能创作工作台
             <span class="shine" />
