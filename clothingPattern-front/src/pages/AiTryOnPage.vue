@@ -1,26 +1,26 @@
-ï»¿<template>
+<template>
   <div class="tryon-page">
-    <!-- ä¸»å¸ƒå±€ - å·¦å³åˆ†æ  -->
+    <!-- Ö÷²¼¾Ö - ×óÓÒ·ÖÀ¸ -->
     <div class="main-layout">
-      <!-- å·¦ä¾§æ“ä½œé¢æ¿ -->
+      <!-- ×ó²à²Ù×÷Ãæ°å -->
       <div class="left-panel">
-        <!-- é¡µé¢æ ‡é¢˜ -->
+        <!-- Ò³Ãæ±êÌâ -->
         <div class="panel-header">
-          <h1 class="panel-title">ğŸ‘— AI æ™ºèƒ½è¯•è¡£</h1>
+          <h1 class="panel-title">?? AI ÖÇÄÜÊÔÒÂ</h1>
           <div class="header-btns">
             <a-button type="text" class="header-btn" @click="showGuideModal = true">
-              <question-circle-outlined /> æŒ‡å—
+              <question-circle-outlined /> Ö¸ÄÏ
             </a-button>
             <a-button type="text" class="header-btn" @click="handleOpenHistoryDrawer">
-              <history-outlined /> å†å²
+              <history-outlined /> ÀúÊ·
             </a-button>
           </div>
         </div>
 
-        <!-- é¢„è®¾æ¨¡ç‰¹é€‰æ‹© -->
+        <!-- Ô¤ÉèÄ£ÌØÑ¡Ôñ -->
         <div class="panel-section">
           <div class="section-header">
-            <span>é€‰æ‹©é¢„è®¾æ¨¡ç‰¹</span>
+            <span>Ñ¡ÔñÔ¤ÉèÄ£ÌØ</span>
           </div>
           <div class="preset-models">
             <div
@@ -35,11 +35,11 @@
           </div>
         </div>
 
-        <!-- ä¸Šä¼ äººç‰©ç…§ç‰‡ -->
+        <!-- ÉÏ´«ÈËÎïÕÕÆ¬ -->
         <div class="panel-section">
           <div class="section-header">
-            <span>äººç‰©ç…§ç‰‡</span>
-            <span class="section-tip">æˆ–ä¸Šä¼ è‡ªå®šä¹‰ç…§ç‰‡</span>
+            <span>ÈËÎïÕÕÆ¬</span>
+            <span class="section-tip">»òÉÏ´«×Ô¶¨ÒåÕÕÆ¬</span>
           </div>
           <div class="upload-box">
             <a-upload
@@ -54,22 +54,22 @@
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
                   </svg>
                 </div>
-                <div class="upload-text">ä¸Šä¼ äººç‰©ç…§ç‰‡</div>
-                <div class="upload-tip">å»ºè®®æ­£é¢å…¨èº«ç…§ï¼ŒJPG/PNG â‰¤10MB</div>
+                <div class="upload-text">ÉÏ´«ÈËÎïÕÕÆ¬</div>
+                <div class="upload-tip">½¨ÒéÕıÃæÈ«ÉíÕÕ£¬JPG/PNG ¡Ü10MB</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
               <a-image :src="personImageUrl || selectedPresetPreviewUrl" :preview="{ src: personImageUrl || selectedPresetPreviewUrl }" />
               <div class="preview-actions">
-                <a-button size="small" @click="clearImage('person')">é‡æ–°é€‰æ‹©</a-button>
+                <a-button size="small" @click="clearImage('person')">ÖØĞÂÑ¡Ôñ</a-button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ä¸Šä¼ ä¸Šè¡£å›¾ç‰‡ -->
+        <!-- ÉÏ´«ÉÏÒÂÍ¼Æ¬ -->
         <div class="panel-section">
-          <div class="section-header">ä¸Šä¼ ä¸Šè¡£</div>
+          <div class="section-header">ÉÏ´«ÉÏÒÂ</div>
           <div class="upload-box small">
             <a-upload
               v-if="!topGarmentUrl"
@@ -83,22 +83,22 @@
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
                   </svg>
                 </div>
-                <div class="upload-text">é€‰æ‹©ä¸Šè¡£å›¾ç‰‡</div>
-                <div class="upload-tip">å¯é€‰ï¼Œä¸ä¸Šä¼ åˆ™åªè¯•ä¸‹è£…</div>
+                <div class="upload-text">Ñ¡ÔñÉÏÒÂÍ¼Æ¬</div>
+                <div class="upload-tip">¿ÉÑ¡£¬²»ÉÏ´«ÔòÖ»ÊÔÏÂ×°</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
               <a-image :src="topGarmentUrl" :preview="{ src: topGarmentUrl }" />
               <div class="preview-actions">
-                <a-button size="small" @click="clearImage('top')">é‡æ–°ä¸Šä¼ </a-button>
+                <a-button size="small" @click="clearImage('top')">ÖØĞÂÉÏ´«</a-button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ä¸Šä¼ ä¸‹è£…å›¾ç‰‡ -->
+        <!-- ÉÏ´«ÏÂ×°Í¼Æ¬ -->
         <div class="panel-section">
-          <div class="section-header">ä¸Šä¼ ä¸‹è£…</div>
+          <div class="section-header">ÉÏ´«ÏÂ×°</div>
           <div class="upload-box small">
             <a-upload
               v-if="!bottomGarmentUrl"
@@ -112,31 +112,31 @@
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 7l-4-4m0 0L8 7m4-4v12"/>
                   </svg>
                 </div>
-                <div class="upload-text">é€‰æ‹©ä¸‹è£…å›¾ç‰‡</div>
-                <div class="upload-tip">å¯é€‰ï¼Œä¸ä¸Šä¼ åˆ™åªè¯•ä¸Šè¡£</div>
+                <div class="upload-text">Ñ¡ÔñÏÂ×°Í¼Æ¬</div>
+                <div class="upload-tip">¿ÉÑ¡£¬²»ÉÏ´«ÔòÖ»ÊÔÉÏÒÂ</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
               <a-image :src="bottomGarmentUrl" :preview="{ src: bottomGarmentUrl }" />
               <div class="preview-actions">
-                <a-button size="small" @click="clearImage('bottom')">é‡æ–°ä¸Šä¼ </a-button>
+                <a-button size="small" @click="clearImage('bottom')">ÖØĞÂÉÏ´«</a-button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- åº•éƒ¨ç”ŸæˆæŒ‰é’® -->
+        <!-- µ×²¿Éú³É°´Å¥ -->
         <div class="panel-footer">
           <a-button
             type="primary"
             block
             size="large"
-            :loading="submitting || polling"
-            :disabled="(!personImageUrl && !selectedPresetKey) || (!topGarmentUrl && !bottomGarmentUrl)"
+            :loading="isTaskRunning"
+            :disabled="isTaskRunning || (!personImageUrl && !selectedPresetKey) || (!topGarmentUrl && !bottomGarmentUrl)"
             @click="handleSubmit"
             class="generate-btn"
           >
-            <span class="btn-text">{{ submitting || polling ? 'ç”Ÿæˆä¸­...' : 'âœ¨ å¼€å§‹AIè¯•è¡£' }}</span>
+            <span class="btn-text">{{ isTaskRunning ? 'Éú³ÉÖĞ...' : '? ¿ªÊ¼AIÊÔÒÂ' }}</span>
           </a-button>
           <a-alert
             v-if="errorMessage"
@@ -148,23 +148,23 @@
         </div>
       </div>
 
-      <!-- å³ä¾§ç»“æœå±•ç¤ºåŒºåŸŸ -->
+      <!-- ÓÒ²à½á¹ûÕ¹Ê¾ÇøÓò -->
       <div class="right-panel">
-        <!-- åŠ è½½ä¸­çŠ¶æ€ -->
+        <!-- ¼ÓÔØÖĞ×´Ì¬ -->
         <div v-if="polling" class="result-loading">
           <a-spin size="large" />
           <div class="loading-text">
-            <h3>æ­£åœ¨ç”Ÿæˆè¯•è¡£æ•ˆæœ...</h3>
-            <p>AIæ­£åœ¨ä¸ºæ‚¨è¿›è¡Œè™šæ‹Ÿè¯•è¡£ï¼Œè¯·ç¨å€™</p>
+            <h3>ÕıÔÚÉú³ÉÊÔÒÂĞ§¹û...</h3>
+            <p>AIÕıÔÚÎªÄú½øĞĞĞéÄâÊÔÒÂ£¬ÇëÉÔºò</p>
           </div>
         </div>
 
-        <!-- å·²ç”Ÿæˆç»“æœ - å±•ç¤ºå¤§å›¾ -->
+        <!-- ÒÑÉú³É½á¹û - Õ¹Ê¾´óÍ¼ -->
         <div v-else-if="resultImageUrl" class="result-content">
-          <h2 class="result-title">AI è¯•è¡£æ•ˆæœ</h2>
-          <p class="result-subtitle">æ™ºèƒ½è¯†åˆ«äººç‰©è½®å»“ï¼ŒçœŸå®è¿˜åŸæœè£…ç©¿ç€æ•ˆæœ</p>
+          <h2 class="result-title">AI ÊÔÒÂĞ§¹û</h2>
+          <p class="result-subtitle">ÖÇÄÜÊ¶±ğÈËÎïÂÖÀª£¬ÕæÊµ»¹Ô­·ş×°´©×ÅĞ§¹û</p>
 
-          <!-- ç”Ÿæˆç»“æœå¤§å›¾ -->
+          <!-- Éú³É½á¹û´óÍ¼ -->
           <div class="result-main">
             <a-image 
               :src="resultImageUrl" 
@@ -173,38 +173,38 @@
             />
           </div>
 
-          <!-- æ“ä½œæŒ‰é’® -->
+          <!-- ²Ù×÷°´Å¥ -->
           <div class="result-actions">
             <a-button type="primary" @click="downloadResult" class="action-btn">
-              <download-outlined /> ä¸‹è½½å›¾ç‰‡
+              <download-outlined /> ÏÂÔØÍ¼Æ¬
             </a-button>
             <a-button @click="shareResult" class="action-btn">
-              <share-alt-outlined /> åˆ†äº«
+              <share-alt-outlined /> ·ÖÏí
             </a-button>
           </div>
 
-          <!-- ä»»åŠ¡ä¿¡æ¯ -->
+          <!-- ÈÎÎñĞÅÏ¢ -->
           <div class="result-meta" v-if="taskDetail">
-            <span v-if="taskDetail.taskStatus">çŠ¶æ€ï¼š{{ taskDetail.taskStatus }}</span>
-            <span v-if="taskDetail.endTime">å®Œæˆï¼š{{ formatTime(taskDetail.endTime) }}</span>
+            <span v-if="taskDetail.taskStatus">×´Ì¬£º{{ taskDetail.taskStatus }}</span>
+            <span v-if="taskDetail.endTime">Íê³É£º{{ formatTime(taskDetail.endTime) }}</span>
           </div>
         </div>
 
-        <!-- ç©ºçŠ¶æ€ - æ˜¾ç¤ºå¼•å¯¼ -->
+        <!-- ¿Õ×´Ì¬ - ÏÔÊ¾Òıµ¼ -->
         <div v-else class="result-empty">
-          <h2 class="result-title">AI æ™ºèƒ½è¯•è¡£</h2>
-          <p class="result-subtitle">ä¸Šä¼ äººç‰©ä¸æœè£…å›¾ç‰‡ï¼ŒAI ä¸ºä½ ç”Ÿæˆé€¼çœŸçš„è¯•ç©¿æ•ˆæœ</p>
+          <h2 class="result-title">AI ÖÇÄÜÊÔÒÂ</h2>
+          <p class="result-subtitle">ÉÏ´«ÈËÎïÓë·ş×°Í¼Æ¬£¬AI ÎªÄãÉú³É±ÆÕæµÄÊÔ´©Ğ§¹û</p>
 
-          <!-- æ­¥éª¤æŒ‡ç¤º -->
+          <!-- ²½ÖèÖ¸Ê¾ -->
           <div class="flow-steps">
-            <span>é€‰æ‹©æ¨¡ç‰¹</span>
-            <span class="flow-arrow">Â»</span>
-            <span>ä¸Šä¼ æœè£…</span>
-            <span class="flow-arrow">Â»</span>
-            <span>ç”Ÿæˆæ•ˆæœ</span>
+            <span>Ñ¡ÔñÄ£ÌØ</span>
+            <span class="flow-arrow">?</span>
+            <span>ÉÏ´«·ş×°</span>
+            <span class="flow-arrow">?</span>
+            <span>Éú³ÉĞ§¹û</span>
           </div>
 
-          <!-- åŠŸèƒ½ç‰¹æ€§ -->
+          <!-- ¹¦ÄÜÌØĞÔ -->
           <div class="feature-grid">
             <div class="feature-item" v-for="feature in features" :key="feature.title">
               <span class="feature-icon">{{ feature.icon }}</span>
@@ -218,61 +218,61 @@
       </div>
     </div>
 
-    <!-- ä½¿ç”¨æŒ‡å—å¼¹çª— -->
+    <!-- Ê¹ÓÃÖ¸ÄÏµ¯´° -->
     <a-modal
       v-model:open="showGuideModal"
-      title="ğŸ“– AI è¯•è¡£ä½¿ç”¨æŒ‡å—"
+      title="?? AI ÊÔÒÂÊ¹ÓÃÖ¸ÄÏ"
       :footer="null"
       width="600px"
       class="guide-modal"
     >
       <div class="guide-content">
         <a-steps direction="vertical" :current="-1">
-          <a-step title="é€‰æ‹©æ¨¡ç‰¹">
+          <a-step title="Ñ¡ÔñÄ£ÌØ">
             <template #description>
-              <p>ä»é¢„è®¾æ¨¡ç‰¹ä¸­é€‰æ‹©ï¼Œæˆ–ä¸Šä¼ æ‚¨è‡ªå·±çš„å…¨èº«ç…§</p>
+              <p>´ÓÔ¤ÉèÄ£ÌØÖĞÑ¡Ôñ£¬»òÉÏ´«Äú×Ô¼ºµÄÈ«ÉíÕÕ</p>
             </template>
           </a-step>
-          <a-step title="ä¸Šä¼ æœè£…">
+          <a-step title="ÉÏ´«·ş×°">
             <template #description>
-              <p>ä¸Šä¼ ä¸Šè¡£æˆ–ä¸‹è£…å›¾ç‰‡ï¼Œä¹Ÿå¯ä»¥åŒæ—¶ä¸Šä¼ </p>
+              <p>ÉÏ´«ÉÏÒÂ»òÏÂ×°Í¼Æ¬£¬Ò²¿ÉÒÔÍ¬Ê±ÉÏ´«</p>
             </template>
           </a-step>
-          <a-step title="ç”Ÿæˆæ•ˆæœ">
+          <a-step title="Éú³ÉĞ§¹û">
             <template #description>
-              <p>ç‚¹å‡»"å¼€å§‹ AI è¯•è¡£"ï¼Œç­‰å¾… AI ç”Ÿæˆè¯•ç©¿æ•ˆæœ</p>
+              <p>µã»÷"¿ªÊ¼ AI ÊÔÒÂ"£¬µÈ´ı AI Éú³ÉÊÔ´©Ğ§¹û</p>
             </template>
           </a-step>
-          <a-step title="ä¿å­˜åˆ†äº«">
+          <a-step title="±£´æ·ÖÏí">
             <template #description>
-              <p>ä¸‹è½½ç»“æœå›¾ç‰‡ï¼Œæˆ–ä¿å­˜åˆ°å†å²è®°å½•</p>
+              <p>ÏÂÔØ½á¹ûÍ¼Æ¬£¬»ò±£´æµ½ÀúÊ·¼ÇÂ¼</p>
             </template>
           </a-step>
         </a-steps>
         <a-divider />
         <div class="guide-tips">
-          <h4>ğŸ’¡ æœ€ä½³å®è·µå»ºè®®</h4>
+          <h4>?? ×î¼ÑÊµ¼ù½¨Òé</h4>
           <ul>
-            <li>äººç‰©ç…§ç‰‡ï¼šæ­£é¢å…¨èº«ç…§ï¼ŒèƒŒæ™¯ç®€æ´ï¼Œå…‰çº¿å……è¶³</li>
-            <li>æœè£…å›¾ç‰‡ï¼šå¹³é“ºæˆ–æ¨¡ç‰¹å±•ç¤ºï¼Œå›¾æ¡ˆæ¸…æ™°å¯è§</li>
-            <li>å›¾ç‰‡æ ¼å¼ï¼šJPG æˆ– PNGï¼Œå¤§å°ä¸è¶…è¿‡ 10MB</li>
-            <li>ç”Ÿæˆæ—¶é—´ï¼šé€šå¸¸éœ€è¦ 30-60 ç§’ï¼Œè¯·è€å¿ƒç­‰å¾…</li>
+            <li>ÈËÎïÕÕÆ¬£ºÕıÃæÈ«ÉíÕÕ£¬±³¾°¼ò½à£¬¹âÏß³ä×ã</li>
+            <li>·ş×°Í¼Æ¬£ºÆ½ÆÌ»òÄ£ÌØÕ¹Ê¾£¬Í¼°¸ÇåÎú¿É¼û</li>
+            <li>Í¼Æ¬¸ñÊ½£ºJPG »ò PNG£¬´óĞ¡²»³¬¹ı 10MB</li>
+            <li>Éú³ÉÊ±¼ä£ºÍ¨³£ĞèÒª 30-60 Ãë£¬ÇëÄÍĞÄµÈ´ı</li>
           </ul>
         </div>
       </div>
     </a-modal>
 
-    <!-- å†å²è®°å½•æŠ½å±‰ -->
+    <!-- ÀúÊ·¼ÇÂ¼³éÌë -->
     <a-drawer
       v-model:open="showHistoryDrawer"
-      title="è¯•è¡£å†å²è®°å½•"
+      title="ÊÔÒÂÀúÊ·¼ÇÂ¼"
       placement="right"
       width="450"
       class="history-drawer"
     >
       <a-spin :spinning="historyLoading">
         <div class="history-content">
-          <a-empty v-if="historyList.length === 0" description="æš‚æ— å†å²è®°å½•">
+          <a-empty v-if="historyList.length === 0" description="ÔİÎŞÀúÊ·¼ÇÂ¼">
             <template #image>
               <history-outlined style="font-size: 64px; color: #666" />
             </template>
@@ -295,13 +295,13 @@
                 </p>
                 <div class="history-actions">
                   <a-button type="primary" size="small" @click="loadHistoryItem(item)">
-                    æŸ¥çœ‹
+                    ²é¿´
                   </a-button>
                   <a-button size="small" @click="downloadHistoryImage(item.localImageUrl)">
-                    ä¸‹è½½
+                    ÏÂÔØ
                   </a-button>
                   <a-button type="text" danger size="small" @click.stop="deleteHistoryItem(item, index)">
-                    åˆ é™¤
+                    É¾³ı
                   </a-button>
                 </div>
               </div>
@@ -329,14 +329,19 @@ import {
 } from '@ant-design/icons-vue'
 import { upload, submit, getStatus, getTryOnHistory, deleteTryOnRecord } from '@/api/aiTryOnController'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { useTryOnTaskStore } from '@/stores/useTryOnTaskStore'
 
 const loginUserStore = useLoginUserStore()
+const tryOnTaskStore = useTryOnTaskStore()
+
+const storageKey = 'try_on_task'
+const pollIntervalMs = 3000
 
 const personImageUrl = ref<string>('')
 const topGarmentUrl = ref<string>('')
 const bottomGarmentUrl = ref<string>('')
 
-// é¢„è®¾æ¨¡ç‰¹åˆ—è¡¨
+// Ô¤ÉèÄ£ÌØÁĞ±í
 const presetModels = [
   {
     key: 'Aaron',
@@ -377,42 +382,47 @@ const presetModels = [
 
 const selectedPresetKey = ref<string>('')
 
-// åŠŸèƒ½ç‰¹æ€§æ•°æ®
+// ¹¦ÄÜÌØĞÔÊı¾İ
 const features = [
   {
-    icon: 'ğŸ¨',
-    title: 'æ™ºèƒ½è¯†åˆ«',
-    desc: 'AI ç²¾å‡†è¯†åˆ«äººç‰©è½®å»“ä¸æœè£…æ¬¾å¼',
+    icon: '??',
+    title: 'ÖÇÄÜÊ¶±ğ',
+    desc: 'AI ¾«×¼Ê¶±ğÈËÎïÂÖÀªÓë·ş×°¿îÊ½',
   },
   {
-    icon: 'âš¡',
-    title: 'å¿«é€Ÿç”Ÿæˆ',
-    desc: '30ç§’å†…å®Œæˆè¯•è¡£æ•ˆæœç”Ÿæˆ',
+    icon: '?',
+    title: '¿ìËÙÉú³É',
+    desc: '30ÃëÄÚÍê³ÉÊÔÒÂĞ§¹ûÉú³É',
   },
   {
-    icon: 'ğŸ¯',
-    title: 'çœŸå®è¿˜åŸ',
-    desc: 'é«˜åº¦è¿˜åŸæœè£…æè´¨ä¸ç©¿ç€æ•ˆæœ',
+    icon: '??',
+    title: 'ÕæÊµ»¹Ô­',
+    desc: '¸ß¶È»¹Ô­·ş×°²ÄÖÊÓë´©×ÅĞ§¹û',
   },
   {
-    icon: 'ğŸ’¾',
-    title: 'å†å²ä¿å­˜',
-    desc: 'æ”¯æŒä¿å­˜å†å²è®°å½•ï¼Œéšæ—¶æŸ¥çœ‹',
+    icon: '??',
+    title: 'ÀúÊ·±£´æ',
+    desc: 'Ö§³Ö±£´æÀúÊ·¼ÇÂ¼£¬ËæÊ±²é¿´',
   },
 ]
 
-// ä½¿ç”¨æŒ‡å—å¼¹çª—
+// Ê¹ÓÃÖ¸ÄÏµ¯´°
 const showGuideModal = ref(false)
 
-// å†å²è®°å½•æŠ½å±‰
+// ÀúÊ·¼ÇÂ¼³éÌë
 const showHistoryDrawer = ref(false)
 const historyList = ref<API.QueryTaskHistoryResultVO[]>([])
 const historyLoading = ref(false)
 
-// é¢„è®¾æ¨¡ç‰¹é¢„è§ˆåœ°å€ï¼ˆç”¨äºäººç‰©é¢„è§ˆï¼Œå½“è¿˜æœªä¸Šä¼ åˆ° COS æ—¶ä½¿ç”¨æœ¬åœ° assetï¼‰
+// Ô¤ÉèÄ£ÌØÔ¤ÀÀµØÖ·£¨ÓÃÓÚÈËÎïÔ¤ÀÀ£¬µ±»¹Î´ÉÏ´«µ½ COS Ê±Ê¹ÓÃ±¾µØ asset£©
 const selectedPresetPreviewUrl = computed(() => {
   const model = presetModels.find((m) => m.key === selectedPresetKey.value)
   return model ? model.assetUrl : ''
+})
+
+const isTaskRunning = computed(() => {
+  const status = tryOnTaskStore.notification?.status
+  return submitting.value || polling.value || status === 'PENDING' || status === 'PROCESSING'
 })
 
 const submitting = ref(false)
@@ -422,17 +432,161 @@ const resultImageUrl = ref<string>('')
 const taskDetail = ref<API.TryOnTask | null>(null)
 const errorMessage = ref<string>('')
 
-let pollTimer: number | null = null
+let pollTimer: ReturnType<typeof window.setTimeout> | null = null
 
 const clearPollTimer = () => {
   if (pollTimer !== null) {
-    window.clearInterval(pollTimer)
+    window.clearTimeout(pollTimer)
     pollTimer = null
   }
 }
 
+type TryOnTaskSnapshot = {
+  taskId: string
+  status: string
+  resultUrl?: string
+  errorMessage?: string
+  updateTime?: number
+  personImageUrl?: string
+  topGarmentUrl?: string
+  bottomGarmentUrl?: string
+}
+
+const readTaskSnapshot = (): TryOnTaskSnapshot | null => {
+  const raw = localStorage.getItem(storageKey)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as TryOnTaskSnapshot
+  } catch {
+    return null
+  }
+}
+
+const saveTaskSnapshot = (snapshot: TryOnTaskSnapshot) => {
+  localStorage.setItem(storageKey, JSON.stringify(snapshot))
+}
+
+const stopPolling = () => {
+  clearPollTimer()
+}
+
+const applySnapshot = (snapshot: TryOnTaskSnapshot) => {
+  currentTaskId.value = snapshot.taskId
+  if (snapshot.personImageUrl !== undefined) {
+    personImageUrl.value = snapshot.personImageUrl || ''
+  }
+  if (snapshot.topGarmentUrl !== undefined) {
+    topGarmentUrl.value = snapshot.topGarmentUrl || ''
+  }
+  if (snapshot.bottomGarmentUrl !== undefined) {
+    bottomGarmentUrl.value = snapshot.bottomGarmentUrl || ''
+  }
+  if (snapshot.resultUrl) {
+    resultImageUrl.value = snapshot.resultUrl
+  }
+}
+
+const pollTryOnStatus = async (taskId: string) => {
+  try {
+    const res = await getStatus({ taskId })
+    const data = res?.data
+    taskDetail.value = data || null
+
+    if (!data) {
+      throw new Error('ÈÎÎñ×´Ì¬Îª¿Õ')
+    }
+
+    const status = data.taskStatus
+    const isSuccess = status === 'SUCCESS' || status === 'SUCCEEDED'
+    if (isSuccess) {
+      const resultUrl = data.localResultUrl || data.resultImageUrl || ''
+      resultImageUrl.value = resultUrl
+      polling.value = false
+      stopPolling()
+
+      saveTaskSnapshot({
+        taskId,
+        status: 'SUCCEEDED',
+        resultUrl,
+        errorMessage: data.errorMessage,
+        updateTime: data.updateTime,
+        personImageUrl: personImageUrl.value,
+        topGarmentUrl: topGarmentUrl.value,
+        bottomGarmentUrl: bottomGarmentUrl.value,
+      })
+
+      tryOnTaskStore.markSucceeded(taskId, resultUrl)
+      message.success('ÊÔÒÂÈÎÎñÒÑÍê³É')
+      return
+    }
+
+    if (status === 'FAILED') {
+      errorMessage.value = data.errorMessage || 'ÊÔÒÂÈÎÎñÊ§°Ü£¬ÇëÉÔºóÖØÊÔ'
+      polling.value = false
+      stopPolling()
+
+      saveTaskSnapshot({
+        taskId,
+        status: 'FAILED',
+        errorMessage: errorMessage.value,
+        updateTime: data.updateTime,
+        personImageUrl: personImageUrl.value,
+        topGarmentUrl: topGarmentUrl.value,
+        bottomGarmentUrl: bottomGarmentUrl.value,
+      })
+
+      tryOnTaskStore.markFailed(taskId, errorMessage.value)
+      return
+    }
+
+    const nextStatus = status === 'RUNNING' ? 'PROCESSING' : status || 'PENDING'
+    polling.value = true
+    tryOnTaskStore.markProcessing(taskId)
+    saveTaskSnapshot({
+      taskId,
+      status: nextStatus,
+      updateTime: data.updateTime,
+      personImageUrl: personImageUrl.value,
+      topGarmentUrl: topGarmentUrl.value,
+      bottomGarmentUrl: bottomGarmentUrl.value,
+    })
+
+    stopPolling()
+    pollTimer = window.setTimeout(() => {
+      pollTryOnStatus(taskId)
+    }, pollIntervalMs)
+  } catch (e: any) {
+    console.error('²éÑ¯ÈÎÎñ×´Ì¬Ê§°Ü:', e)
+    polling.value = false
+    stopPolling()
+    errorMessage.value = e?.message || '²éÑ¯ÈÎÎñ×´Ì¬Ê§°Ü'
+  }
+}
+
 onMounted(() => {
-  // é¦–æ¬¡è®¿é—®æ˜¾ç¤ºä½¿ç”¨æŒ‡å—
+  void loginUserStore.fetchLoginUser()
+  tryOnTaskStore.markRead()
+
+  const snapshot = readTaskSnapshot()
+  const creationParams = tryOnTaskStore.getCreationParams()
+  if (snapshot) {
+    applySnapshot(snapshot)
+  } else if (creationParams) {
+    personImageUrl.value = creationParams.personImageUrl || ''
+    topGarmentUrl.value = creationParams.topGarmentUrl || ''
+    bottomGarmentUrl.value = creationParams.bottomGarmentUrl || ''
+  }
+
+  if (snapshot?.status === 'SUCCEEDED' && snapshot.resultUrl) {
+    polling.value = false
+  } else if (snapshot?.status === 'PENDING' || snapshot?.status === 'PROCESSING' || snapshot?.status === 'RUNNING') {
+    polling.value = true
+    pollTryOnStatus(snapshot.taskId)
+  }
+
+  // Ê×´Î·ÃÎÊÏÔÊ¾Ê¹ÓÃÖ¸ÄÏ
   const hasVisited = localStorage.getItem('aiTryOn_hasVisited')
   if (!hasVisited) {
     setTimeout(() => {
@@ -448,7 +602,7 @@ onBeforeUnmount(() => {
 
 const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
   if (file.size > 10 * 1024 * 1024) {
-    message.error('å›¾ç‰‡å¤§å°ä¸èƒ½è¶…è¿‡ 10MB')
+    message.error('Í¼Æ¬´óĞ¡²»ÄÜ³¬¹ı 10MB')
     return false
   }
 
@@ -459,12 +613,12 @@ const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
     const res = await upload(formData as any)
     const url = res?.data
     if (!url) {
-      throw new Error('ä¸Šä¼ å¤±è´¥ï¼Œæœªè·å–åˆ°å›¾ç‰‡åœ°å€')
+      throw new Error('ÉÏ´«Ê§°Ü£¬Î´»ñÈ¡µ½Í¼Æ¬µØÖ·')
     }
 
     if (type === 'person') {
       personImageUrl.value = url
-      // ç”¨æˆ·æ‰‹åŠ¨ä¸Šä¼ äººç‰©å›¾ç‰‡æ—¶ï¼Œæ¸…ç©ºé¢„è®¾é€‰æ‹©
+      // ÓÃ»§ÊÖ¶¯ÉÏ´«ÈËÎïÍ¼Æ¬Ê±£¬Çå¿ÕÔ¤ÉèÑ¡Ôñ
       selectedPresetKey.value = ''
     } else if (type === 'top') {
       topGarmentUrl.value = url
@@ -472,85 +626,53 @@ const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
       bottomGarmentUrl.value = url
     }
 
-    message.success('å›¾ç‰‡ä¸Šä¼ æˆåŠŸ')
+    message.success('Í¼Æ¬ÉÏ´«³É¹¦')
   } catch (e: any) {
-    console.error('ä¸Šä¼ å¤±è´¥:', e)
-    message.error(e?.message || 'ä¸Šä¼ å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•')
+    console.error('ÉÏ´«Ê§°Ü:', e)
+    message.error(e?.message || 'ÉÏ´«Ê§°Ü£¬ÇëÉÔºóÖØÊÔ')
   }
 
   return false
 }
 
-// é€‰æ‹©é¢„è®¾æ¨¡ç‰¹ï¼šåªè®°å½•é€‰ä¸­ï¼Œç”¨äºé¢„è§ˆä¸åç»­æäº¤æ—¶ä¸Šä¼ 
+// Ñ¡ÔñÔ¤ÉèÄ£ÌØ£ºÖ»¼ÇÂ¼Ñ¡ÖĞ£¬ÓÃÓÚÔ¤ÀÀÓëºóĞøÌá½»Ê±ÉÏ´«
 const handleSelectPreset = (model: { key: string; name: string; assetUrl: string }) => {
   selectedPresetKey.value = model.key
-  // é€‰ä¸­é¢„è®¾æ—¶ï¼Œä¸ç«‹åˆ»ä¸Šä¼ ï¼›å¦‚æœä¹‹å‰æœ‰ç”¨æˆ·ä¸Šä¼ çš„äººç‰©ç…§ï¼Œåˆ™ä»…æ›´æ–°é€‰ä¸­çŠ¶æ€
-  message.success(`å·²é€‰æ‹©é¢„è®¾æ¨¡ç‰¹ï¼š${model.name}`)
+  // Ñ¡ÖĞÔ¤ÉèÊ±£¬²»Á¢¿ÌÉÏ´«£»Èç¹ûÖ®Ç°ÓĞÓÃ»§ÉÏ´«µÄÈËÎïÕÕ£¬Ôò½ö¸üĞÂÑ¡ÖĞ×´Ì¬
+  message.success(`ÒÑÑ¡ÔñÔ¤ÉèÄ£ÌØ£º${model.name}`)
 }
 
 const clearImage = (type: 'person' | 'top' | 'bottom') => {
   if (type === 'person') {
-    // æ¸…ç©ºäººç‰©å›¾ç‰‡ï¼ˆæ— è®ºæ˜¯ä¸Šä¼ çš„è¿˜æ˜¯é€šè¿‡é¢„è®¾æ¨¡ç‰¹ç”Ÿæˆçš„ URLï¼‰
+    // Çå¿ÕÈËÎïÍ¼Æ¬£¨ÎŞÂÛÊÇÉÏ´«µÄ»¹ÊÇÍ¨¹ıÔ¤ÉèÄ£ÌØÉú³ÉµÄ URL£©
     personImageUrl.value = ''
-    // åŒæ—¶æ¸…ç©ºé¢„è®¾æ¨¡ç‰¹é€‰æ‹©ï¼Œè¿™æ ·å†æ¬¡ç‚¹å‡»â€œå¼€å§‹ AI è¯•è¡£â€ä¼šå¼ºåˆ¶ç”¨æˆ·é‡æ–°é€‰æ‹©/ä¸Šä¼ 
+    // Í¬Ê±Çå¿ÕÔ¤ÉèÄ£ÌØÑ¡Ôñ£¬ÕâÑùÔÙ´Îµã»÷¡°¿ªÊ¼ AI ÊÔÒÂ¡±»áÇ¿ÖÆÓÃ»§ÖØĞÂÑ¡Ôñ/ÉÏ´«
     selectedPresetKey.value = ''
   }
   if (type === 'top') topGarmentUrl.value = ''
   if (type === 'bottom') bottomGarmentUrl.value = ''
 }
 
-const startPolling = (taskId: string) => {
-  clearPollTimer()
-  polling.value = true
-
-  pollTimer = window.setInterval(async () => {
-    try {
-      const res = await getStatus({ taskId })
-      const data = res?.data
-      taskDetail.value = data
-
-      if (!data) return
-
-      const status = data.taskStatus
-      const isSuccess = status === 'SUCCESS' || status === 'SUCCEEDED'
-
-      if (isSuccess && (data.localResultUrl || data.resultImageUrl)) {
-        resultImageUrl.value = data.localResultUrl || data.resultImageUrl || ''
-        message.success('è¯•è¡£ä»»åŠ¡å·²å®Œæˆ')
-        polling.value = false
-        clearPollTimer()
-      } else if (status === 'FAILED') {
-        errorMessage.value = data.errorMessage || 'è¯•è¡£ä»»åŠ¡å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•'
-        polling.value = false
-        clearPollTimer()
-      }
-    } catch (e: any) {
-      console.error('æŸ¥è¯¢ä»»åŠ¡çŠ¶æ€å¤±è´¥:', e)
-      polling.value = false
-      clearPollTimer()
-      errorMessage.value = e?.message || 'æŸ¥è¯¢ä»»åŠ¡çŠ¶æ€å¤±è´¥'
-    }
-  }, 3000)
-}
-
 const handleSubmit = async () => {
-  // å¿…é¡»è¦ä¹ˆä¸Šä¼ äººç‰©ç…§ç‰‡ï¼Œè¦ä¹ˆé€‰æ‹©é¢„è®¾æ¨¡ç‰¹
+  // ±ØĞëÒªÃ´ÉÏ´«ÈËÎïÕÕÆ¬£¬ÒªÃ´Ñ¡ÔñÔ¤ÉèÄ£ÌØ
   if (!personImageUrl.value && !selectedPresetKey.value) {
-    message.warning('è¯·å…ˆé€‰æ‹©é¢„è®¾æ¨¡ç‰¹æˆ–ä¸Šä¼ äººç‰©ç…§ç‰‡')
+    message.warning('ÇëÏÈÑ¡ÔñÔ¤ÉèÄ£ÌØ»òÉÏ´«ÈËÎïÕÕÆ¬')
     return
   }
   if (!topGarmentUrl.value && !bottomGarmentUrl.value) {
-    message.warning('è¯·è‡³å°‘ä¸Šä¼ ä¸Šè¡£æˆ–ä¸‹è£…å›¾ç‰‡')
+    message.warning('ÇëÖÁÉÙÉÏ´«ÉÏÒÂ»òÏÂ×°Í¼Æ¬')
     return
   }
 
+  stopPolling()
   submitting.value = true
+  polling.value = false
   errorMessage.value = ''
   resultImageUrl.value = ''
   taskDetail.value = null
 
   try {
-    // å¦‚æœè¿˜æ²¡æœ‰äººç‰©çš„ COS åœ°å€ï¼Œä½†é€‰ä¸­äº†é¢„è®¾æ¨¡ç‰¹ï¼Œåˆ™æ­¤æ—¶å…ˆä¸Šä¼ é¢„è®¾æ¨¡ç‰¹
+    // Èç¹û»¹Ã»ÓĞÈËÎïµÄ COS µØÖ·£¬µ«Ñ¡ÖĞÁËÔ¤ÉèÄ£ÌØ£¬Ôò´ËÊ±ÏÈÉÏ´«Ô¤ÉèÄ£ÌØ
     if (!personImageUrl.value && selectedPresetKey.value) {
       const model = presetModels.find((m) => m.key === selectedPresetKey.value)
       if (model) {
@@ -564,7 +686,7 @@ const handleSubmit = async () => {
         const uploadRes = await upload(formData as any)
         const url = uploadRes?.data
         if (!url) {
-          throw new Error('ä¸Šä¼ é¢„è®¾æ¨¡ç‰¹å¤±è´¥ï¼Œæœªè·å–åˆ°å›¾ç‰‡åœ°å€')
+          throw new Error('ÉÏ´«Ô¤ÉèÄ£ÌØÊ§°Ü£¬Î´»ñÈ¡µ½Í¼Æ¬µØÖ·')
         }
         personImageUrl.value = url
       }
@@ -578,15 +700,33 @@ const handleSubmit = async () => {
 
     const taskId = res?.data
     if (!taskId) {
-      throw new Error('æœªè·å–åˆ°ä»»åŠ¡ ID')
+      throw new Error('Î´»ñÈ¡µ½ÈÎÎñ ID')
     }
 
     currentTaskId.value = taskId
-    message.success('ä»»åŠ¡æäº¤æˆåŠŸï¼Œæ­£åœ¨ç”Ÿæˆè¯•è¡£æ•ˆæœ...')
-    startPolling(taskId)
+
+    saveTaskSnapshot({
+      taskId,
+      status: 'PENDING',
+      updateTime: Date.now(),
+      personImageUrl: personImageUrl.value,
+      topGarmentUrl: topGarmentUrl.value,
+      bottomGarmentUrl: bottomGarmentUrl.value,
+    })
+
+    tryOnTaskStore.createTask({
+      taskId,
+      personImageUrl: personImageUrl.value,
+      topGarmentUrl: topGarmentUrl.value,
+      bottomGarmentUrl: bottomGarmentUrl.value,
+    })
+
+    message.success('ÈÎÎñÌá½»³É¹¦£¬ÕıÔÚÉú³ÉÊÔÒÂĞ§¹û...')
+    polling.value = true
+    pollTryOnStatus(taskId)
   } catch (e: any) {
-    console.error('æäº¤è¯•è¡£ä»»åŠ¡å¤±è´¥:', e)
-    errorMessage.value = e?.message || 'æäº¤è¯•è¡£ä»»åŠ¡å¤±è´¥ï¼Œè¯·ç¨åé‡è¯•'
+    console.error('Ìá½»ÊÔÒÂÈÎÎñÊ§°Ü:', e)
+    errorMessage.value = e?.message || 'Ìá½»ÊÔÒÂÈÎÎñÊ§°Ü£¬ÇëÉÔºóÖØÊÔ'
   } finally {
     submitting.value = false
   }
@@ -594,7 +734,7 @@ const handleSubmit = async () => {
 
 
 
-// ä¸‹è½½ç»“æœå›¾ç‰‡
+// ÏÂÔØ½á¹ûÍ¼Æ¬
 const downloadResult = () => {
   if (!resultImageUrl.value) return
 
@@ -604,20 +744,20 @@ const downloadResult = () => {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  message.success('å›¾ç‰‡ä¸‹è½½æˆåŠŸ')
+  message.success('Í¼Æ¬ÏÂÔØ³É¹¦')
 }
 
-// ä¿å­˜åˆ°å†å²è®°å½•
+// ±£´æµ½ÀúÊ·¼ÇÂ¼
 const saveToHistory = () => {
   if (!resultImageUrl.value) return
-  message.success('å·²è‡ªåŠ¨ä¿å­˜ï¼Œå¯åœ¨å†å²è®°å½•ä¸­æŸ¥çœ‹')
+  message.success('ÒÑ×Ô¶¯±£´æ£¬¿ÉÔÚÀúÊ·¼ÇÂ¼ÖĞ²é¿´')
 }
 
-// ä»åç«¯åŠ è½½å†å²è®°å½•
+// ´Óºó¶Ë¼ÓÔØÀúÊ·¼ÇÂ¼
 const loadHistoryFromBackend = async () => {
   const userId = loginUserStore.loginUser?.id
   if (!userId) {
-    message.warning('è¯·å…ˆç™»å½•')
+    message.warning('ÇëÏÈµÇÂ¼')
     return
   }
 
@@ -625,26 +765,26 @@ const loadHistoryFromBackend = async () => {
   try {
     const res = await getTryOnHistory({ userId })
     if (res.data.code === 0 && res.data.data) {
-      // è¿‡æ»¤æ‰æ— æ•ˆæ•°æ®ï¼ˆlocalImageUrl ä¸º nullï¼‰
+      // ¹ıÂËµôÎŞĞ§Êı¾İ£¨localImageUrl Îª null£©
       historyList.value = res.data.data.filter(
         (item) => item.localImageUrl && item.submitTime
       )
     } else {
-      message.error('åŠ è½½å†å²è®°å½•å¤±è´¥ï¼š' + res.data.message)
+      message.error('¼ÓÔØÀúÊ·¼ÇÂ¼Ê§°Ü£º' + res.data.message)
     }
   } catch (e: any) {
-    console.error('åŠ è½½å†å²è®°å½•å¤±è´¥:', e)
-    message.error(e?.message || 'åŠ è½½å†å²è®°å½•å¤±è´¥')
+    console.error('¼ÓÔØÀúÊ·¼ÇÂ¼Ê§°Ü:', e)
+    message.error(e?.message || '¼ÓÔØÀúÊ·¼ÇÂ¼Ê§°Ü')
   } finally {
     historyLoading.value = false
   }
 }
 
-// åŠ è½½å†å²è®°å½•é¡¹
+// ¼ÓÔØÀúÊ·¼ÇÂ¼Ïî
 const loadHistoryItem = (item: API.QueryTaskHistoryResultVO) => {
   Modal.confirm({
-    title: 'æŸ¥çœ‹å†å²è®°å½•',
-    content: 'æ˜¯å¦æŸ¥çœ‹æ­¤å†å²è®°å½•çš„è¯•è¡£æ•ˆæœï¼Ÿ',
+    title: '²é¿´ÀúÊ·¼ÇÂ¼',
+    content: 'ÊÇ·ñ²é¿´´ËÀúÊ·¼ÇÂ¼µÄÊÔÒÂĞ§¹û£¿',
     onOk: () => {
       resultImageUrl.value = item.localImageUrl || ''
       taskDetail.value = {
@@ -653,63 +793,63 @@ const loadHistoryItem = (item: API.QueryTaskHistoryResultVO) => {
         endTime: item.endTime,
       } as any
       showHistoryDrawer.value = false
-      message.success('å†å²è®°å½•å·²åŠ è½½')
+      message.success('ÀúÊ·¼ÇÂ¼ÒÑ¼ÓÔØ')
     },
   })
 }
 
-// åˆ é™¤å†å²è®°å½•é¡¹ï¼ˆè°ƒç”¨åç«¯æ¥å£ï¼‰
+// É¾³ıÀúÊ·¼ÇÂ¼Ïî£¨µ÷ÓÃºó¶Ë½Ó¿Ú£©
 const deleteHistoryItem = async (item: API.QueryTaskHistoryResultVO, index: number) => {
   if (!item.id) {
-    message.error('è®°å½•IDä¸å­˜åœ¨ï¼Œæ— æ³•åˆ é™¤')
+    message.error('¼ÇÂ¼ID²»´æÔÚ£¬ÎŞ·¨É¾³ı')
     return
   }
 
   Modal.confirm({
-    title: 'åˆ é™¤å†å²è®°å½•',
-    content: 'ç¡®å®šè¦åˆ é™¤æ­¤è®°å½•å—ï¼Ÿåˆ é™¤åå°†æ— æ³•æ¢å¤ã€‚',
-    okText: 'ç¡®å®š',
-    cancelText: 'å–æ¶ˆ',
+    title: 'É¾³ıÀúÊ·¼ÇÂ¼',
+    content: 'È·¶¨ÒªÉ¾³ı´Ë¼ÇÂ¼Âğ£¿É¾³ıºó½«ÎŞ·¨»Ö¸´¡£',
+    okText: 'È·¶¨',
+    cancelText: 'È¡Ïû',
     okType: 'danger',
     onOk: async () => {
       try {
         const res = await deleteTryOnRecord({ id: item.id })
         if (res.data.code === 0 && res.data.data) {
           historyList.value.splice(index, 1)
-          message.success('åˆ é™¤æˆåŠŸ')
+          message.success('É¾³ı³É¹¦')
         } else {
-          message.error('åˆ é™¤å¤±è´¥ï¼š' + res.data.message)
+          message.error('É¾³ıÊ§°Ü£º' + res.data.message)
         }
       } catch (e: any) {
-        console.error('åˆ é™¤å¤±è´¥:', e)
-        message.error(e?.message || 'åˆ é™¤å¤±è´¥')
+        console.error('É¾³ıÊ§°Ü:', e)
+        message.error(e?.message || 'É¾³ıÊ§°Ü')
       }
     },
   })
 }
 
-// åˆ†äº«ç»“æœ
+// ·ÖÏí½á¹û
 const shareResult = () => {
   if (!resultImageUrl.value) return
 
-  // å¤åˆ¶å›¾ç‰‡é“¾æ¥åˆ°å‰ªè´´æ¿
+  // ¸´ÖÆÍ¼Æ¬Á´½Óµ½¼ôÌù°å
   navigator.clipboard
     .writeText(resultImageUrl.value)
     .then(() => {
-      message.success('å›¾ç‰‡é“¾æ¥å·²å¤åˆ¶åˆ°å‰ªè´´æ¿')
+      message.success('Í¼Æ¬Á´½ÓÒÑ¸´ÖÆµ½¼ôÌù°å')
     })
     .catch(() => {
-      message.error('å¤åˆ¶å¤±è´¥ï¼Œè¯·æ‰‹åŠ¨å¤åˆ¶')
+      message.error('¸´ÖÆÊ§°Ü£¬ÇëÊÖ¶¯¸´ÖÆ')
     })
 }
 
-// æ‰“å¼€å†å²è®°å½•æŠ½å±‰æ—¶åŠ è½½æ•°æ®
+// ´ò¿ªÀúÊ·¼ÇÂ¼³éÌëÊ±¼ÓÔØÊı¾İ
 const handleOpenHistoryDrawer = () => {
   showHistoryDrawer.value = true
   loadHistoryFromBackend()
 }
 
-// æ ¼å¼åŒ–æ—¶é—´
+// ¸ñÊ½»¯Ê±¼ä
 const formatTime = (timeStr: string | undefined) => {
   if (!timeStr) return '-'
   return new Date(timeStr).toLocaleString('zh-CN', {
@@ -721,7 +861,7 @@ const formatTime = (timeStr: string | undefined) => {
   })
 }
 
-// ä¸‹è½½å†å²è®°å½•å›¾ç‰‡
+// ÏÂÔØÀúÊ·¼ÇÂ¼Í¼Æ¬
 const downloadHistoryImage = (imageUrl: string | undefined) => {
   if (!imageUrl) return
 
@@ -731,26 +871,26 @@ const downloadHistoryImage = (imageUrl: string | undefined) => {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  message.success('å›¾ç‰‡ä¸‹è½½æˆåŠŸ')
+  message.success('Í¼Æ¬ÏÂÔØ³É¹¦')
 }
 
-// åˆ†äº«å†å²è®°å½•å›¾ç‰‡
+// ·ÖÏíÀúÊ·¼ÇÂ¼Í¼Æ¬
 const shareHistoryImage = (imageUrl: string | undefined) => {
   if (!imageUrl) return
 
   navigator.clipboard
     .writeText(imageUrl)
     .then(() => {
-      message.success('å›¾ç‰‡é“¾æ¥å·²å¤åˆ¶åˆ°å‰ªè´´æ¿')
+      message.success('Í¼Æ¬Á´½ÓÒÑ¸´ÖÆµ½¼ôÌù°å')
     })
     .catch(() => {
-      message.error('å¤åˆ¶å¤±è´¥ï¼Œè¯·æ‰‹åŠ¨å¤åˆ¶')
+      message.error('¸´ÖÆÊ§°Ü£¬ÇëÊÖ¶¯¸´ÖÆ')
     })
 }
 </script>
 
 <style scoped>
-/* å…¨å±€åŸºç¡€æ ·å¼ */
+/* È«¾Ö»ù´¡ÑùÊ½ */
 .tryon-page {
   height: 100vh;
   overflow: hidden;
@@ -758,14 +898,14 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-/* ä¸»å¸ƒå±€ - å·¦å³åˆ†æ  */
+/* Ö÷²¼¾Ö - ×óÓÒ·ÖÀ¸ */
 .main-layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* å·¦ä¾§æ“ä½œé¢æ¿ */
+/* ×ó²à²Ù×÷Ãæ°å */
 .left-panel {
   width: 420px;
   min-width: 420px;
@@ -778,7 +918,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   overflow-x: hidden;
 }
 
-/* å·¦ä¾§æ»šåŠ¨æ¡ç¾åŒ– */
+/* ×ó²à¹ö¶¯ÌõÃÀ»¯ */
 .left-panel::-webkit-scrollbar {
   width: 6px;
 }
@@ -796,7 +936,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   background: #4a4a6c;
 }
 
-/* é¢æ¿å¤´éƒ¨ */
+/* Ãæ°åÍ·²¿ */
 .panel-header {
   padding: 20px;
   border-bottom: 1px solid #3a3a5c;
@@ -826,13 +966,13 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   color: #d4a574 !important;
 }
 
-/* é¢æ¿åŒºå— */
+/* Ãæ°åÇø¿é */
 .panel-section {
   padding: 16px 20px;
   border-bottom: 1px solid #3a3a5c;
 }
 
-/* åŒºå—æ ‡é¢˜ */
+/* Çø¿é±êÌâ */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -849,7 +989,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   font-weight: 400;
 }
 
-/* é¢„è®¾æ¨¡ç‰¹ç½‘æ ¼ */
+/* Ô¤ÉèÄ£ÌØÍø¸ñ */
 .preset-models {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -889,7 +1029,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   color: #888;
 }
 
-/* ä¸Šä¼ æ¡† */
+/* ÉÏ´«¿ò */
 .upload-box {
   border: 1px dashed #4a4a6c;
   border-radius: 12px;
@@ -937,7 +1077,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   line-height: 1.5;
 }
 
-/* å·²ä¸Šä¼ é¢„è§ˆ */
+/* ÒÑÉÏ´«Ô¤ÀÀ */
 .uploaded-preview {
   width: 100%;
   padding: 12px;
@@ -972,7 +1112,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   border-color: #667eea;
 }
 
-/* åº•éƒ¨ç”ŸæˆæŒ‰é’® */
+/* µ×²¿Éú³É°´Å¥ */
 .panel-footer {
   padding: 20px;
   margin-top: auto;
@@ -1010,7 +1150,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   margin-top: 12px;
 }
 
-/* å³ä¾§ç»“æœåŒºåŸŸ */
+/* ÓÒ²à½á¹ûÇøÓò */
 .right-panel {
   flex: 1;
   display: flex;
@@ -1023,7 +1163,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   overflow-y: auto;
 }
 
-/* åŠ è½½çŠ¶æ€ */
+/* ¼ÓÔØ×´Ì¬ */
 .result-loading {
   display: flex;
   flex-direction: column;
@@ -1048,7 +1188,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   margin: 0;
 }
 
-/* ç»“æœå†…å®¹ */
+/* ½á¹ûÄÚÈİ */
 .result-content,
 .result-empty {
   display: flex;
@@ -1073,7 +1213,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   line-height: 1.6;
 }
 
-/* æ­¥éª¤æŒ‡ç¤º */
+/* ²½ÖèÖ¸Ê¾ */
 .flow-steps {
   display: flex;
   align-items: center;
@@ -1088,7 +1228,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   font-weight: bold;
 }
 
-/* ç”Ÿæˆç»“æœå¤§å›¾ */
+/* Éú³É½á¹û´óÍ¼ */
 .result-main {
   display: flex;
   justify-content: center;
@@ -1118,7 +1258,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   border-radius: 16px;
 }
 
-/* æ“ä½œæŒ‰é’® */
+/* ²Ù×÷°´Å¥ */
 .result-actions {
   display: flex;
   gap: 16px;
@@ -1147,7 +1287,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* ä»»åŠ¡ä¿¡æ¯ */
+/* ÈÎÎñĞÅÏ¢ */
 .result-meta {
   margin-top: 20px;
   display: flex;
@@ -1156,7 +1296,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   color: #666;
 }
 
-/* åŠŸèƒ½ç‰¹æ€§ç½‘æ ¼ */
+/* ¹¦ÄÜÌØĞÔÍø¸ñ */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1202,7 +1342,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   line-height: 1.5;
 }
 
-/* ä½¿ç”¨æŒ‡å—æ ·å¼ */
+/* Ê¹ÓÃÖ¸ÄÏÑùÊ½ */
 .guide-content {
   padding: 8px 0;
 }
@@ -1230,7 +1370,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   line-height: 1.6;
 }
 
-/* å†å²è®°å½•æ ·å¼ */
+/* ÀúÊ·¼ÇÂ¼ÑùÊ½ */
 .history-content {
   height: 100%;
 }
@@ -1284,7 +1424,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   flex-wrap: wrap;
 }
 
-/* å“åº”å¼ */
+/* ÏìÓ¦Ê½ */
 @media (max-width: 1200px) {
   .left-panel {
     width: 380px;
@@ -1372,3 +1512,7 @@ const shareHistoryImage = (imageUrl: string | undefined) => {
   }
 }
 </style>
+
+
+
+

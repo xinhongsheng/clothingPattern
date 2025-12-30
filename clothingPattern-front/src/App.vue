@@ -8,19 +8,23 @@ import BasicLayout from "@/layout/BasicLayout.vue"
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import { useMJTaskStore } from '@/stores/useMJTaskStore'
 import { useImageFusionTaskStore } from '@/stores/useImageFusionTaskStore'
+import { useTryOnTaskStore } from '@/stores/useTryOnTaskStore'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { getImagineStatus } from '@/api/midjourneyjiekou'
 import { getResults, queryStatus } from '@/api/imageFusionController'
+import { getStatus as getTryOnStatus } from '@/api/aiTryOnController'
 
 const loginUserStore = useLoginUserStore()
 const mjTaskStore = useMJTaskStore()
 const fusionTaskStore = useImageFusionTaskStore()
+const tryOnTaskStore = useTryOnTaskStore()
 const route = useRoute()
 
 const mjStorageKey = 'mj_generate_task'
 const fusionStorageKey = 'image_fusion_task'
+const tryOnStorageKey = 'try_on_task'
 const pollIntervalMs = 2000
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -75,6 +79,34 @@ const readFusionTaskSnapshot = (): FusionTaskSnapshot | null => {
 
 const saveFusionTaskSnapshot = (snapshot: FusionTaskSnapshot) => {
   localStorage.setItem(fusionStorageKey, JSON.stringify(snapshot))
+}
+
+type TryOnTaskSnapshot = {
+  taskId: string
+  status: string
+  resultUrl?: string
+  errorMessage?: string
+  updateTime?: number
+  notified?: boolean
+  personImageUrl?: string
+  topGarmentUrl?: string
+  bottomGarmentUrl?: string
+}
+
+const readTryOnTaskSnapshot = (): TryOnTaskSnapshot | null => {
+  const raw = localStorage.getItem(tryOnStorageKey)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as TryOnTaskSnapshot
+  } catch {
+    return null
+  }
+}
+
+const saveTryOnTaskSnapshot = (snapshot: TryOnTaskSnapshot) => {
+  localStorage.setItem(tryOnStorageKey, JSON.stringify(snapshot))
 }
 
 const pollMjTaskStatus = async () => {
@@ -209,12 +241,79 @@ const pollFusionTaskStatus = async () => {
   }
 }
 
+const pollTryOnTaskStatus = async () => {
+  const snapshot = readTryOnTaskSnapshot()
+  if (!snapshot) {
+    return
+  }
+  if (route.path === '/ai/try-on') {
+    return
+  }
+  if (snapshot.status === 'SUCCEEDED' || snapshot.status === 'FAILED') {
+    return
+  }
+  try {
+    const res = await getTryOnStatus({ taskId: snapshot.taskId })
+    const taskData: any = res?.data
+    if (!taskData) {
+      return
+    }
+    const status = taskData.taskStatus
+    const isSuccess = status === 'SUCCESS' || status === 'SUCCEEDED'
+
+    if (isSuccess) {
+      const resultUrl = taskData.localResultUrl || taskData.resultImageUrl || ''
+      saveTryOnTaskSnapshot({
+        ...snapshot,
+        status: 'SUCCEEDED',
+        resultUrl,
+        updateTime: taskData.updateTime,
+        notified: true,
+      })
+      tryOnTaskStore.markSucceeded(snapshot.taskId, resultUrl)
+      if (!snapshot.notified) {
+        message.success('试衣生成完成，返回AI试衣页可查看最新效果')
+      }
+      return
+    }
+
+    if (status === 'FAILED') {
+      const errorMessage = taskData.errorMessage || '试衣任务失败，请稍后重试'
+      saveTryOnTaskSnapshot({
+        ...snapshot,
+        status: 'FAILED',
+        errorMessage,
+        updateTime: taskData.updateTime,
+        notified: true,
+      })
+      tryOnTaskStore.markFailed(snapshot.taskId, errorMessage)
+      if (!snapshot.notified) {
+        message.error(errorMessage)
+      }
+      return
+    }
+
+    if (status === 'PROCESSING' || status === 'PENDING' || status === 'RUNNING') {
+      tryOnTaskStore.markProcessing(snapshot.taskId)
+    }
+    saveTryOnTaskSnapshot({
+      ...snapshot,
+      status: status || snapshot.status,
+      updateTime: taskData.updateTime,
+      notified: snapshot.notified,
+    })
+  } catch {
+    return
+  }
+}
+
 // 应用初始化时自动获取登录用户信息
 onMounted(async () => {
   await loginUserStore.fetchLoginUser()
   pollTimer = setInterval(() => {
     void pollMjTaskStatus()
     void pollFusionTaskStatus()
+    void pollTryOnTaskStatus()
   }, pollIntervalMs)
 })
 

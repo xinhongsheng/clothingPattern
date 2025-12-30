@@ -41,6 +41,14 @@
                     <PicCenterOutlined style="color: #faad14; margin-right: 8px" />
                     <span>{{ getFusionTaskStatusText() }}</span>
                   </div>
+                  <div
+                    v-if="tryOnTaskStore.notification"
+                    class="notification-item"
+                    @click="goToTryOn"
+                  >
+                    <SkinOutlined style="color: #52c41a; margin-right: 8px" />
+                    <span>{{ getTryOnTaskStatusText() }}</span>
+                  </div>
                 </div>
               </template>
               <a-badge :count="unreadCount" :offset="[-2, 2]" class="notification-badge">
@@ -106,6 +114,7 @@ import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { useMJTaskStore } from '@/stores/useMJTaskStore.ts'
 import { useImageFusionTaskStore } from '@/stores/useImageFusionTaskStore'
+import { useTryOnTaskStore } from '@/stores/useTryOnTaskStore'
 import { ref, h, computed } from 'vue' // 注意：h 函数需要导入（用于渲染图标）
 import { userLoginOut } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
@@ -115,17 +124,22 @@ const router = useRouter() // 初始化 router（之前代码漏了，会导致 
 const loginUserStore = useLoginUserStore()
 const mjTaskStore = useMJTaskStore()
 const fusionTaskStore = useImageFusionTaskStore()
+const tryOnTaskStore = useTryOnTaskStore()
 
 const unreadCount = computed(() => {
   let count = 0
   if (mjTaskStore.hasUnread) count += 1
   if (fusionTaskStore.hasUnread) count += 1
+  if (tryOnTaskStore.hasUnread) count += 1
   return count
 })
 
 const hasUnread = computed(() => unreadCount.value > 0)
 const hasAnyNotification = computed(
-  () => !!mjTaskStore.notification || !!fusionTaskStore.notification
+  () =>
+    !!mjTaskStore.notification ||
+    !!fusionTaskStore.notification ||
+    !!tryOnTaskStore.notification
 )
 
 // 获取MJ任务状态文本
@@ -161,6 +175,22 @@ const getFusionTaskStatusText = () => {
   }
 }
 
+const getTryOnTaskStatusText = () => {
+  const notification = tryOnTaskStore.notification
+  if (!notification) return ''
+  switch (notification.status) {
+    case 'PENDING':
+    case 'PROCESSING':
+      return 'AI试衣中...'
+    case 'SUCCEEDED':
+      return '试衣完成，点击查看'
+    case 'FAILED':
+      return '试衣失败，点击重试'
+    default:
+      return 'AI试衣'
+  }
+}
+
 // 跳转到智能创作页面
 const goToMJGeneration = () => {
   mjTaskStore.markRead()
@@ -170,6 +200,11 @@ const goToMJGeneration = () => {
 const goToImageFusion = () => {
   fusionTaskStore.markRead()
   router.push('/image-fusion')
+}
+
+const goToTryOn = () => {
+  tryOnTaskStore.markRead()
+  router.push('/ai/try-on')
 }
 
 const originItems = [

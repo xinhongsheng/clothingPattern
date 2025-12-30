@@ -7,9 +7,11 @@ import com.xhs.clothingpatternbackend.common.ResultUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
+import com.xhs.clothingpatternbackend.model.dto.tryon.TryOnGenerateMessage;
 import com.xhs.clothingpatternbackend.model.entity.TryOnTask;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.QueryTaskHistoryResultVO;
+import com.xhs.clothingpatternbackend.mq.TryOnGenerateProducer;
 import com.xhs.clothingpatternbackend.service.TryOnTaskService;
 import com.xhs.clothingpatternbackend.service.UserService;
 import com.xhs.clothingpatternbackend.service.impl.TryOnTaskServiceImpl;
@@ -50,6 +52,8 @@ public class AiTryOnController {
     private CosUtils cosUtils;
     @Resource
     private CosClientConfig cosClientConfig;
+    @Resource
+    private TryOnGenerateProducer tryOnGenerateProducer;
 
     // 上传图片到OSS，返回公网URL
     @PostMapping("/upload")
@@ -69,7 +73,13 @@ public class AiTryOnController {
         }
         User loginUser = userService.getLoginUser(request);
         Long userId = loginUser.getId();
-        return tryOnTaskService.submitTask(userId, personImageUrl, topGarmentUrl, bottomGarmentUrl);
+        String taskId = tryOnTaskService.submitTask(userId, personImageUrl, topGarmentUrl, bottomGarmentUrl);
+        try {
+            tryOnGenerateProducer.send(new TryOnGenerateMessage(taskId, userId));
+        } catch (Exception e) {
+            // 异步入队失败不影响任务提交
+        }
+        return taskId;
     }
 
     /**
