@@ -9,6 +9,7 @@
               <div class="image-wrapper">
                 <img :src="banner.imageUrl" :alt="banner.title" class="carousel-image" />
                 <div class="banner-content">
+                  <div class="banner-pill">精选推荐</div>
                   <h2 class="banner-title">{{ banner.title }}</h2>
                 </div>
               </div>
@@ -34,18 +35,22 @@
                 {{ category.categoryName }}
               </a-button>
             </div>
-            
+
             <div class="sort-actions">
-               <a-input-search
-                  v-model:value="searchKeyword"
-                  placeholder="搜索精彩文章..."
-                  class="custom-search"
-                  @search="handleSearch"
-                />
-               <a-radio-group v-model:value="sortField" button-style="solid" @change="handleSortChange">
-                  <a-radio-button value="publishTime">最新</a-radio-button>
-                  <a-radio-button value="viewCount">最热</a-radio-button>
-                </a-radio-group>
+              <a-input-search
+                v-model:value="searchKeyword"
+                placeholder="搜索精彩文章..."
+                class="custom-search"
+                @search="handleSearch"
+              />
+              <a-radio-group
+                v-model:value="sortField"
+                button-style="solid"
+                @change="handleSortChange"
+              >
+                <a-radio-button value="publishTime">最新</a-radio-button>
+                <a-radio-button value="viewCount">最热</a-radio-button>
+              </a-radio-group>
             </div>
           </div>
 
@@ -55,7 +60,7 @@
               <div
                 v-for="article in articleList"
                 :key="article.id"
-                class="article-card"
+                class="article-card card-glass"
                 @click="goToDetail(article.id)"
               >
                 <div class="card-cover">
@@ -69,38 +74,48 @@
                     <span v-if="article.isTop === 1" class="badge top">置顶</span>
                     <span v-if="article.isHot === 1" class="badge hot">热门</span>
                   </div>
+                  <div class="cover-fade"></div>
                 </div>
+
                 <div class="card-content">
                   <div class="meta-top">
                     <a-tag color="blue" class="category-tag">{{ article.categoryName }}</a-tag>
                     <span class="publish-time">{{ formatTime(article.publishTime) }}</span>
                   </div>
+
                   <h3 class="title" :title="article.title">{{ article.title }}</h3>
                   <p class="summary">{{ article.summary }}</p>
-                  
+
                   <div class="meta-footer">
                     <div class="author-info">
-                       <a-avatar size="small" :src="article.userAvatar" class="avatar">
-                          {{ article.author?.[0]?.toUpperCase() }}
-                       </a-avatar>
-                       <span class="author-name">{{ article.author }}</span>
+                      <a-avatar size="small" :src="article.userAvatar" class="avatar">
+                        {{ article.author?.[0]?.toUpperCase() }}
+                      </a-avatar>
+                      <span class="author-name">{{ article.author }}</span>
                     </div>
+
                     <div class="stats">
-                      <span title="阅读">
-                        <EyeOutlined /> {{ formatNumber(article.viewCount) }}
-                      </span>
-                      <span title="点赞">
-                        <LikeOutlined /> {{ formatNumber(article.likeCount) }}
-                      </span>
-                      <span title="评论">
-                        <MessageOutlined /> {{ formatNumber(article.commentCount) }}
-                      </span>
+                      <span title="阅读"
+                        ><EyeOutlined /> {{ formatNumber(article.viewCount) }}</span
+                      >
+                      <span title="点赞"
+                        ><LikeOutlined /> {{ formatNumber(article.likeCount) }}</span
+                      >
+                      <span title="评论"
+                        ><MessageOutlined /> {{ formatNumber(article.commentCount) }}</span
+                      >
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <a-empty v-else description="暂无相关文章" :image="Empty.PRESENTED_IMAGE_SIMPLE" class="empty-state" />
+
+            <a-empty
+              v-else
+              description="暂无相关文章"
+              :image="Empty.PRESENTED_IMAGE_SIMPLE"
+              class="empty-state"
+            />
           </a-spin>
 
           <!-- 分页 -->
@@ -119,12 +134,16 @@
         <aside class="right-column">
           <!-- 热门推荐 -->
           <div class="sidebar-card hot-articles card-glass">
-            <h3 class="sidebar-title">
-              <FireOutlined class="icon-fire" /> 热门推荐
-            </h3>
+            <h3 class="sidebar-title"><FireOutlined class="icon-fire" /> 热门推荐</h3>
+
             <a-spin :spinning="hotLoading">
               <ul class="hot-list">
-                <li v-for="(article, index) in hotArticles" :key="article.id" class="hot-item" @click="goToDetail(article.id)">
+                <li
+                  v-for="(article, index) in hotArticles"
+                  :key="article.id"
+                  class="hot-item"
+                  @click="goToDetail(article.id)"
+                >
                   <span class="rank-num" :class="{ 'top-3': index < 3 }">{{ index + 1 }}</span>
                   <div class="hot-info">
                     <div class="hot-title">{{ article.title }}</div>
@@ -135,12 +154,16 @@
             </a-spin>
           </div>
 
-          <!-- 推广/广告位 (ռλ) -->
+          <!-- 推广/广告位 -->
           <div class="sidebar-card promotion-card card-glass">
+            <div class="promo-orb orb-a"></div>
+            <div class="promo-orb orb-b"></div>
+
             <div class="promo-content">
+              <div class="promo-eyebrow">Community</div>
               <h4>分享你的灵感</h4>
               <p>加入我们的社区，发布你的第一篇设计文章。</p>
-              <a-button type="primary" block>立即发布</a-button>
+              <a-button type="primary" block class="promo-btn">立即发布</a-button>
             </div>
           </div>
         </aside>
@@ -152,15 +175,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { message, Empty } from 'ant-design-vue'
-import {
-  UserOutlined,
-  EyeOutlined,
-  LikeOutlined,
-  MessageOutlined,
-  FireOutlined,
-  SearchOutlined
-} from '@ant-design/icons-vue'
+import { Empty } from 'ant-design-vue'
+import { EyeOutlined, LikeOutlined, MessageOutlined, FireOutlined } from '@ant-design/icons-vue'
 import { getArticleList } from '@/api/articleController'
 import { getBannerList } from '@/api/bannerController'
 import { getCategories } from '@/api/articleCategoryController'
@@ -188,7 +204,7 @@ const loading = ref(false)
 const hotLoading = ref(false)
 
 // 辅助函数
-const formatTime = (time: string) => time ? dayjs(time).fromNow() : ''
+const formatTime = (time: string) => (time ? dayjs(time).fromNow() : '')
 const formatNumber = (num: number) => {
   return num > 999 ? (num / 1000).toFixed(1) + 'k' : num
 }
@@ -216,7 +232,7 @@ const loadArticles = async () => {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       status: 'PUBLISHED',
-      auditStatus: 'APPROVED'
+      auditStatus: 'APPROVED',
     })
     if (res.data.code === 0) {
       articleList.value = res.data.data.records || []
@@ -236,7 +252,7 @@ const loadHotArticles = async () => {
       pageNum: 1,
       pageSize: 5,
       status: 'PUBLISHED',
-      auditStatus: 'APPROVED'
+      auditStatus: 'APPROVED',
     })
     if (res.data.code === 0) {
       hotArticles.value = res.data.data.records || []
@@ -294,432 +310,747 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-// 变量
-$primary-color: #1890ff;
-$text-color: #333;
-$secondary-text: #666;
-$muted-text: #999;
-$bg-color: #f0f2f5;
-$card-bg: #ffffff;
-$radius: 12px;
-$shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:wght@400;600;700&display=swap');
 
+/* =========================
+   Design Tokens（与首页一致）
+   ========================= */
 .article-page {
+  --ink: #1f1a15;
+  --muted: #7a6f66;
+  --accent: #d45b2d;
+  --accent-2: #2a9d8f;
+  --surface: #fffdf8;
+  --surface-2: #f6efe6;
+  --stroke: rgba(31, 26, 21, 0.08);
+  --shadow: 0 22px 60px rgba(31, 26, 21, 0.12);
+  --transition-duration: 0.35s;
+  --transition-easing: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-body: 'Manrope', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Newsreader', 'Noto Serif SC', 'Songti SC', serif;
+
   min-height: 100vh;
-  background-color: $bg-color;
-  padding: 24px 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  padding: 24px 0 44px;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 8% -10%, rgba(240, 181, 128, 0.35), transparent 65%),
+    radial-gradient(800px 380px at 92% 5%, rgba(122, 210, 196, 0.28), transparent 60%),
+    linear-gradient(180deg, #fbf7f1 0%, #ffffff 55%, #f6efe6 100%);
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+}
+
+.article-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(31, 26, 21, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.32;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .page-container {
   max-width: 1440px;
   margin: 0 auto;
   padding: 0 16px;
+  position: relative;
+  z-index: 1;
 }
 
-/* 轮播图 */
+/* =========================
+   Glass Card Helper
+   ========================= */
+.card-glass {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--stroke);
+  border-radius: 26px;
+  box-shadow: 0 18px 36px rgba(31, 26, 21, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+/* =========================
+   Banner
+   ========================= */
 .banner-section {
-  margin-bottom: 24px;
-  border-radius: $radius;
+  margin-bottom: 22px;
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: $shadow;
-
-  .carousel-item {
-    height: 380px;
-    position: relative;
-    
-    .image-wrapper {
-        width: 100%;
-        height: 100%;
-        position: relative;
-    }
-
-    .carousel-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .banner-content {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 40px 24px 24px;
-        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-        color: white;
-        
-        .banner-title {
-            color: white;
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-    }
-  }
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 1;
 }
 
-/* 主内容布局 */
+:deep(.ant-carousel .slick-dots) {
+  bottom: 18px;
+}
+
+:deep(.ant-carousel .slick-dots li button) {
+  width: 18px;
+  height: 6px;
+  border-radius: 999px;
+  opacity: 0.35;
+}
+
+:deep(.ant-carousel .slick-dots li.slick-active button) {
+  opacity: 1;
+}
+
+.carousel-item {
+  height: 380px;
+  position: relative;
+}
+
+.image-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.02);
+  transition: transform 0.8s var(--transition-easing);
+}
+
+.carousel-item:hover .carousel-image {
+  transform: scale(1.06);
+}
+
+.banner-content {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 56px 26px 26px;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent 70%);
+}
+
+.banner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.banner-title {
+  font-family: var(--font-display);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.6px;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+}
+
+/* =========================
+   Main Layout
+   ========================= */
 .main-content-wrapper {
   display: flex;
-  gap: 24px;
+  gap: 22px;
   align-items: flex-start;
 }
 
-/* 左侧列 */
 .left-column {
   flex: 1;
-  min-width: 0; // 防止flex子项溢出
+  min-width: 0;
 }
 
-/* 筛选栏 */
-.filter-bar {
-  background: $card-bg;
-  padding: 16px 24px;
-  border-radius: $radius;
-  margin-bottom: 24px;
+.right-column {
+  width: 330px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: $shadow;
+  gap: 18px;
+}
 
-  .category-scroll {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    gap: 8px;
-    
-    &::-webkit-scrollbar {
-        height: 4px;
-    }
-    &::-webkit-scrollbar-thumb {
-        background: #ddd;
-        border-radius: 2px;
-    }
+/* =========================
+   Filter Bar
+   ========================= */
+.filter-bar {
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all var(--transition-duration) var(--transition-easing);
+}
 
-    .category-btn {
-      border-radius: 20px;
-      font-weight: 500;
-      flex-shrink: 0;
-      
-      &.ant-btn-text {
-          color: $secondary-text;
-          &:hover {
-              color: $primary-color;
-              background: rgba($primary-color, 0.05);
-          }
-      }
-    }
+.filter-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(31, 26, 21, 0.12);
+}
+
+.category-scroll {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  gap: 8px;
+
+  &::-webkit-scrollbar {
+    height: 6px;
   }
-  
-  .sort-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      
-      .custom-search {
-          max-width: 300px;
-          :deep(.ant-input) {
-              border-radius: 20px;
-          }
-           :deep(.ant-input-search-button) {
-              border-radius: 0 20px 20px 0 !important;
-          }
-      }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(31, 26, 21, 0.12);
+    border-radius: 999px;
   }
 }
 
-/* 文章卡片 */
+.category-btn {
+  flex-shrink: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 0 14px;
+  height: 34px;
+  transition: all 0.25s var(--transition-easing);
+}
+
+:deep(.category-btn.ant-btn-text) {
+  color: var(--muted);
+}
+
+:deep(.category-btn.ant-btn-text:hover) {
+  color: var(--accent);
+  background: rgba(212, 91, 45, 0.08);
+  transform: translateY(-1px);
+}
+
+:deep(.category-btn.ant-btn-primary) {
+  border: none;
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+  box-shadow: 0 12px 22px rgba(212, 91, 45, 0.25);
+}
+
+.sort-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.custom-search {
+  max-width: 320px;
+  width: 100%;
+}
+
+:deep(.custom-search .ant-input) {
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 26, 21, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.25s var(--transition-easing);
+  padding-left: 16px;
+}
+
+:deep(.custom-search .ant-input:focus) {
+  border-color: rgba(42, 157, 143, 0.55);
+  box-shadow: 0 0 0 3px rgba(42, 157, 143, 0.16);
+}
+
+:deep(.custom-search .ant-input-search-button) {
+  border-radius: 0 999px 999px 0 !important;
+  border: none;
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+  box-shadow: 0 12px 22px rgba(212, 91, 45, 0.22);
+}
+
+:deep(.ant-radio-group) {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(31, 26, 21, 0.1);
+  padding: 4px;
+}
+
+:deep(.ant-radio-button-wrapper) {
+  border: none !important;
+  border-radius: 999px !important;
+  color: var(--muted);
+  font-weight: 800;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 14px;
+  background: transparent;
+  transition: all 0.25s var(--transition-easing);
+}
+
+:deep(.ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked):hover) {
+  color: var(--accent);
+  background: rgba(212, 91, 45, 0.08);
+}
+
+:deep(.ant-radio-button-wrapper-checked) {
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%) !important;
+  box-shadow: 0 12px 22px rgba(212, 91, 45, 0.22);
+}
+
+/* =========================
+   Article List & Cards
+   ========================= */
 .article-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .article-card {
   display: flex;
-  background: $card-bg;
-  border-radius: $radius;
   overflow: hidden;
-  transition: all 0.3s ease;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  height: 200px;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    
-    .cover-img {
-        transform: scale(1.05);
-    }
-  }
-
-  .card-cover {
-    width: 280px;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-
-    .cover-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-
-    .badges {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      display: flex;
-      gap: 6px;
-      
-      .badge {
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          color: white;
-          font-weight: bold;
-          backdrop-filter: blur(4px);
-          
-          &.top { background: rgba(255, 77, 79, 0.9); }
-          &.hot { background: rgba(255, 122, 69, 0.9); }
-      }
-    }
-  }
-
-  .card-content {
-    flex: 1;
-    padding: 20px 24px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-width: 0;
-
-    .meta-top {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 8px;
-        
-        .publish-time {
-            color: $muted-text;
-            font-size: 13px;
-        }
-    }
-
-    .title {
-      font-size: 18px;
-      font-weight: 700;
-      color: $text-color;
-      margin-bottom: 8px;
-      line-height: 1.4;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .summary {
-      color: $secondary-text;
-      font-size: 14px;
-      line-height: 1.6;
-      margin-bottom: 16px;
-      flex: 1;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .meta-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid #f0f0f0;
-      padding-top: 12px;
-      
-      .author-info {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 14px;
-          color: $text-color;
-      }
-
-      .stats {
-        display: flex;
-        gap: 16px;
-        color: $muted-text;
-        font-size: 13px;
-
-        span {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          &:hover { color: $primary-color; }
-        }
-      }
-    }
-  }
+  border-radius: 26px;
+  transition: all var(--transition-duration) var(--transition-easing);
 }
 
-/* 右侧边栏 */
-.right-column {
-  width: 320px;
+.article-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 26px 46px rgba(31, 26, 21, 0.12);
+  border-color: rgba(212, 91, 45, 0.22);
+}
+
+.card-cover {
+  width: 300px;
+  position: relative;
+  overflow: hidden;
   flex-shrink: 0;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s var(--transition-easing);
+}
+
+.article-card:hover .cover-img {
+  transform: scale(1.06);
+}
+
+.cover-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.18), transparent 55%);
+  pointer-events: none;
+}
+
+.badges {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.badge.top {
+  background: rgba(255, 77, 79, 0.92);
+}
+.badge.hot {
+  background: rgba(255, 122, 69, 0.92);
+}
+
+.card-content {
+  flex: 1;
+  padding: 18px 20px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  justify-content: space-between;
 }
 
+.meta-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+:deep(.category-tag) {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-weight: 800;
+}
+
+.publish-time {
+  color: rgba(122, 111, 102, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.summary {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 0 14px;
+  flex: 1;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(31, 26, 21, 0.08);
+  padding-top: 12px;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+:deep(.avatar) {
+  box-shadow: 0 12px 22px rgba(31, 26, 21, 0.08);
+}
+
+.author-name {
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats {
+  display: flex;
+  gap: 14px;
+  color: rgba(122, 111, 102, 0.9);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.25s var(--transition-easing);
+}
+
+.stats span:hover {
+  color: var(--accent);
+}
+
+/* =========================
+   Sidebar
+   ========================= */
 .sidebar-card {
-  background: $card-bg;
-  border-radius: $radius;
-  padding: 20px;
-  box-shadow: $shadow;
-  
-  .sidebar-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      
-      .icon-fire { color: #ff4d4f; }
+  padding: 18px;
+  border-radius: 26px;
+  transition: all var(--transition-duration) var(--transition-easing);
+}
+
+.sidebar-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 48px rgba(31, 26, 21, 0.12);
+}
+
+.sidebar-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.3px;
+
+  .icon-fire {
+    color: #ff4d4f;
+    filter: drop-shadow(0 10px 16px rgba(255, 77, 79, 0.2));
   }
 }
 
 .hot-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    
-    .hot-item {
-        display: flex;
-        gap: 12px;
-        padding: 10px 0;
-        cursor: pointer;
-        border-bottom: 1px dashed #f0f0f0;
-        
-        &:last-child { border-bottom: none; }
-        &:hover .hot-title { color: $primary-color; }
-        
-        .rank-num {
-            width: 20px;
-            height: 20px;
-            line-height: 20px;
-            text-align: center;
-            background: #f0f0f0;
-            color: #999;
-            font-size: 12px;
-            font-weight: bold;
-            border-radius: 4px;
-            margin-top: 2px;
-            
-            &.top-3 {
-                background: #ff4d4f;
-                color: white;
-            }
-        }
-        
-        .hot-info {
-            flex: 1;
-            overflow: hidden;
-            
-            .hot-title {
-                font-size: 14px;
-                color: $text-color;
-                margin-bottom: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                transition: color 0.3s;
-            }
-            
-            .hot-view {
-                font-size: 12px;
-                color: $muted-text;
-            }
-        }
-    }
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
+.hot-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 4px;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(31, 26, 21, 0.12);
+  transition: all 0.25s var(--transition-easing);
+}
+
+.hot-item:last-child {
+  border-bottom: none;
+}
+
+.hot-item:hover {
+  transform: translateY(-1px);
+}
+
+.rank-num {
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  background: rgba(31, 26, 21, 0.06);
+  color: rgba(122, 111, 102, 0.95);
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 8px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.rank-num.top-3 {
+  background: rgba(255, 77, 79, 0.92);
+  color: #fff;
+}
+
+.hot-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.hot-title {
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 800;
+  transition: color 0.25s var(--transition-easing);
+}
+
+.hot-item:hover .hot-title {
+  color: var(--accent);
+}
+
+.hot-view {
+  font-size: 12px;
+  color: rgba(122, 111, 102, 0.92);
+  font-weight: 700;
+}
+
+/* =========================
+   Promotion (match homepage vibe, no "cheap gradient")
+   ========================= */
 .promotion-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-align: center;
-    
-    .promo-content {
-        h4 { color: white; margin-bottom: 8px; font-size: 18px; }
-        p { color: rgba(255,255,255,0.8); margin-bottom: 16px; font-size: 13px; }
-        button {
-            background: white;
-            color: #764ba2;
-            border: none;
-            font-weight: 600;
-            &:hover { background: #f0f0f0; }
-        }
-    }
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
 }
 
+.promo-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.promo-orb.orb-a {
+  width: 220px;
+  height: 220px;
+  right: -90px;
+  top: -120px;
+  background: radial-gradient(circle at 30% 30%, rgba(244, 182, 124, 0.8), transparent 70%);
+  animation: float 10s ease-in-out infinite;
+}
+
+.promo-orb.orb-b {
+  width: 180px;
+  height: 180px;
+  left: -80px;
+  bottom: -120px;
+  background: radial-gradient(circle at 30% 30%, rgba(92, 184, 167, 0.75), transparent 70%);
+  animation: float 12s ease-in-out infinite reverse;
+}
+
+.promo-content {
+  position: relative;
+  z-index: 1;
+  text-align: left;
+}
+
+.promo-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.promo-content h4 {
+  font-family: var(--font-display);
+  margin: 0 0 8px;
+  font-size: 20px;
+  letter-spacing: -0.4px;
+  color: var(--ink);
+}
+
+.promo-content p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.promo-btn {
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%);
+  box-shadow: 0 14px 24px rgba(212, 91, 45, 0.22);
+}
+
+/* =========================
+   Pagination & Empty
+   ========================= */
 .pagination-wrapper {
-  margin-top: 32px;
+  margin-top: 26px;
   display: flex;
   justify-content: center;
 }
 
-/* 响应式适配 */
+:deep(.ant-pagination-item) {
+  border-radius: 12px !important;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s var(--transition-easing);
+}
+
+:deep(.ant-pagination-item:hover) {
+  border-color: rgba(212, 91, 45, 0.4);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(212, 91, 45, 0.14);
+}
+
+:deep(.ant-pagination-item-active) {
+  background: linear-gradient(135deg, var(--accent) 0%, #f08a5d 100%) !important;
+  border: none !important;
+  box-shadow: 0 12px 22px rgba(212, 91, 45, 0.25);
+}
+
+:deep(.ant-pagination-item-active a) {
+  color: #ffffff !important;
+}
+
+.empty-state {
+  padding: 48px 0;
+}
+
+:deep(.ant-empty-description) {
+  color: rgba(122, 111, 102, 0.9);
+  font-weight: 700;
+}
+
+/* =========================
+   Responsive
+   ========================= */
 @media (max-width: 992px) {
   .main-content-wrapper {
-      flex-direction: column;
+    flex-direction: column;
   }
-  
+
   .right-column {
-      width: 100%;
-      order: 2; // 移动到下方
+    width: 100%;
+    order: 2;
   }
-  
-  .left-column {
-      width: 100%;
-  }
-  
+
   .article-card {
-      height: auto;
-      flex-direction: column;
-      
-      .card-cover {
-          width: 100%;
-          height: 180px;
-      }
-      
-      .card-content {
-          padding: 16px;
-      }
+    flex-direction: column;
+  }
+
+  .card-cover {
+    width: 100%;
+    height: 200px;
+  }
+
+  .card-content {
+    padding: 16px 16px 18px;
   }
 }
 
 @media (max-width: 576px) {
-    .banner-section .carousel-item {
-        height: 200px;
-    }
-    
-    .sort-actions {
-        flex-direction: column;
-        align-items: stretch;
-        
-        .custom-search {
-            max-width: none;
-        }
-        
-        .ant-radio-group {
-            display: flex;
-            .ant-radio-button-wrapper { flex: 1; text-align: center; }
-        }
-    }
+  .carousel-item {
+    height: 220px;
+  }
+
+  .banner-title {
+    font-size: 20px;
+  }
+
+  .sort-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .custom-search {
+    max-width: none;
+  }
+
+  :deep(.ant-radio-group) {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  :deep(.ant-radio-button-wrapper) {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* =========================
+   Animations
+   ========================= */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(12px);
+  }
 }
 </style>

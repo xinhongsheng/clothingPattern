@@ -416,11 +416,70 @@ const scrollToBottom = () => {
   })
 }
 
-// 简单的 Markdown 格式化
+// 轻量 Markdown 格式化（提升可读性但不改变内容）
 const formatMarkdown = (text: string) => {
   if (!text) return ''
-  return text
-    .replace(/\n/g, '<br>')
+
+  const normalized = text
+    .replace(/\r\n/g, '\n')
+    .replace(/---+/g, '\n---\n')
+    .replace(/(?<!\n)###\s*/g, '\n### ')
+    .replace(/(?<!\n)##\s*/g, '\n## ')
+    .replace(/(?<!\n)#\s*/g, '\n# ')
+    .replace(/(✅|🔹|🚫|💡)\s*/g, '\n$1 ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  const lines = normalized.split('\n')
+  let html = ''
+  let inList = false
+
+  const closeList = () => {
+    if (inList) {
+      html += '</ul>'
+      inList = false
+    }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) {
+      closeList()
+      continue
+    }
+    if (line === '---') {
+      closeList()
+      html += '<hr />'
+      continue
+    }
+    const headingMatch = line.match(/^(#{1,3})\s*(.*)$/)
+    if (headingMatch) {
+      const content = headingMatch[2]?.trim()
+      if (!content) {
+        continue
+      }
+      closeList()
+      const level = headingMatch[1].length
+      html += `<h${level}>${content}</h${level}>`
+      continue
+    }
+    const listMatch = line.match(/^[-•–—]{1,2}\s+(.*)$/)
+    const emojiMatch = line.match(/^(✅|🔹|🚫|💡)\s+(.*)$/)
+    if (listMatch || emojiMatch) {
+      if (!inList) {
+        html += '<ul>'
+        inList = true
+      }
+      const content = listMatch ? listMatch[1] : `${emojiMatch?.[1]} ${emojiMatch?.[2]}`
+      html += `<li>${content}</li>`
+      continue
+    }
+    closeList()
+    html += `<p>${line}</p>`
+  }
+  closeList()
+
+  return html
     .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
     .replace(
       /`(.*?)`/g,
@@ -1143,25 +1202,59 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
 
 /* ===== Markdown ===== */
 :deep(.markdown-body) {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+
   p {
-    margin: 0;
+    margin: 0 0 8px 0;
   }
+
   ul,
   ol {
-    margin: 6px 0 6px 20px;
+    margin: 8px 0 8px 18px;
     padding: 0;
   }
+
   li {
-    margin-bottom: 3px;
+    margin-bottom: 6px;
+    padding-left: 2px;
   }
+
+  h1,
   h2,
   h3 {
-    margin: 12px 0 8px 0;
+    margin: 14px 0 8px 0;
     color: var(--accent-2);
-    font-size: 15px;
     font-weight: 800;
     letter-spacing: -0.2px;
   }
+
+  h1 {
+    font-size: 17px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  h3 {
+    font-size: 15px;
+  }
+
+  hr {
+    border: none;
+    height: 1px;
+    background: rgba(31, 26, 21, 0.12);
+    margin: 12px 0;
+  }
+
+  b,
+  strong {
+    color: var(--ink);
+    font-weight: 800;
+  }
+
   a {
     color: var(--accent);
     text-decoration: none;
