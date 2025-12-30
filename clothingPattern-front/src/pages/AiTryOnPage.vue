@@ -178,6 +178,9 @@
             <a-button type="primary" @click="downloadResult" class="action-btn">
               <download-outlined /> 下载图片
             </a-button>
+            <a-button @click="saveToHistory" class="action-btn">
+              <save-outlined /> 保存图案
+            </a-button>
             <a-button @click="shareResult" class="action-btn">
               <share-alt-outlined /> 分享
             </a-button>
@@ -747,10 +750,23 @@ const downloadResult = () => {
   message.success('图片下载成功')
 }
 
+const clearCurrentResult = () => {
+  stopPolling()
+  currentTaskId.value = ''
+  resultImageUrl.value = ''
+  taskDetail.value = null
+  errorMessage.value = ''
+  polling.value = false
+  submitting.value = false
+  localStorage.removeItem(storageKey)
+  tryOnTaskStore.clearTask()
+}
+
 // 保存到历史记录
 const saveToHistory = () => {
   if (!resultImageUrl.value) return
-  message.success('已自动保存，可在历史记录中查看')
+  message.success('保存成功，可在历史记录中查看')
+  clearCurrentResult()
 }
 
 // 从后端加载历史记录
