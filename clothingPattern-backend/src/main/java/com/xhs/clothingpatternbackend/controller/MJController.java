@@ -38,6 +38,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.File;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -81,6 +86,12 @@ public class MJController {
     
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    
+    @Resource
+    private com.xhs.clothingpatternbackend.utils.CosUtils cosUtils;
+    
+    @Resource
+    private com.xhs.clothingpatternbackend.config.CosClientConfig cosClientConfig;
     
     /**
      * 生成图片（Imagine）
@@ -208,6 +219,7 @@ public class MJController {
     
     /**
      * 保存 MJ 生成的图片到数据库
+     * 下载图片并上传到 COS，同时获取文件大小
      *
      * @param request MJ 响应数据
      * @param httpRequest HTTP请求
@@ -223,6 +235,7 @@ public class MJController {
         // 获取登录用户
         User loginUser = userService.getLoginUser(httpRequest);
         
+        File tempFile = null;
         try {
             // 检查必要的字段
             String rawImageUrl = request.getRawImageUrl();
@@ -248,14 +261,66 @@ public class MJController {
             String season = request.getSeason();
             String targetAudience = request.getTargetAudience();
             
+            // === 下载图片并上传到 COS ===
+            String cosPatternUrl;
+            String cosThumbUrl;
+            Integer fileSize = null;
+            
+            // 下载原始图片到临时文件
+            tempFile = downloadImageToTempFile(rawImageUrl);
+            if (tempFile != null && tempFile.exists()) {
+                // 获取文件大小
+                fileSize = (int) tempFile.length();
+                
+                // 上传到 COS
+                String key = "mj-pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
+                com.qcloud.cos.model.PutObjectResult putResult = cosUtils.putPictureObject(key, tempFile);
+                
+                // 从COS处理结果中获取实际的图片URL
+                try {
+                    com.qcloud.cos.model.ciModel.persistence.CIUploadResult ciResult = putResult.getCiUploadResult();
+                    if (ciResult != null && ciResult.getProcessResults() != null) {
+                        com.qcloud.cos.model.ciModel.persistence.ProcessResults processResults = ciResult.getProcessResults();
+                        java.util.List<com.qcloud.cos.model.ciModel.persistence.CIObject> objectList = processResults.getObjectList();
+                        
+                        if (objectList != null && !objectList.isEmpty()) {
+                            // 第一个是压缩后的webp图片（缩略图）
+                            com.qcloud.cos.model.ciModel.persistence.CIObject compressedObject = objectList.get(0);
+                            cosThumbUrl = cosClientConfig.getHost() + "/" + compressedObject.getKey();
+                            // 原图使用上传的key
+                            cosPatternUrl = cosClientConfig.getHost() + "/" + key;
+                        } else {
+                            cosPatternUrl = cosClientConfig.getHost() + "/" + key;
+                            cosThumbUrl = cosPatternUrl;
+                        }
+                    } else {
+                        cosPatternUrl = cosClientConfig.getHost() + "/" + key;
+                        cosThumbUrl = cosPatternUrl;
+                    }
+                } catch (Exception e) {
+                    log.warn("获取COS处理结果失败，使用默认URL: {}", e.getMessage());
+                    cosPatternUrl = cosClientConfig.getHost() + "/" + key;
+                    cosThumbUrl = cosPatternUrl;
+                }
+                
+                log.info("MJ图片已上传到COS，URL: {}，文件大小: {} bytes", cosPatternUrl, fileSize);
+            } else {
+                // 下载失败，使用原始URL
+                log.warn("下载MJ图片失败，使用原始URL");
+                cosPatternUrl = rawImageUrl;
+                cosThumbUrl = StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl;
+            }
+            
             // 保存到数据库
             Pattern pattern = new Pattern();
             pattern.setUserId(loginUser.getId());
             pattern.setPatternName(patternName);
             pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "Midjourney生成的图案");
             pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
-            pattern.setPatternUrl(rawImageUrl);
-            pattern.setThumbUrl(StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl);
+            pattern.setPatternUrl(cosPatternUrl);
+            pattern.setThumbUrl(cosThumbUrl);
+            pattern.setFileSize(fileSize);  // 保存文件大小
+            pattern.setFileType("image/png");
             pattern.setStyle(style);
             pattern.setSeason(season);
             pattern.setTargetAudience(targetAudience);
@@ -268,9 +333,8 @@ public class MJController {
             boolean saved = patternService.save(pattern);
             ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
 
-            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，风格：{}，季节：{}，受众：{}",
-                    pattern.getId(), loginUser.getId(), style, season, targetAudience);
-
+            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，文件大小：{} bytes，风格：{}，季节：{}，受众：{}",
+                    pattern.getId(), loginUser.getId(), fileSize, style, season, targetAudience);
 
             // 清空图案列表缓存，确保前端能立即看到新图案
             clearPatternListCache();
@@ -279,6 +343,60 @@ public class MJController {
         } catch (Exception e) {
             log.error("保存MJ图片失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存失败：" + e.getMessage());
+        } finally {
+            // 清理临时文件
+            if (tempFile != null && tempFile.exists()) {
+                boolean deleted = tempFile.delete();
+                if (!deleted) {
+                    log.warn("临时文件删除失败: {}", tempFile.getAbsolutePath());
+                }
+            }
+        }
+    }
+    
+    /**
+     * 下载图片到临时文件
+     *
+     * @param imageUrl 图片URL
+     * @return 临时文件
+     */
+    private File downloadImageToTempFile(String imageUrl) {
+        HttpURLConnection connection = null;
+        InputStream inputStream = null;
+        try {
+            URL url = new URL(imageUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(30000);  // 30秒连接超时
+            connection.setReadTimeout(60000);     // 60秒读取超时
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                log.error("下载图片失败，HTTP状态码: {}", responseCode);
+                return null;
+            }
+            
+            inputStream = connection.getInputStream();
+            File tempFile = File.createTempFile("mj_image_", ".png");
+            Files.copy(inputStream, tempFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            
+            log.info("图片下载成功，临时文件: {}，大小: {} bytes", 
+                    tempFile.getAbsolutePath(), tempFile.length());
+            return tempFile;
+            
+        } catch (Exception e) {
+            log.error("下载图片异常: {}", e.getMessage());
+            return null;
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException ignored) {}
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
     
