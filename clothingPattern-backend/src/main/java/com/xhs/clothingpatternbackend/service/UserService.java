@@ -27,6 +27,17 @@ public interface UserService extends IService<User> {
      */
     long userRegister(String userAccount, String userPassword, String checkPassword);
 
+    /**
+     * 用户注册（带IP识别省份）
+     *
+     * @param userAccount   用户账户
+     * @param userPassword  用户密码
+     * @param checkPassword 校验密码
+     * @param request       HttpServletRequest用于获取IP
+     * @return 新用户id
+     */
+    long userRegister(String userAccount, String userPassword, String checkPassword, HttpServletRequest request);
+
 
     /**
      * 用户登录

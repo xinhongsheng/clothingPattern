@@ -16,6 +16,7 @@ import com.xhs.clothingpatternbackend.model.enums.UserRoleEnum;
 import com.xhs.clothingpatternbackend.model.vo.LoginUserVO;
 import com.xhs.clothingpatternbackend.model.vo.UserVO;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.utils.IpLocationUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -76,6 +77,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserPassword(encryptPassword);
         user.setUserName("默认名称");
         user.setUserRole(UserRoleEnum.USER.getValue());
+        boolean saveResult = this.save(user);
+        if (!saveResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败,数据库错误！");
+        }
+        return user.getId();
+    }
+
+    /**
+     * 用户注册（带IP识别省份）
+     */
+    @Override
+    public long userRegister(String userAccount, String userPassword, String checkPassword, HttpServletRequest request) {
+        //1.校验参数
+        if (StrUtil.hasBlank(userAccount, userPassword, checkPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+
+        if (userAccount.length() < 4) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号过短");
+        }
+
+        if (userPassword.length() < 8 || checkPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
+        }
+        if (!userPassword.equals(checkPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
+        }
+        // 2.检查用户账号是否和数据库中已有的重复
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userAccount", userAccount);
+        long count = this.baseMapper.selectCount(queryWrapper);
+        if (count > 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号重复");
+        }
+        //3.密码加盐
+        String encryptPassword = getEncryptPassword(userPassword);
+        //4.插入数据
+        User user = new User();
+        user.setUserAccount(userAccount);
+        user.setUserPassword(encryptPassword);
+        user.setUserName("默认名称");
+        user.setUserRole(UserRoleEnum.USER.getValue());
+        
+        //5.根据IP识别省份
+        try {
+            String province = IpLocationUtils.getProvinceFromRequest(request);
+            if (StrUtil.isNotBlank(province)) {
+                user.setProvince(province);
+                log.info("用户注册自动识别省份: {}, 用户: {}", province, userAccount);
+            }
+        } catch (Exception e) {
+            log.warn("用户注册IP省份识别失败: {}", e.getMessage());
+        }
+        
         boolean saveResult = this.save(user);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败,数据库错误！");
