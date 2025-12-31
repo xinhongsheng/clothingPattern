@@ -31,6 +31,7 @@ import okhttp3.Response;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.http.MediaType;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -90,7 +91,7 @@ public class ImageFusionController {
             "4. 保证图案与服装底色协调，视觉效果干净、高级。\n" +
             "5. 背景保持简洁，不添加文字或额外装饰。";
     // -------------------------- 上传图片（无修改） --------------------------
-    @PostMapping("/upload")
+    @PostMapping(value="/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
             if (file.getSize() > 5 * 1024 * 1024) {

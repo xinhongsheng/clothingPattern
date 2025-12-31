@@ -25,6 +25,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -322,7 +323,7 @@ public class ArticleController {
     /**
      * 上传文章封面图片
      */
-    @PostMapping("/upload/cover")
+    @PostMapping(value="/upload/cover",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<String> uploadCoverImage(@RequestParam("file") MultipartFile file,
             HttpServletRequest httpRequest) {
         User loginUser = userService.getLoginUser(httpRequest);

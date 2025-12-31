@@ -408,14 +408,10 @@ const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
     return false
   }
 
-  // 创建FormData对象
-  const uploadFormData = new FormData()
-  uploadFormData.append('file', file)
-
   // 调用后端上传接口
   uploading.value = true
   try {
-    const res = await uploadCoverImage(uploadFormData)
+    const res = await uploadCoverImage({}, file) as any
     if (res.data.code === 0 && res.data.data) {
       const cosUrl = res.data.data
       formData.coverImage = cosUrl

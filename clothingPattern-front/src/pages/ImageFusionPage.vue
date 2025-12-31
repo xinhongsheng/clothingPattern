@@ -546,10 +546,8 @@ const handleSubmit = async () => {
 
     // 上传服装图片（或复用已上传URL）
     if (garmentImageFile.value) {
-      const formData = new FormData()
-      formData.append('file', garmentImageFile.value)
-      const res = await uploadImage(formData)
-      garmentUrl = (res as any)?.data?.data || (res as any)?.data?.url
+      const res = await uploadImage({}, garmentImageFile.value) as any
+      garmentUrl = res?.data?.data || res?.data?.url
       if (!garmentUrl) {
         throw new Error('服装图片上传失败')
       }
@@ -566,10 +564,8 @@ const handleSubmit = async () => {
     // 上传图案图片（或复用已上传URL）
     if (patternImageFiles.value.length) {
       for (let i = 0; i < patternImageFiles.value.length; i++) {
-        const formData = new FormData()
-        formData.append('file', patternImageFiles.value[i])
-        const res = await uploadImage(formData)
-        const url = (res as any)?.data?.data || (res as any)?.data?.url
+        const res = await uploadImage({}, patternImageFiles.value[i]) as any
+        const url = res?.data?.data || res?.data?.url
         if (!url) {
           throw new Error(`图案图片 ${i + 1} 上传失败`)
         }

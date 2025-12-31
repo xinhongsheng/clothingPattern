@@ -262,10 +262,7 @@ const handleUpload = async (file: File) => {
   }
 
   try {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await uploadBanner(formData)
+    const res = await uploadBanner({}, file) as any
     if (res.data.code === 0 && res.data.data) {
       const imageUrl = res.data.data
       form.imageUrl = imageUrl

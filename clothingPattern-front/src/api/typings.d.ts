@@ -577,8 +577,8 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    tempImageUrlList?: string[]
     localImageUrlList?: string[]
+    tempImageUrlList?: string[]
     origPromptList?: string[]
     sortList?: number[]
   }

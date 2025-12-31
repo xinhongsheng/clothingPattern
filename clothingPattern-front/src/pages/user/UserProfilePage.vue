@@ -262,13 +262,9 @@ const handleAvatarUpload = async (file: File) => {
     return false
   }
 
-  // 创建FormData对象
-  const uploadFormData = new FormData()
-  uploadFormData.append('file', file)
-
   try {
     // 调用后端上传接口
-    const res = await uploadAvatar(uploadFormData)
+    const res = await uploadAvatar({}, file) as any
     if (res.data.code === 0 && res.data.data) {
       const cosUrl = res.data.data
       userForm.userAvatar = cosUrl

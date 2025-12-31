@@ -20,6 +20,7 @@ import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -200,7 +201,7 @@ public class UserController {
     /**
      * 上传头像
      */
-    @PostMapping("/upload/avatar")
+    @PostMapping(value = "/upload/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<String> uploadAvatar(@RequestParam("file") MultipartFile file,
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);

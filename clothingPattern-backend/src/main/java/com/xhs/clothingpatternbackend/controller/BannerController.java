@@ -12,6 +12,7 @@ import com.xhs.clothingpatternbackend.utils.CosUtils;
 import com.xhs.clothingpatternbackend.config.CosClientConfig;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -85,7 +86,7 @@ public class BannerController {
     /**
      * 上传轮播图
      */
-    @PostMapping("/upload")
+    @PostMapping(value="/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<String> uploadBanner(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         if (loginUser == null) {

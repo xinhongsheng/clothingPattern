@@ -58,12 +58,12 @@ export async function submit(
 }
 
 /** 此处后端没有提供注释 POST /try-on/upload */
-export async function upload(body: FormData, options?: { [key: string]: any }) {
+export async function upload(body: {}, options?: { [key: string]: any }) {
   return request<string>('/try-on/upload', {
     method: 'POST',
-    // headers: {
-    //   'Content-Type': 'application/json',
-    // },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     data: body,
     ...(options || {}),
   })

@@ -77,14 +77,14 @@ const handleMapClick = (params) => {
 
 const getChartOption = () => {
   // 计算最大值用于 visualMap
-  const maxValue = provinceData.value.length > 0 
+  const maxValue = provinceData.value.length > 0
     ? Math.max(...provinceData.value.map(item => item.value || 0), 100)
     : 100
 
   return {
     backgroundColor: 'transparent',
     title: {
-      text: "各省用户分布统计",
+      text: "服务器各省用户分布统计",
       left: 'center',
       textStyle: {
         color: '#00f2ff',
