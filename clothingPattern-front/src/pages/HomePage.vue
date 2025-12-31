@@ -312,7 +312,8 @@ onMounted(() => {
 
 /* 顶部欢迎区域 */
 .hero-section {
-  max-width: 1400px;
+  max-width: 95%;
+  width: 100%;
   margin: 28px auto 0;
   padding: 32px 40px;
   background: linear-gradient(135deg, rgba(255, 252, 246, 0.95) 0%, rgba(255, 241, 226, 0.95) 60%, rgba(255, 252, 246, 0.9) 100%);
@@ -500,7 +501,8 @@ onMounted(() => {
 
 /* 主内容区域 */
 .main-content {
-  max-width: 1440px;
+  max-width: 95%;
+  width: 100%;
   margin: 0 auto;
   padding: 24px 24px;
   position: relative;
@@ -905,6 +907,210 @@ onMounted(() => {
     min-width: 32px;
     height: 32px;
     line-height: 32px;
+  }
+}
+
+/* 大屏幕适配 - 1600px (1080p+) */
+@media (min-width: 1600px) {
+  .hero-section {
+    max-width: 1520px;
+    padding: 36px 48px;
+  }
+
+  .hero-title {
+    font-size: 42px;
+  }
+
+  .hero-subtitle {
+    font-size: 17px;
+  }
+
+  .main-content {
+    max-width: 1560px;
+    padding: 28px 32px;
+  }
+
+  .filter-section {
+    padding: 36px;
+  }
+
+  .gallery-title {
+    font-size: 28px;
+  }
+
+  .expandable-search.expanded {
+    width: 320px;
+  }
+}
+
+/* 大屏幕适配 - 1920px (1080p Full HD) */
+@media (min-width: 1920px) {
+  .hero-section {
+    max-width: 1800px;
+    padding: 40px 56px;
+    border-radius: 32px;
+  }
+
+  .hero-title {
+    font-size: 46px;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+  }
+
+  .hero-stats {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .main-content {
+    max-width: 1840px;
+    padding: 32px 40px;
+  }
+
+  .filter-section {
+    padding: 40px;
+    border-radius: 28px;
+  }
+
+  .filter-label {
+    font-size: 16px;
+    min-width: 90px;
+  }
+
+  :deep(.ant-tag-checkable) {
+    padding: 8px 20px;
+    font-size: 15px;
+    height: 36px;
+    line-height: 20px;
+  }
+
+  .gallery-title {
+    font-size: 30px;
+  }
+
+  .gallery-subtitle {
+    font-size: 15px;
+  }
+
+  .expandable-search.expanded {
+    width: 360px;
+  }
+}
+
+/* 超大屏幕适配 - 2560px (2K QHD) */
+@media (min-width: 2560px) {
+  .hero-section {
+    max-width: 2400px;
+    padding: 48px 64px;
+    border-radius: 36px;
+  }
+
+  .hero-title {
+    font-size: 52px;
+    letter-spacing: -1px;
+  }
+
+  .hero-subtitle {
+    font-size: 20px;
+  }
+
+  .hero-eyebrow {
+    font-size: 14px;
+  }
+
+  .hero-stats {
+    font-size: 15px;
+    padding: 10px 20px;
+  }
+
+  .main-content {
+    max-width: 2440px;
+    padding: 40px 48px;
+  }
+
+  .filter-section {
+    padding: 48px;
+    border-radius: 32px;
+  }
+
+  .filter-row {
+    margin-bottom: 28px;
+  }
+
+  .filter-label {
+    font-size: 17px;
+    min-width: 100px;
+    margin-right: 24px;
+  }
+
+  :deep(.ant-tag-checkable) {
+    padding: 10px 24px;
+    font-size: 16px;
+    height: 40px;
+    line-height: 20px;
+    margin-right: 14px;
+    margin-bottom: 14px;
+  }
+
+  .gallery-header {
+    margin: 12px 8px 28px;
+  }
+
+  .gallery-title {
+    font-size: 34px;
+  }
+
+  .gallery-subtitle {
+    font-size: 16px;
+  }
+
+  .gallery-count {
+    font-size: 14px;
+    padding: 8px 20px;
+  }
+
+  .expandable-search.expanded {
+    width: 400px;
+  }
+
+  .search-card {
+    padding: 18px 22px;
+    border-radius: 24px;
+  }
+
+  .search-label {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .search-icon-btn {
+    font-size: 20px;
+    padding: 12px;
+  }
+
+  :deep(.ant-input-search .ant-input) {
+    height: 46px;
+    font-size: 16px;
+    padding-left: 22px;
+  }
+
+  .pagination {
+    margin-top: 80px;
+    padding: 32px 0;
+  }
+
+  :deep(.ant-pagination) {
+    font-size: 16px;
+  }
+
+  :deep(.ant-pagination-item) {
+    margin: 0 8px;
+    min-width: 40px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 14px !important;
   }
 }
 

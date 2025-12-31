@@ -338,4 +338,146 @@ const doDelete = async (pattern: API.PatternVO, e: Event) => {
     }
   }
 }
+
+/* 大屏幕适配 - 1600px */
+@media (min-width: 1600px) {
+  .pattern-list {
+    .pattern-cover {
+      height: 260px;
+    }
+
+    .pattern-card {
+      border-radius: 18px;
+    }
+
+    :deep(.ant-card-body) {
+      padding: 22px;
+    }
+
+    :deep(.ant-card-meta-title) {
+      font-size: 19px;
+    }
+
+    .pattern-desc .desc-text {
+      font-size: 15px;
+      min-height: 48px;
+    }
+  }
+}
+
+/* 大屏幕适配 - 1920px (Full HD) */
+@media (min-width: 1920px) {
+  .pattern-list {
+    padding: 20px 0;
+
+    .pattern-cover {
+      height: 280px;
+    }
+
+    .pattern-card {
+      border-radius: 20px;
+
+      &:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    :deep(.ant-card-body) {
+      padding: 24px;
+    }
+
+    :deep(.ant-card-meta-title) {
+      font-size: 20px;
+      margin-bottom: 10px !important;
+    }
+
+    .pattern-desc {
+      .desc-text {
+        font-size: 15px;
+        line-height: 1.7;
+        min-height: 50px;
+      }
+
+      .pattern-tags .ant-tag {
+        font-size: 13px;
+        padding: 3px 12px;
+      }
+    }
+
+    .like-action {
+      .like-icon {
+        font-size: 22px;
+      }
+      span {
+        font-size: 15px;
+      }
+    }
+  }
+}
+
+/* 超大屏幕适配 - 2560px (2K) */
+@media (min-width: 2560px) {
+  .pattern-list {
+    padding: 24px 0;
+
+    .pattern-cover {
+      height: 320px;
+    }
+
+    .pattern-card {
+      border-radius: 22px;
+
+      &:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 28px 56px rgba(0, 0, 0, 0.12);
+      }
+    }
+
+    :deep(.ant-card-body) {
+      padding: 28px;
+    }
+
+    :deep(.ant-card-meta-title) {
+      font-size: 22px;
+      margin-bottom: 12px !important;
+    }
+
+    :deep(.ant-card-actions) {
+      > li {
+        margin: 14px 0;
+        font-size: 15px;
+      }
+    }
+
+    .pattern-desc {
+      .desc-text {
+        font-size: 16px;
+        line-height: 1.75;
+        min-height: 56px;
+        margin-bottom: 16px;
+      }
+
+      .pattern-tags {
+        margin-top: 16px;
+
+        .ant-tag {
+          font-size: 14px;
+          padding: 4px 14px;
+          border-radius: 8px;
+          margin-bottom: 8px;
+        }
+      }
+    }
+
+    .like-action {
+      .like-icon {
+        font-size: 24px;
+      }
+      span {
+        font-size: 16px;
+      }
+    }
+  }
+}
 </style>
