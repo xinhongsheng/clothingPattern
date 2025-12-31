@@ -1082,7 +1082,7 @@ const handleExpandPrompt = async () => {
 <style scoped lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:wght@400;600;700&display=swap');
 
-/* ========= 主页一致的暖调主题变量 ========= */
+/* ========= 灵感社区一致的暖调主题变量 ========= */
 .mj-pattern-generation-page {
   --ink: #1f1a15;
   --muted: #7a6f66;

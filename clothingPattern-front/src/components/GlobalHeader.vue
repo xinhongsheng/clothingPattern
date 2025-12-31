@@ -55,7 +55,7 @@
                 <BellOutlined class="notification-icon" />
               </a-badge>
             </a-popover>
-            
+
             <a-dropdown>
               <a-space>
                 <a-badge :dot="hasUnread" :offset="[2, 2]">
@@ -211,8 +211,8 @@ const originItems = [
   {
     key: '/',
     icon: () => h(HomeOutlined),
-    label: '主页',
-    title: '主页',
+    label: '灵感社区',
+    title: '灵感社区',
   },
 
   {

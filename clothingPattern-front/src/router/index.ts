@@ -29,7 +29,7 @@ const router = createRouter({
 
     {
       path: '/',
-      name: '主页',
+      name: '灵感社区',
       component: HomePage,
 
     },
