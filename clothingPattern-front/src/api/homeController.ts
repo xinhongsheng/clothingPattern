@@ -41,6 +41,14 @@ export async function getPatternCount(options?: { [key: string]: any }) {
   })
 }
 
+/** 此处后端没有提供注释 GET /home/province/userCount */
+export async function getProvinceUserCount(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMapStringObject>('/home/province/userCount', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 此处后端没有提供注释 GET /home/statistics */
 export async function getHomeStatistics(options?: { [key: string]: any }) {
   return request<API.BaseResponseHomeStatisticsVO>('/home/statistics', {

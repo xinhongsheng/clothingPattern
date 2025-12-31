@@ -95,4 +95,10 @@ public interface UserService extends IService<User> {
     boolean isAdmin(User user);
 
     List<Map<String, Object>> getUserGrowth();
+
+    /**
+     * 获取各省份用户统计
+     * @return 省份用户数量列表
+     */
+    List<Map<String, Object>> getProvinceUserCount();
 }

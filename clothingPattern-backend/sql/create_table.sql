@@ -376,3 +376,10 @@ CREATE TABLE `pattern_similarity` (
                                       INDEX `idx_patternIdA`(`patternIdA`),
                                       INDEX `idx_patternIdB`(`patternIdB`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图案相似度矩阵表';
+
+-- 用户表添加省份字段
+ALTER TABLE `user` 
+ADD COLUMN `province` varchar(50) DEFAULT NULL COMMENT '所在省份' AFTER `userProfile`;
+
+-- 添加省份索引（便于统计查询）
+ALTER TABLE `user` ADD INDEX `idx_province` (`province`);

@@ -577,8 +577,8 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    localImageUrlList?: string[]
     tempImageUrlList?: string[]
+    localImageUrlList?: string[]
     origPromptList?: string[]
     sortList?: number[]
   }
@@ -602,6 +602,7 @@ declare namespace API {
     userName?: string
     userAvatar?: string
     userProfile?: string
+    province?: string
     userRole?: string
     editTime?: string
     createTime?: string
@@ -993,6 +994,7 @@ declare namespace API {
     userName?: string
     userAvatar?: string
     userProfile?: string
+    province?: string
     userRole?: string
     editTime?: string
     createTime?: string
@@ -1035,6 +1037,7 @@ declare namespace API {
     userName?: string
     userAvatar?: string
     userProfile?: string
+    province?: string
   }
 
   type UserUpdateRequest = {
@@ -1051,6 +1054,7 @@ declare namespace API {
     userName?: string
     userAvatar?: string
     userProfile?: string
+    province?: string
     userRole?: string
     createTime?: string
   }

@@ -126,4 +126,13 @@ public class HomeController {
         List<Map<String, Object>> preference = patternService.getStylePreference();
         return ResultUtils.success(preference);
     }
+
+    /**
+     * 获取各省份用户统计
+     */
+    @GetMapping("/province/userCount")
+    public BaseResponse<List<Map<String, Object>>> getProvinceUserCount() {
+        List<Map<String, Object>> provinceUserCount = userService.getProvinceUserCount();
+        return ResultUtils.success(provinceUserCount);
+    }
 }

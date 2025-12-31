@@ -264,6 +264,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return result;
     }
 
+    /**
+     * 获取各省份用户统计
+     * @return 省份用户数量列表
+     */
+    @Override
+    public List<Map<String, Object>> getProvinceUserCount() {
+        // 查询所有用户的省份分布
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("province", "count(*) as count")
+                .isNotNull("province")
+                .ne("province", "")
+                .groupBy("province")
+                .orderByDesc("count");
+
+        List<Map<String, Object>> result = this.baseMapper.selectMaps(queryWrapper);
+        return result;
+    }
+
 }
 
 

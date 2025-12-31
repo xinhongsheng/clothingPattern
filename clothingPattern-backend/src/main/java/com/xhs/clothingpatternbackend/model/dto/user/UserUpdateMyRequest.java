@@ -25,6 +25,11 @@ public class UserUpdateMyRequest implements Serializable {
      */
     private String userProfile;
 
+    /**
+     * 所在省份
+     */
+    private String province;
+
     private static final long serialVersionUID = 1L;
 }
 

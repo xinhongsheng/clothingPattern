@@ -8,9 +8,11 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import chinaJson from '@/assets/china.json' // 导入 JSON 文件
+import { getProvinceUserCount } from '@/api/homeController'
 
 const chartRef = ref(null)
 let chartInstance = null
+const provinceData = ref([])
 
 onMounted(async () => {
   await initChart()
@@ -24,6 +26,9 @@ onBeforeUnmount(() => {
 
 const initChart = async () => {
   try {
+    // 获取省份用户统计数据
+    await fetchProvinceData()
+
     // 初始化图表
     chartInstance = echarts.init(chartRef.value, 'tech')
 
@@ -37,6 +42,22 @@ const initChart = async () => {
     chartInstance.on('click', handleMapClick)
   } catch (error) {
     console.error('地图初始化失败:', error)
+  }
+}
+
+// 获取省份用户统计数据
+const fetchProvinceData = async () => {
+  try {
+    const res = await getProvinceUserCount()
+    if (res.data.code === 0 && res.data.data) {
+      // 转换数据格式为 ECharts 需要的格式
+      provinceData.value = res.data.data.map((item) => ({
+        name: item.province,
+        value: item.count,
+      }))
+    }
+  } catch (error) {
+    console.error('获取省份统计数据失败:', error)
   }
 }
 
@@ -55,10 +76,15 @@ const handleMapClick = (params) => {
 }
 
 const getChartOption = () => {
+  // 计算最大值用于 visualMap
+  const maxValue = provinceData.value.length > 0 
+    ? Math.max(...provinceData.value.map(item => item.value || 0), 100)
+    : 100
+
   return {
     backgroundColor: 'transparent',
     title: {
-      text: "中国服装风格趋势数据可视化",
+      text: "各省用户分布统计",
       left: 'center',
       textStyle: {
         color: '#00f2ff',
@@ -70,8 +96,10 @@ const getChartOption = () => {
     tooltip: {
       trigger: 'item',
       formatter: (params) => {
+        const value = params.value || 0
         return `
           <div style="font-weight:bold; color: #00f2ff;">${params.name}</div>
+          <div style="color: #fff; margin-top: 4px;">用户数: <span style="color: #50d2ff; font-weight: bold;">${value}</span> 人</div>
         `
       },
       backgroundColor: 'rgba(0, 20, 50, 0.9)',
@@ -83,7 +111,7 @@ const getChartOption = () => {
     },
     visualMap: {
       min: 0,
-      max: 1000,
+      max: maxValue,
       text: ['高', '低'],
       realtime: false,
       calculable: true,
@@ -96,11 +124,12 @@ const getChartOption = () => {
     },
     series: [
       {
-        name: '数据',
+        name: '用户数量',
         type: 'map',
         map: 'china',
         roam: true,
         zoom: 1.2,
+        data: provinceData.value, // 使用接口返回的数据
         label: {
           show: true,
           color: '#fff',

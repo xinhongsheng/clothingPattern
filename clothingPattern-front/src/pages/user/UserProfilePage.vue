@@ -56,6 +56,21 @@
                 />
               </a-form-item>
 
+              <!-- 所在省份 -->
+              <a-form-item label="所在省份" name="province">
+                <a-select
+                  v-model:value="userForm.province"
+                  placeholder="请选择所在省份"
+                  show-search
+                  allow-clear
+                  :filter-option="filterOption"
+                >
+                  <a-select-option v-for="province in provinceList" :key="province" :value="province">
+                    {{ province }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+
               <!-- 按钮 -->
               <a-form-item :wrapper-col="{ offset: 4, span: 16 }">
                 <a-space>
@@ -148,7 +163,25 @@ const userForm = reactive({
   userName: '',
   userAvatar: '',
   userProfile: '',
+  province: '',
 })
+
+// 省份列表
+const provinceList = [
+  '北京市', '天津市', '上海市', '重庆市',
+  '河北省', '山西省', '辽宁省', '吉林省', '黑龙江省',
+  '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省',
+  '河南省', '湖北省', '湖南省', '广东省', '海南省',
+  '四川省', '贵州省', '云南省', '陕西省', '甘肃省', '青海省',
+  '台湾省',
+  '内蒙古自治区', '广西壮族自治区', '西藏自治区', '宁夏回族自治区', '新疆维吾尔自治区',
+  '香港特别行政区', '澳门特别行政区',
+]
+
+// 省份搜索过滤
+const filterOption = (input: string, option: any) => {
+  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+}
 
 // 保存状态
 const saving = ref(false)
@@ -166,6 +199,7 @@ const loadUserInfo = async () => {
       userForm.userName = user.userName || ''
       userForm.userAvatar = user.userAvatar || ''
       userForm.userProfile = user.userProfile || ''
+      userForm.province = user.province || ''
     }
   } catch (error: any) {
     console.error('加载用户信息失败:', error)
@@ -198,6 +232,7 @@ const handleUpdateProfile = async () => {
       userName: userForm.userName,
       userAvatar: userForm.userAvatar,
       userProfile: userForm.userProfile,
+      province: userForm.province,
     })
     if (res.data.code === 0) {
       message.success('保存成功')
