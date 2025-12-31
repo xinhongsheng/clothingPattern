@@ -396,6 +396,13 @@ router.afterEach((to) => {
   background-color: #f5f5f5;
 }
 
+.user-login-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
 .user-login-status > div {
   display: flex;
   align-items: center;
