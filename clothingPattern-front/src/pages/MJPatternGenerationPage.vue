@@ -1805,7 +1805,8 @@ const handleExpandPrompt = async () => {
   gap: 12px;
 }
 
-.action-row { display: flex; gap: 12px; }
+.action-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.action-row .ghost-btn { flex: 1; min-width: 120px; white-space: nowrap; }
 
 .ghost-btn {
   height: 42px;

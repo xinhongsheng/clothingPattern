@@ -265,10 +265,14 @@ public class MJController {
             String cosPatternUrl;
             String cosThumbUrl;
             Integer fileSize = null;
+            String fileType = "image/png";  // 默认值
             
             // 下载原始图片到临时文件
-            tempFile = downloadImageToTempFile(rawImageUrl);
-            if (tempFile != null && tempFile.exists()) {
+            DownloadResult downloadResult = downloadImageToTempFile(rawImageUrl);
+            if (downloadResult != null && downloadResult.file != null && downloadResult.file.exists()) {
+                tempFile = downloadResult.file;
+                fileType = downloadResult.contentType;
+                
                 // 获取文件大小
                 fileSize = (int) tempFile.length();
                 
@@ -320,7 +324,7 @@ public class MJController {
             pattern.setPatternUrl(cosPatternUrl);
             pattern.setThumbUrl(cosThumbUrl);
             pattern.setFileSize(fileSize);  // 保存文件大小
-            pattern.setFileType("image/png");
+            pattern.setFileType(fileType);  // 自动获取的文件类型
             pattern.setStyle(style);
             pattern.setSeason(season);
             pattern.setTargetAudience(targetAudience);
@@ -358,9 +362,9 @@ public class MJController {
      * 下载图片到临时文件
      *
      * @param imageUrl 图片URL
-     * @return 临时文件
+     * @return 下载结果（包含临时文件和contentType）
      */
-    private File downloadImageToTempFile(String imageUrl) {
+    private DownloadResult downloadImageToTempFile(String imageUrl) {
         HttpURLConnection connection = null;
         InputStream inputStream = null;
         try {
@@ -377,13 +381,26 @@ public class MJController {
                 return null;
             }
             
+            // 获取 Content-Type
+            String contentType = connection.getContentType();
+            if (StringUtils.isBlank(contentType)) {
+                contentType = "image/png";  // 默认值
+            }
+            // 去除可能的字符集后缀，如 "image/png; charset=utf-8"
+            if (contentType.contains(";")) {
+                contentType = contentType.substring(0, contentType.indexOf(";")).trim();
+            }
+            
+            // 根据 Content-Type 确定文件后缀
+            String suffix = getFileExtensionFromContentType(contentType);
+            
             inputStream = connection.getInputStream();
-            File tempFile = File.createTempFile("mj_image_", ".png");
+            File tempFile = File.createTempFile("mj_image_", suffix);
             Files.copy(inputStream, tempFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             
-            log.info("图片下载成功，临时文件: {}，大小: {} bytes", 
-                    tempFile.getAbsolutePath(), tempFile.length());
-            return tempFile;
+            log.info("图片下载成功，临时文件: {}，大小: {} bytes，类型: {}", 
+                    tempFile.getAbsolutePath(), tempFile.length(), contentType);
+            return new DownloadResult(tempFile, contentType);
             
         } catch (Exception e) {
             log.error("下载图片异常: {}", e.getMessage());
@@ -397,6 +414,40 @@ public class MJController {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+    
+    /**
+     * 根据 Content-Type 获取文件后缀
+     */
+    private String getFileExtensionFromContentType(String contentType) {
+        if (contentType == null) return ".png";
+        switch (contentType.toLowerCase()) {
+            case "image/jpeg":
+            case "image/jpg":
+                return ".jpg";
+            case "image/gif":
+                return ".gif";
+            case "image/webp":
+                return ".webp";
+            case "image/bmp":
+                return ".bmp";
+            case "image/png":
+            default:
+                return ".png";
+        }
+    }
+    
+    /**
+     * 下载结果封装类
+     */
+    private static class DownloadResult {
+        final File file;
+        final String contentType;
+        
+        DownloadResult(File file, String contentType) {
+            this.file = file;
+            this.contentType = contentType;
         }
     }
     
