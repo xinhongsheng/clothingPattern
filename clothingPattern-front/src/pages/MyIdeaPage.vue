@@ -602,31 +602,22 @@ const handleUploadSubmit = async () => {
 
   uploading.value = true
   try {
-    const formData = new FormData()
-    formData.append('file', file.originFileObj as Blob)
-    if (uploadForm.patternName) {
-      formData.append('patternName', uploadForm.patternName)
-    }
-    if (uploadForm.description) {
-      formData.append('description', uploadForm.description)
-    }
-    if (uploadForm.style) {
-      formData.append('style', uploadForm.style)
-    }
-    if (uploadForm.season) {
-      formData.append('season', uploadForm.season)
-    }
-    if (uploadForm.targetAudience) {
-      formData.append('targetAudience', uploadForm.targetAudience)
+    // 构建参数对象
+    const params: API.uploadPatternParams = {
+      patternName: uploadForm.patternName || undefined,
+      description: uploadForm.description || undefined,
+      style: uploadForm.style || undefined,
+      season: uploadForm.season || undefined,
+      targetAudience: uploadForm.targetAudience || undefined,
     }
 
-    const res = await uploadPattern(formData)
-    if (res.data.code === 0) {
+    const res = await uploadPattern(params, {}, file.originFileObj as File)
+    if ((res as any).data?.code === 0) {
       message.success('图案上传成功！')
       resetUploadForm()
       fetchData() // 刷新列表
     } else {
-      message.error('上传失败：' + res.data.message)
+      message.error('上传失败：' + ((res as any).data?.message || '未知错误'))
     }
   } catch (error: any) {
     console.error('上传失败:', error)

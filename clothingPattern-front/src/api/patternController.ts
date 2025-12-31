@@ -191,14 +191,43 @@ export async function updatePattern(
   })
 }
 
-/** 上传图案（用户手动上传本地图案） POST /pattern/upload */
+/** 此处后端没有提供注释 POST /pattern/upload */
 export async function uploadPattern(
-  formData: FormData,
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.uploadPatternParams,
+  body: {},
+  file?: File,
   options?: { [key: string]: any }
 ) {
+  const formData = new FormData()
+
+  if (file) {
+    formData.append('file', file)
+  }
+
+  Object.keys(body).forEach((ele) => {
+    const item = (body as any)[ele]
+
+    if (item !== undefined && item !== null) {
+      if (typeof item === 'object' && !(item instanceof File)) {
+        if (item instanceof Array) {
+          item.forEach((f) => formData.append(ele, f || ''))
+        } else {
+          formData.append(ele, new Blob([JSON.stringify(item)], { type: 'application/json' }))
+        }
+      } else {
+        formData.append(ele, item)
+      }
+    }
+  })
+
   return request<API.BaseResponseLong>('/pattern/upload', {
     method: 'POST',
+    params: {
+      ...params,
+    },
     data: formData,
+    requestType: 'form',
     ...(options || {}),
   })
 }

@@ -102,7 +102,7 @@ public class PatternController {
      * @param request HTTP请求
      * @return 上传结果
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<Long> uploadPattern(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "patternName", required = false) String patternName,

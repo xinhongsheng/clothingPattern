@@ -577,10 +577,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    sortList?: number[]
-    tempImageUrlList?: string[]
     localImageUrlList?: string[]
+    tempImageUrlList?: string[]
     origPromptList?: string[]
+    sortList?: number[]
   }
 
   type likeArticleParams = {
@@ -972,6 +972,14 @@ declare namespace API {
     errorCode?: string
     errorMessage?: string
     localResultUrl?: string
+  }
+
+  type uploadPatternParams = {
+    patternName?: string
+    description?: string
+    style?: string
+    season?: string
+    targetAudience?: string
   }
 
   type Usage = {
