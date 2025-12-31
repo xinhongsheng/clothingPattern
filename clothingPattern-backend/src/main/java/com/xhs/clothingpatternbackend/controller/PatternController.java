@@ -14,6 +14,12 @@ import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.pattern.*;
+import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
+import com.xhs.clothingpatternbackend.model.enums.UserRoleEnum;
+import com.xhs.clothingpatternbackend.config.CosClientConfig;
+import com.xhs.clothingpatternbackend.utils.CosUtils;
+import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
+import org.springframework.web.multipart.MultipartFile;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.PatternGenerateStatusEnum;
@@ -70,6 +76,12 @@ public class PatternController {
     @Resource
     private PatternGenerateProducer patternGenerateProducer;
 
+    @Resource
+    private CosUtils cosUtils;
+
+    @Resource
+    private CosClientConfig cosClientConfig;
+
     // 改为公共静态变量，方便其他服务清空缓存
     public static final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -77,6 +89,86 @@ public class PatternController {
                     // 缓存 5 分钟移除
                     .expireAfterWrite(5L, TimeUnit.MINUTES)
                     .build();
+
+    /**
+     * 上传图案（用户手动上传本地图案）
+     *
+     * @param file 图案文件
+     * @param patternName 图案名称
+     * @param description 描述
+     * @param style 风格
+     * @param season 季节
+     * @param targetAudience 目标人群
+     * @param request HTTP请求
+     * @return 上传结果
+     */
+    @PostMapping("/upload")
+    public BaseResponse<Long> uploadPattern(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "patternName", required = false) String patternName,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "style", required = false) String style,
+            @RequestParam(value = "season", required = false) String season,
+            @RequestParam(value = "targetAudience", required = false) String targetAudience,
+            HttpServletRequest request) {
+        // 校验参数
+        ThrowUtils.throwIf(file == null || file.isEmpty(), ErrorCode.PARAMS_ERROR, "文件不能为空");
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        // 校验文件大小（不超过5MB）
+        long fileSize = file.getSize();
+        ThrowUtils.throwIf(fileSize > 5 * 1024 * 1024, ErrorCode.PARAMS_ERROR, "图片大小不能超过5MB");
+
+        // 校验文件类型
+        String contentType = file.getContentType();
+        ThrowUtils.throwIf(contentType == null || !contentType.startsWith("image/"), 
+                ErrorCode.PARAMS_ERROR, "只支持图片文件");
+
+        // 上传图片到COS
+        String patternUrl = CosImageUploadUtils.uploadImageToCos(
+                file,
+                loginUser.getId(),
+                cosUtils,
+                cosClientConfig,
+                "pattern_upload_",
+                "pattern/upload/",
+                true
+        );
+
+        // 创建图案记录
+        Pattern pattern = new Pattern();
+        pattern.setUserId(loginUser.getId());
+        pattern.setPatternName(patternName != null && !patternName.isEmpty() ? patternName : "用户上传图案");
+        pattern.setDescription(description);
+        pattern.setGenerationType("手动上传");
+        pattern.setPatternUrl(patternUrl);
+        pattern.setThumbUrl(patternUrl); // 缩略图使用原图
+        pattern.setStyle(style);
+        pattern.setSeason(season);
+        pattern.setTargetAudience(targetAudience);
+        pattern.setFileType(contentType);
+        pattern.setFileSize((int) fileSize);
+
+        // 设置审核状态：管理员直接通过，普通用户待审核
+        if (UserRoleEnum.ADMIN.getValue().equals(loginUser.getUserRole())) {
+            pattern.setAuditStatus(AuditStatusEnum.APPROVED.getValue());
+        } else {
+            pattern.setAuditStatus(AuditStatusEnum.PENDING.getValue());
+        }
+
+        // 校验数据
+        patternService.validPattern(pattern, true);
+
+        // 保存到数据库
+        boolean result = patternService.save(pattern);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图案保存失败");
+
+        // 清空图案列表缓存
+        clearPatternListCache();
+
+        return ResultUtils.success(pattern.getId());
+    }
 
     /**
      * 生成图案

@@ -190,3 +190,15 @@ export async function updatePattern(
     ...(options || {}),
   })
 }
+
+/** 上传图案（用户手动上传本地图案） POST /pattern/upload */
+export async function uploadPattern(
+  formData: FormData,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseLong>('/pattern/upload', {
+    method: 'POST',
+    data: formData,
+    ...(options || {}),
+  })
+}

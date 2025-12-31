@@ -13,7 +13,68 @@
         <PlusOutlined />
         创作新图案
       </a-button>
+      <a-button type="default" size="large" @click="showUploadModal" class="upload-btn">
+        <UploadOutlined />
+        上传
+      </a-button>
     </div>
+
+    <!-- 上传图案对话框 -->
+    <a-modal
+      v-model:open="uploadModalVisible"
+      title="上传图案"
+      :confirm-loading="uploading"
+      @ok="handleUploadSubmit"
+      @cancel="resetUploadForm"
+      width="520px"
+      class="upload-modal"
+    >
+      <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 20 }">
+        <a-form-item label="图案文件" required>
+          <a-upload
+            v-model:file-list="uploadFileList"
+            :before-upload="beforeUpload"
+            :max-count="1"
+            accept="image/*"
+            list-type="picture-card"
+          >
+            <div v-if="!uploadFileList || uploadFileList.length === 0">
+              <UploadOutlined />
+              <div style="margin-top: 8px">点击上传</div>
+            </div>
+          </a-upload>
+          <div class="upload-tip">支持 JPG、PNG 格式，大小不超过 5MB</div>
+        </a-form-item>
+        <a-form-item label="图案名称">
+          <a-input v-model:value="uploadForm.patternName" placeholder="请输入图案名称" :maxlength="50" />
+        </a-form-item>
+        <a-form-item label="图案描述">
+          <a-textarea v-model:value="uploadForm.description" placeholder="请输入图案描述" :rows="3" :maxlength="500" />
+        </a-form-item>
+        <a-form-item label="风格">
+          <a-select v-model:value="uploadForm.style" placeholder="请选择风格" allow-clear>
+            <a-select-option v-for="style in styleList" :key="style" :value="style">{{ style }}</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="季节">
+          <a-select v-model:value="uploadForm.season" placeholder="请选择季节" allow-clear>
+            <a-select-option value="春季">春季</a-select-option>
+            <a-select-option value="夏季">夏季</a-select-option>
+            <a-select-option value="秋季">秋季</a-select-option>
+            <a-select-option value="冬季">冬季</a-select-option>
+            <a-select-option value="四季通用">四季通用</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="目标人群">
+          <a-auto-complete
+            v-model:value="uploadForm.targetAudience"
+            :options="targetAudienceOptions"
+            placeholder="请选择或输入目标人群"
+            allow-clear
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
     <!-- 搜索和筛选区域 -->
     <a-card class="filter-card" :bordered="false">
@@ -215,9 +276,11 @@ import {
   ClockCircleOutlined,
   CloseCircleOutlined,
   AppstoreOutlined,
+  UploadOutlined,
 } from '@ant-design/icons-vue'
 import * as echarts from 'echarts'
-import { listMyPatternVoByPage } from '@/api/patternController'
+import { listMyPatternVoByPage, uploadPattern } from '@/api/patternController'
+import type { UploadProps } from 'ant-design-vue'
 import PatternList from '@/components/PatternList.vue'
 import {
   AUDIT_STATUS_OPTIONS,
@@ -226,6 +289,18 @@ import {
 } from '@/constants/pattern'
 
 const router = useRouter()
+
+// 上传相关状态
+const uploadModalVisible = ref(false)
+const uploading = ref(false)
+const uploadFileList = ref<UploadProps['fileList']>([])
+const uploadForm = reactive({
+  patternName: '',
+  description: '',
+  style: undefined as string | undefined,
+  season: undefined as string | undefined,
+  targetAudience: '',
+})
 
 // 数据
 const dataList = ref<API.PatternVO[]>([])
@@ -243,6 +318,15 @@ let statusChart: echarts.ECharts | null = null
 
 // 风格列表（与 HomePage 保持一致）
 const styleList = ['简约','可爱', '复古', '民族', '抽象', '未来']
+
+// 目标人群选项
+const targetAudienceOptions = [
+  { value: '儿童' },
+  { value: '青少年' },
+  { value: '成人' },
+  { value: '中老年' },
+  { value: '通用' },
+]
 
 // 搜索条件
 const searchParams = reactive<API.PatternQueryRequest>({
@@ -472,6 +556,86 @@ const goToCreate = () => {
   router.push('/mj/generation')
 }
 
+// 打开上传对话框
+const showUploadModal = () => {
+  uploadModalVisible.value = true
+}
+
+// 上传前校验
+const beforeUpload = (file: File) => {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    message.error('只能上传图片文件!')
+    return false
+  }
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    message.error('图片大小不能超过 5MB!')
+    return false
+  }
+  return false // 返回false阻止自动上传，手动提交
+}
+
+// 重置上传表单
+const resetUploadForm = () => {
+  uploadFileList.value = []
+  uploadForm.patternName = ''
+  uploadForm.description = ''
+  uploadForm.style = undefined
+  uploadForm.season = undefined
+  uploadForm.targetAudience = ''
+  uploadModalVisible.value = false
+}
+
+// 提交上传
+const handleUploadSubmit = async () => {
+  if (!uploadFileList.value || uploadFileList.value.length === 0) {
+    message.warning('请先选择要上传的图片')
+    return
+  }
+
+  const file = uploadFileList.value[0]
+  if (!file || !file.originFileObj) {
+    message.error('文件上传失败，请重新选择')
+    return
+  }
+
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file.originFileObj as Blob)
+    if (uploadForm.patternName) {
+      formData.append('patternName', uploadForm.patternName)
+    }
+    if (uploadForm.description) {
+      formData.append('description', uploadForm.description)
+    }
+    if (uploadForm.style) {
+      formData.append('style', uploadForm.style)
+    }
+    if (uploadForm.season) {
+      formData.append('season', uploadForm.season)
+    }
+    if (uploadForm.targetAudience) {
+      formData.append('targetAudience', uploadForm.targetAudience)
+    }
+
+    const res = await uploadPattern(formData)
+    if (res.data.code === 0) {
+      message.success('图案上传成功！')
+      resetUploadForm()
+      fetchData() // 刷新列表
+    } else {
+      message.error('上传失败：' + res.data.message)
+    }
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    message.error('上传失败：' + error.message)
+  } finally {
+    uploading.value = false
+  }
+}
+
 // 页面加载
 onMounted(() => {
   fetchData()
@@ -554,6 +718,29 @@ onBeforeUnmount(() => {
           transform: translateY(-3px);
           box-shadow: 0 8px 24px rgba(76, 201, 240, 0.4);
           background: linear-gradient(135deg, #43bffa 0%, #3a86ff 100%) !important;
+        }
+
+        &:active {
+          transform: translateY(-1px);
+        }
+      }
+
+      .upload-btn {
+        margin-left: 12px;
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid rgba(255, 255, 255, 0.5) !important;
+        border-radius: 12px !important;
+        padding: 0 24px !important;
+        height: 52px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: white !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+          transform: translateY(-3px);
+          background: rgba(255, 255, 255, 0.3) !important;
+          border-color: white !important;
         }
 
         &:active {
@@ -1162,5 +1349,36 @@ onBeforeUnmount(() => {
 
 :deep(.ant-list-loading) {
   padding: 64px 0;
+}
+
+// 上传对话框样式
+.upload-modal {
+  :deep(.ant-modal-content) {
+    border-radius: 16px;
+  }
+
+  :deep(.ant-modal-header) {
+    border-radius: 16px 16px 0 0;
+  }
+
+  :deep(.ant-upload-wrapper.ant-upload-picture-card-wrapper) {
+    .ant-upload.ant-upload-select {
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      border: 2px dashed #d9d9d9;
+      transition: all 0.3s;
+
+      &:hover {
+        border-color: #4299e1;
+      }
+    }
+  }
+
+  .upload-tip {
+    margin-top: 8px;
+    color: #718096;
+    font-size: 13px;
+  }
 }
 </style>
