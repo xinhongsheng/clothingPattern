@@ -208,10 +208,10 @@
     </a-modal>
 
     <!-- 详情弹窗 -->
-    <a-modal v-model:open="detailModalVisible" title="图案详情" :footer="null" width="800px">
+    <a-modal v-model:open="detailModalVisible" title="图案详情" :footer="null" :width="detailModalWidth" class="detail-modal">
       <div v-if="currentPattern" class="pattern-detail">
-        <a-row :gutter="24">
-          <a-col :span="12">
+        <a-row :gutter="[16, 16]">
+          <a-col :xs="24" :sm="24" :md="12">
             <div class="detail-image">
               <a-image
                 :src="currentPattern.patternUrl"
@@ -220,7 +220,7 @@
               />
             </div>
           </a-col>
-          <a-col :span="12">
+          <a-col :xs="24" :sm="24" :md="12">
             <a-descriptions :column="1" bordered size="small">
               <a-descriptions-item label="图案名称">
                 {{ currentPattern.patternName }}
@@ -383,6 +383,12 @@ const rejectForm = reactive({
 // 详情弹窗
 const detailModalVisible = ref(false)
 const currentPattern = ref<any>(null)
+const detailModalWidth = computed(() => {
+  if (typeof window !== 'undefined' && window.innerWidth < 576) {
+    return '95%'
+  }
+  return '800px'
+})
 
 // 获取数据
 const fetchData = async () => {
@@ -641,17 +647,341 @@ onMounted(() => {
   }
 }
 
+/* 响应式适配 */
+@media (max-width: 992px) {
+  #patternManagePage {
+    padding: 20px;
+
+    .header-card {
+      .page-title {
+        font-size: 22px;
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
+  #patternManagePage {
+    padding: 16px;
+
+    .header-card {
+      .page-title {
+        font-size: 18px;
+        gap: 6px;
+      }
+
+      .page-desc {
+        font-size: 13px;
+        margin-top: 6px;
+      }
+
+      :deep(.ant-flex) {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+      }
+
+      :deep(.ant-space) {
+        width: 100%;
+      }
+
+      :deep(.ant-btn) {
+        flex: 1;
+      }
+    }
+
+    .search-card {
+      :deep(.ant-form-inline .ant-form-item) {
+        display: block;
+        margin-right: 0;
+        width: 100%;
+      }
+
+      :deep(.ant-form-item-control) {
+        width: 100%;
+      }
+
+      :deep(.ant-input),
+      :deep(.ant-select),
+      :deep(.ant-input-number) {
+        width: 100% !important;
+      }
+
+      :deep(.ant-btn) {
+        width: 100%;
+      }
+    }
+
+    .table-card {
+      :deep(.ant-table) {
+        font-size: 13px;
+      }
+
+      :deep(.ant-table-thead > tr > th) {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 10px 8px;
+      }
+
+      .pattern-preview :deep(.ant-image) {
+        width: 70px !important;
+        height: 70px !important;
+      }
+    }
+
+    .pattern-detail {
+      :deep(.ant-descriptions-item-label) {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+
+      :deep(.ant-descriptions-item-content) {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
   #patternManagePage {
     padding: 12px;
 
-    .page-title {
-      font-size: 20px;
+    .header-card {
+      margin-bottom: 12px;
+      border-radius: 8px;
+
+      :deep(.ant-card-body) {
+        padding: 14px;
+      }
+
+      .page-title {
+        font-size: 16px;
+      }
+
+      .page-desc {
+        font-size: 12px;
+      }
+
+      :deep(.ant-btn) {
+        height: 36px;
+        font-size: 13px;
+      }
+
+      :deep(.ant-badge-count) {
+        font-size: 10px;
+        height: 16px;
+        line-height: 16px;
+        padding: 0 4px;
+      }
     }
 
-    :deep(.ant-form-inline .ant-form-item) {
-      display: block;
-      margin-right: 0;
+    .search-card {
+      margin-bottom: 12px;
+      border-radius: 8px;
+
+      :deep(.ant-card-body) {
+        padding: 14px;
+      }
+
+      :deep(.ant-form-item) {
+        margin-bottom: 10px;
+      }
+
+      :deep(.ant-form-item-label) {
+        font-size: 13px;
+      }
+
+      :deep(.ant-input),
+      :deep(.ant-select-selector),
+      :deep(.ant-input-number) {
+        height: 36px !important;
+        font-size: 13px;
+      }
+
+      :deep(.ant-btn) {
+        height: 36px;
+        font-size: 13px;
+      }
+    }
+
+    .table-card {
+      border-radius: 8px;
+
+      :deep(.ant-card-body) {
+        padding: 12px;
+      }
+
+      :deep(.ant-table) {
+        font-size: 12px;
+      }
+
+      :deep(.ant-table-thead > tr > th) {
+        padding: 8px 6px;
+        font-size: 11px;
+      }
+
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 8px 6px;
+      }
+
+      .pattern-preview :deep(.ant-image) {
+        width: 50px !important;
+        height: 50px !important;
+      }
+
+      .pattern-info {
+        strong {
+          font-size: 12px;
+        }
+
+        .info-item {
+          font-size: 10px;
+        }
+      }
+
+      :deep(.ant-tag) {
+        font-size: 10px;
+        padding: 0 4px;
+        margin: 0;
+      }
+
+      :deep(.ant-btn-sm) {
+        font-size: 10px;
+        padding: 2px 6px;
+        height: 24px;
+      }
+
+      :deep(.ant-pagination) {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      :deep(.ant-pagination-total-text) {
+        width: 100%;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      :deep(.ant-pagination-item),
+      :deep(.ant-pagination-prev),
+      :deep(.ant-pagination-next) {
+        min-width: 28px;
+        height: 28px;
+        line-height: 28px;
+      }
+    }
+
+    .pattern-detail {
+      :deep(.ant-descriptions-item-label) {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+
+      :deep(.ant-descriptions-item-content) {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+    }
+  }
+
+  :deep(.detail-modal .ant-modal-body) {
+    padding: 12px;
+  }
+
+  :deep(.ant-modal-content) {
+    border-radius: 10px;
+  }
+
+  :deep(.ant-modal-header) {
+    padding: 12px 16px;
+  }
+
+  :deep(.ant-modal-title) {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  #patternManagePage {
+    padding: 10px;
+
+    .header-card,
+    .search-card,
+    .table-card {
+      border-radius: 6px;
+    }
+
+    .header-card {
+      :deep(.ant-card-body) {
+        padding: 12px;
+      }
+
+      .page-title {
+        font-size: 15px;
+      }
+
+      :deep(.ant-btn) {
+        height: 34px;
+        font-size: 12px;
+        padding: 0 10px;
+      }
+    }
+
+    .search-card {
+      :deep(.ant-card-body) {
+        padding: 12px;
+      }
+
+      :deep(.ant-form-item) {
+        margin-bottom: 8px;
+      }
+
+      :deep(.ant-input),
+      :deep(.ant-select-selector),
+      :deep(.ant-input-number) {
+        height: 34px !important;
+        font-size: 12px;
+      }
+
+      :deep(.ant-btn) {
+        height: 34px;
+        font-size: 12px;
+      }
+    }
+
+    .table-card {
+      :deep(.ant-card-body) {
+        padding: 10px;
+      }
+
+      :deep(.ant-table-thead > tr > th),
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 6px 4px;
+      }
+
+      .pattern-preview :deep(.ant-image) {
+        width: 40px !important;
+        height: 40px !important;
+      }
+
+      :deep(.ant-btn-sm) {
+        font-size: 9px;
+        padding: 1px 4px;
+        height: 22px;
+      }
+    }
+
+    .pattern-detail {
+      :deep(.ant-descriptions-item-label),
+      :deep(.ant-descriptions-item-content) {
+        font-size: 10px;
+        padding: 5px 6px;
+      }
     }
   }
 }
