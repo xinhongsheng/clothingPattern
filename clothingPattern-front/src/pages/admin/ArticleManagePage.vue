@@ -79,6 +79,8 @@
         :pagination="pagination"
         @change="doTableChange"
         row-key="id"
+        :scroll="{ x: 1200 }"
+        class="article-table"
       >
         <!-- 使用新的 bodyCell 插槽 -->
         <template #bodyCell="{ column, record }">
@@ -184,9 +186,10 @@
     <a-modal
       :open="categoryModalVisible"
       title="分类管理"
-      width="800px"
+      :width="categoryModalWidth"
       @cancel="categoryModalVisible = false"
       :footer="null"
+      class="category-modal"
     >
       <div class="category-manage">
         <!-- 新增分类表单 -->
@@ -381,6 +384,12 @@ const loading = ref(false)
 const categoryModalVisible = ref(false)
 const editCategoryModalVisible = ref(false)
 const categoryLoading = ref(false)
+const categoryModalWidth = computed(() => {
+  if (typeof window !== 'undefined' && window.innerWidth < 576) {
+    return '95%'
+  }
+  return '800px'
+})
 const newCategory = reactive({
   categoryName: '',
   categoryDesc: '',
@@ -859,6 +868,8 @@ onMounted(() => {
 <style scoped lang="scss">
 .article-manage-page {
   padding: 24px;
+  min-height: 100vh;
+  background: #f0f2f5;
 
   .search-bar {
     margin-bottom: 16px;
@@ -901,6 +912,389 @@ onMounted(() => {
     margin-top: 8px;
     color: #999;
     font-size: 12px;
+  }
+}
+
+/* 响应式适配 */
+@media (max-width: 992px) {
+  .article-manage-page {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .article-manage-page {
+    padding: 16px;
+
+    :deep(.ant-card-head) {
+      padding: 12px 16px;
+    }
+
+    :deep(.ant-card-head-title) {
+      font-size: 16px;
+    }
+
+    :deep(.ant-card-extra) {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    :deep(.ant-card-head-wrapper) {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    :deep(.ant-card-extra .ant-space) {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    :deep(.ant-card-extra .ant-btn) {
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .search-bar {
+      padding: 12px;
+
+      :deep(.ant-form-inline .ant-form-item) {
+        display: block;
+        margin-right: 0;
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      :deep(.ant-form-item-control) {
+        width: 100%;
+      }
+
+      :deep(.ant-input),
+      :deep(.ant-select) {
+        width: 100% !important;
+      }
+
+      :deep(.ant-space) {
+        width: 100%;
+      }
+
+      :deep(.ant-btn) {
+        flex: 1;
+      }
+    }
+
+    .article-table {
+      :deep(.ant-table) {
+        font-size: 13px;
+      }
+
+      :deep(.ant-table-thead > tr > th) {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 10px 8px;
+      }
+
+      :deep(.ant-image) {
+        width: 60px !important;
+        height: 45px !important;
+      }
+
+      :deep(.ant-tag) {
+        font-size: 10px;
+        padding: 0 4px;
+        margin: 2px;
+      }
+
+      :deep(.ant-btn-link) {
+        padding: 2px 4px;
+        font-size: 12px;
+      }
+    }
+
+    :deep(.ant-pagination) {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    :deep(.ant-pagination-total-text) {
+      width: 100%;
+      text-align: center;
+    }
+  }
+
+  .category-manage {
+    :deep(.ant-row) {
+      flex-direction: column;
+    }
+
+    :deep(.ant-col) {
+      max-width: 100% !important;
+      flex: 0 0 100% !important;
+    }
+
+    :deep(.ant-form-item) {
+      margin-bottom: 12px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .article-manage-page {
+    padding: 12px;
+
+    :deep(.ant-card) {
+      border-radius: 8px;
+    }
+
+    :deep(.ant-card-body) {
+      padding: 12px;
+    }
+
+    :deep(.ant-card-head) {
+      padding: 10px 12px;
+      min-height: auto;
+    }
+
+    :deep(.ant-card-head-title) {
+      font-size: 15px;
+    }
+
+    :deep(.ant-card-extra .ant-btn) {
+      height: 34px;
+      font-size: 12px;
+      padding: 0 10px;
+    }
+
+    .search-bar {
+      padding: 10px;
+      border-radius: 6px;
+
+      :deep(.ant-form-item-label) {
+        font-size: 13px;
+      }
+
+      :deep(.ant-input),
+      :deep(.ant-select-selector) {
+        height: 34px !important;
+        font-size: 13px;
+      }
+
+      :deep(.ant-btn) {
+        height: 34px;
+        font-size: 13px;
+      }
+    }
+
+    .article-table {
+      :deep(.ant-table) {
+        font-size: 12px;
+      }
+
+      :deep(.ant-table-thead > tr > th) {
+        padding: 8px 6px;
+        font-size: 11px;
+      }
+
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 8px 6px;
+      }
+
+      :deep(.ant-image) {
+        width: 50px !important;
+        height: 38px !important;
+      }
+
+      .title-cell {
+        gap: 4px;
+
+        .title-text {
+          font-size: 12px;
+        }
+      }
+
+      :deep(.ant-tag) {
+        font-size: 9px;
+        padding: 0 3px;
+        line-height: 16px;
+      }
+
+      :deep(.ant-space-vertical) {
+        gap: 2px !important;
+
+        span {
+          font-size: 11px;
+        }
+      }
+
+      :deep(.ant-btn-link) {
+        padding: 1px 3px;
+        font-size: 11px;
+        height: auto;
+      }
+    }
+
+    :deep(.ant-pagination-item),
+    :deep(.ant-pagination-prev),
+    :deep(.ant-pagination-next) {
+      min-width: 28px;
+      height: 28px;
+      line-height: 28px;
+    }
+  }
+
+  .category-manage {
+    :deep(.ant-card) {
+      margin-bottom: 12px;
+    }
+
+    :deep(.ant-card-head) {
+      padding: 8px 12px;
+      min-height: auto;
+    }
+
+    :deep(.ant-card-head-title) {
+      font-size: 14px;
+    }
+
+    :deep(.ant-card-body) {
+      padding: 12px;
+    }
+
+    :deep(.ant-input),
+    :deep(.ant-input-number),
+    :deep(.ant-select-selector) {
+      height: 34px !important;
+      font-size: 13px;
+    }
+
+    :deep(.ant-btn) {
+      height: 34px;
+      font-size: 13px;
+    }
+
+    :deep(.ant-table) {
+      font-size: 12px;
+    }
+
+    :deep(.ant-table-thead > tr > th),
+    :deep(.ant-table-tbody > tr > td) {
+      padding: 8px 6px;
+      font-size: 11px;
+    }
+
+    :deep(.ant-image) {
+      width: 30px !important;
+      height: 30px !important;
+    }
+
+    :deep(.ant-btn-link) {
+      padding: 1px 4px;
+      font-size: 11px;
+    }
+
+    .upload-tip {
+      font-size: 11px;
+    }
+  }
+
+  :deep(.category-modal .ant-modal-body) {
+    padding: 12px;
+  }
+
+  :deep(.ant-modal-content) {
+    border-radius: 10px;
+  }
+
+  :deep(.ant-modal-header) {
+    padding: 12px 16px;
+  }
+
+  :deep(.ant-modal-title) {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .article-manage-page {
+    padding: 10px;
+
+    :deep(.ant-card-head) {
+      padding: 8px 10px;
+    }
+
+    :deep(.ant-card-head-title) {
+      font-size: 14px;
+    }
+
+    :deep(.ant-card-body) {
+      padding: 10px;
+    }
+
+    :deep(.ant-card-extra .ant-btn) {
+      height: 32px;
+      font-size: 11px;
+      padding: 0 8px;
+    }
+
+    .search-bar {
+      padding: 8px;
+
+      :deep(.ant-input),
+      :deep(.ant-select-selector) {
+        height: 32px !important;
+        font-size: 12px;
+      }
+
+      :deep(.ant-btn) {
+        height: 32px;
+        font-size: 12px;
+      }
+    }
+
+    .article-table {
+      :deep(.ant-table-thead > tr > th),
+      :deep(.ant-table-tbody > tr > td) {
+        padding: 6px 4px;
+      }
+
+      :deep(.ant-image) {
+        width: 40px !important;
+        height: 30px !important;
+      }
+
+      :deep(.ant-tag) {
+        font-size: 8px;
+        padding: 0 2px;
+      }
+
+      :deep(.ant-btn-link) {
+        padding: 0 2px;
+        font-size: 10px;
+      }
+    }
+  }
+
+  .category-manage {
+    :deep(.ant-input),
+    :deep(.ant-input-number),
+    :deep(.ant-select-selector) {
+      height: 32px !important;
+      font-size: 12px;
+    }
+
+    :deep(.ant-btn) {
+      height: 32px;
+      font-size: 12px;
+    }
+
+    :deep(.ant-table-thead > tr > th),
+    :deep(.ant-table-tbody > tr > td) {
+      padding: 6px 4px;
+      font-size: 10px;
+    }
   }
 }
 </style>
