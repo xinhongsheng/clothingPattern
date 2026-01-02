@@ -1,6 +1,97 @@
 ﻿<template>
   <div id="globalHeader">
-    <a-row :wrap="false">
+    <!-- 手机端导航 -->
+    <div class="mobile-header">
+      <RouterLink to="/" class="mobile-logo">
+        <span class="logo-text">服装图案</span>
+      </RouterLink>
+      <div class="mobile-right">
+        <!-- 通知铃铛 -->
+        <a-popover v-if="hasAnyNotification && loginUserStore.loginUser.id" placement="bottomRight" trigger="click">
+          <template #content>
+            <div class="notification-content">
+              <div v-if="mjTaskStore.notification" class="notification-item" @click="goToMJGeneration">
+                <HighlightOutlined style="color: #1890ff; margin-right: 8px" />
+                <span>{{ getMJTaskStatusText() }}</span>
+              </div>
+              <div v-if="fusionTaskStore.notification" class="notification-item" @click="goToImageFusion">
+                <PicCenterOutlined style="color: #faad14; margin-right: 8px" />
+                <span>{{ getFusionTaskStatusText() }}</span>
+              </div>
+              <div v-if="tryOnTaskStore.notification" class="notification-item" @click="goToTryOn">
+                <SkinOutlined style="color: #52c41a; margin-right: 8px" />
+                <span>{{ getTryOnTaskStatusText() }}</span>
+              </div>
+            </div>
+          </template>
+          <a-badge :count="unreadCount" :offset="[-2, 2]" class="notification-badge">
+            <BellOutlined class="notification-icon" />
+          </a-badge>
+        </a-popover>
+        <!-- 用户头像 -->
+        <a-avatar 
+          v-if="loginUserStore.loginUser.id" 
+          :src="loginUserStore.loginUser.userAvatar" 
+          :size="32"
+          @click="mobileDrawerVisible = true"
+          style="cursor: pointer"
+        />
+        <!-- 汉堡菜单按钮 -->
+        <a-button type="text" class="menu-trigger" @click="mobileDrawerVisible = true">
+          <MenuOutlined />
+        </a-button>
+      </div>
+    </div>
+
+    <!-- 手机端抽屉菜单 -->
+    <a-drawer
+      v-model:open="mobileDrawerVisible"
+      placement="right"
+      :width="280"
+      :closable="true"
+      class="mobile-drawer"
+    >
+      <template #title>
+        <div class="drawer-header">
+          <span>导航菜单</span>
+        </div>
+      </template>
+      <a-menu
+        v-model:selectedKeys="current"
+        mode="inline"
+        :items="items"
+        @click="handleMobileMenuClick"
+        class="drawer-menu"
+      />
+      <div class="drawer-footer" v-if="loginUserStore.loginUser.id">
+        <a-divider />
+        <div class="drawer-user-info">
+          <a-avatar :src="loginUserStore.loginUser.userAvatar" :size="40" />
+          <span class="user-name">{{ loginUserStore.loginUser.userName ?? '无名' }}</span>
+        </div>
+        <a-menu mode="inline" class="drawer-user-menu">
+          <a-menu-item key="my_idea" @click="handleMobileMenuClick({ key: '/my_idea' })">
+            <UserOutlined />
+            我的创意
+          </a-menu-item>
+          <a-menu-item key="profile" @click="handleMobileMenuClick({ key: '/user/profile' })">
+            <UserOutlined />
+            个人中心
+          </a-menu-item>
+          <a-menu-item key="logout" @click="doLogout">
+            <LogoutOutlined />
+            退出登录
+          </a-menu-item>
+        </a-menu>
+      </div>
+      <div class="drawer-footer" v-else>
+        <a-divider />
+        <a-button type="primary" block @click="handleMobileMenuClick({ key: '/user/login' })">登录</a-button>
+      </div>
+    </a-drawer>
+
+    <!-- 桌面端导航 -->
+    <a-row :wrap="false" class="desktop-header">
       <a-col flex="200px">
         <RouterLink to="/">
           <div class="title-bar">
@@ -109,6 +200,7 @@ import {
   AppstoreOutlined,
   CrownOutlined,
   BellOutlined,
+  MenuOutlined,
 } from '@ant-design/icons-vue'
 import { MenuProps } from 'ant-design-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
@@ -339,12 +431,55 @@ const current = ref<string[]>([])
 router.afterEach((to) => {
   current.value = [to.path]
 })
+
+// 手机端抽屉菜单状态
+const mobileDrawerVisible = ref(false)
+
+// 手机端菜单点击处理
+const handleMobileMenuClick = ({ key }: { key: string }) => {
+  mobileDrawerVisible.value = false
+  router.push({ path: key })
+}
 </script>
 <style scoped>
+/* 手机端导航样式 */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 56px;
+}
+
+.mobile-logo {
+  text-decoration: none;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f1a15;
+}
+
+.mobile-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-trigger {
+  font-size: 20px;
+  padding: 4px 8px;
+}
+
+/* 桌面端导航样式 */
+.desktop-header {
+  display: flex;
+}
+
 .title-bar {
   display: flex;
   align-items: center;
-  /** 设置为透明 */
 }
 
 .title {
@@ -390,6 +525,7 @@ router.afterEach((to) => {
   padding: 8px 12px;
   border-radius: 4px;
   transition: background-color 0.3s;
+  cursor: pointer;
 }
 
 .notification-item:hover {
@@ -406,5 +542,55 @@ router.afterEach((to) => {
 .user-login-status > div {
   display: flex;
   align-items: center;
+}
+
+/* 抽屉菜单样式 */
+.drawer-header {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.drawer-menu {
+  border-inline-end: none !important;
+}
+
+.drawer-footer {
+  padding: 0 8px;
+}
+
+.drawer-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f1a15;
+}
+
+.drawer-user-menu {
+  border-inline-end: none !important;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+  }
+  .desktop-header {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-header {
+    display: none;
+  }
+  .desktop-header {
+    display: flex;
+  }
 }
 </style>
