@@ -208,10 +208,65 @@
       </a-col>
     </a-row>
 
-    <!-- 作品状态分布图表 -->
-    <a-card class="chart-card" :bordered="false" title="作品状态分布">
-      <div class="chart-container">
-        <div ref="statusChartRef" class="status-chart"></div>
+    <!-- 数据可视化图表区域 -->
+    <a-row :gutter="24" class="charts-row">
+      <!-- 作品状态分布图表 -->
+      <a-col :xs="24" :lg="8">
+        <a-card class="chart-card" :bordered="false">
+          <template #title>
+            <div class="chart-title">
+              <PieChartOutlined class="chart-title-icon status-icon" />
+              <span>作品状态分布</span>
+            </div>
+          </template>
+          <div class="chart-container">
+            <div ref="statusChartRef" class="status-chart"></div>
+          </div>
+        </a-card>
+      </a-col>
+
+      <!-- 风格分布雷达图 -->
+      <a-col :xs="24" :lg="8">
+        <a-card class="chart-card" :bordered="false">
+          <template #title>
+            <div class="chart-title">
+              <RadarChartOutlined class="chart-title-icon style-icon" />
+              <span>风格偏好分析</span>
+            </div>
+          </template>
+          <div class="chart-container">
+            <div ref="styleChartRef" class="style-chart"></div>
+          </div>
+        </a-card>
+      </a-col>
+
+      <!-- 生成类型统计图 -->
+      <a-col :xs="24" :lg="8">
+        <a-card class="chart-card" :bordered="false">
+          <template #title>
+            <div class="chart-title">
+              <BarChartOutlined class="chart-title-icon type-icon" />
+              <span>生成类型统计</span>
+            </div>
+          </template>
+          <div class="chart-container">
+            <div ref="typeChartRef" class="type-chart"></div>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
+
+    <!-- 创作趋势图 -->
+    <a-card class="chart-card trend-chart-card" :bordered="false">
+      <template #title>
+        <div class="chart-title">
+          <LineChartOutlined class="chart-title-icon trend-icon" />
+          <span>创作趋势分析</span>
+          <a-tag color="processing" class="trend-tag">近30天</a-tag>
+        </div>
+      </template>
+      <div class="trend-chart-container">
+        <div ref="trendChartRef" class="trend-chart"></div>
       </div>
     </a-card>
 
@@ -277,6 +332,10 @@ import {
   CloseCircleOutlined,
   AppstoreOutlined,
   UploadOutlined,
+  PieChartOutlined,
+  RadarChartOutlined,
+  BarChartOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons-vue'
 import * as echarts from 'echarts'
 import { listMyPatternVoByPage, uploadPattern } from '@/api/patternController'
@@ -314,7 +373,18 @@ const rejectedCount = ref(0)
 
 // ECharts 图表实例
 const statusChartRef = ref<HTMLDivElement | null>(null)
+const styleChartRef = ref<HTMLDivElement | null>(null)
+const typeChartRef = ref<HTMLDivElement | null>(null)
+const trendChartRef = ref<HTMLDivElement | null>(null)
 let statusChart: echarts.ECharts | null = null
+let styleChart: echarts.ECharts | null = null
+let typeChart: echarts.ECharts | null = null
+let trendChart: echarts.ECharts | null = null
+
+// 统计数据
+const styleStats = ref<Record<string, number>>({})
+const typeStats = ref<Record<string, number>>({})
+const trendStats = ref<Array<{ date: string; count: number }>>([])
 
 // 风格列表（与 HomePage 保持一致）
 const styleList = ['简约','可爱', '复古', '民族', '抽象', '未来']
@@ -364,9 +434,53 @@ const fetchStatistics = async () => {
         (item) => item.auditStatus === AUDIT_STATUS_ENUM.REJECTED
       ).length
 
+      // 统计风格分布
+      const styleCounts: Record<string, number> = {}
+      allData.forEach((item) => {
+        if (item.style) {
+          styleCounts[item.style] = (styleCounts[item.style] || 0) + 1
+        }
+      })
+      styleStats.value = styleCounts
+
+      // 统计生成类型
+      const typeCounts: Record<string, number> = {}
+      allData.forEach((item) => {
+        const type = item.generationType ?? 0
+        typeCounts[type] = (typeCounts[type] || 0) + 1
+      })
+      typeStats.value = typeCounts
+
+      // 统计近30天创作趋势
+      const now = new Date()
+      const trendData: Record<string, number> = {}
+
+      // 初始化近30天的数据
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now)
+        date.setDate(date.getDate() - i)
+        const dateStr = date.toISOString().split('T')[0] as string
+        trendData[dateStr] = 0
+      }
+
+      // 统计每天的创作数量
+      allData.forEach((item) => {
+        if (item.createTime) {
+          const dateStr = new Date(item.createTime).toISOString().split('T')[0] as string
+          if (dateStr in trendData) {
+            trendData[dateStr] = (trendData[dateStr] ?? 0) + 1
+          }
+        }
+      })
+
+      trendStats.value = Object.entries(trendData).map(([date, count]) => ({
+        date,
+        count
+      }))
+
       // 统计更新后重新渲染图表
       await nextTick()
-      renderStatusChart()
+      renderAllCharts()
     }
   } catch (error: any) {
     console.error('获取统计数据失败：', error.message)
@@ -402,8 +516,7 @@ const renderStatusChart = () => {
         color: '#2d3748',
         fontSize: 14
       },
-      formatter: '{b}: {c} 个 ({d}%)',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+      formatter: '{b}: {c} 个 ({d}%)'
     },
     legend: {
       bottom: 0,
@@ -475,23 +588,23 @@ const renderStatusChart = () => {
         {
           type: 'text',
           left: 'center',
-          top: '45%',
+          top: '42%',
           style: {
             text: '总计',
             fontSize: 14,
             fontWeight: 500,
-            color: '#718096'
+            fill: '#718096'
           }
         },
         {
           type: 'text',
           left: 'center',
-          top: '55%',
+          top: '52%',
           style: {
             text: `${approvedCount.value + pendingCount.value + rejectedCount.value}`,
             fontSize: 24,
             fontWeight: 700,
-            color: '#2d3748'
+            fill: '#2d3748'
           }
         }
       ]
@@ -502,11 +615,389 @@ const renderStatusChart = () => {
   statusChart.resize()
 }
 
+// 渲染风格分布雷达图
+const renderStyleChart = () => {
+  if (!styleChartRef.value) return
+
+  if (!styleChart) {
+    styleChart = echarts.init(styleChartRef.value)
+  }
+
+  const indicators = styleList.map(style => ({
+    name: style,
+    max: Math.max(...Object.values(styleStats.value), 10)
+  }))
+
+  const dataValues = styleList.map(style => styleStats.value[style] || 0)
+
+  const option: echarts.EChartsOption = {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e8f4f8',
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      textStyle: {
+        color: '#2d3748',
+        fontSize: 13
+      }
+    },
+    radar: {
+      indicator: indicators,
+      shape: 'polygon',
+      splitNumber: 4,
+      axisName: {
+        color: '#4a5568',
+        fontSize: 12,
+        fontWeight: 500
+      },
+      splitLine: {
+        lineStyle: {
+          color: ['#e8f4f8', '#d4e6eb', '#c0d8df', '#acccda']
+        }
+      },
+      splitArea: {
+        show: true,
+        areaStyle: {
+          color: ['rgba(102, 126, 234, 0.02)', 'rgba(102, 126, 234, 0.04)', 'rgba(102, 126, 234, 0.06)', 'rgba(102, 126, 234, 0.08)']
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#e8f4f8'
+        }
+      }
+    },
+    series: [
+      {
+        name: '风格分布',
+        type: 'radar',
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: {
+          width: 3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 1,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: '#667eea' },
+              { offset: 1, color: '#764ba2' }
+            ]
+          } as any
+        },
+        itemStyle: {
+          color: '#667eea',
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(102, 126, 234, 0.4)' },
+              { offset: 1, color: 'rgba(118, 75, 162, 0.1)' }
+            ]
+          } as any
+        },
+        data: [
+          {
+            value: dataValues,
+            name: '我的风格'
+          }
+        ]
+      }
+    ]
+  }
+
+  styleChart.setOption(option)
+  styleChart.resize()
+}
+
+// 渲染生成类型统计图
+const renderTypeChart = () => {
+  if (!typeChartRef.value) return
+
+  if (!typeChart) {
+    typeChart = echarts.init(typeChartRef.value)
+  }
+
+  const typeNames: Record<number, string> = {
+    0: '手动上传',
+    1: 'AI智能生成',
+    2: 'Midjourney'
+  }
+
+  const colors = ['#4cc9f0', '#4895ef', '#560bad']
+
+  const xData = Object.keys(typeStats.value).map(key => typeNames[Number(key)] || `类型${key}`)
+  const yData = Object.values(typeStats.value)
+
+  const option: echarts.EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e8f4f8',
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      textStyle: {
+        color: '#2d3748',
+        fontSize: 13
+      },
+      axisPointer: {
+        type: 'shadow',
+        shadowStyle: {
+          color: 'rgba(102, 126, 234, 0.08)'
+        }
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '12%',
+      top: '15%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: xData,
+      axisLine: {
+        lineStyle: {
+          color: '#e8f4f8'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#4a5568',
+        fontSize: 11,
+        interval: 0,
+        rotate: xData.length > 3 ? 15 : 0
+      }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: {
+        lineStyle: {
+          color: '#f0f2f5',
+          type: 'dashed'
+        }
+      },
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#718096',
+        fontSize: 11
+      }
+    },
+    series: [
+      {
+        name: '数量',
+        type: 'bar',
+        barWidth: '45%',
+        itemStyle: {
+          borderRadius: [8, 8, 0, 0],
+          color: (params: any) => {
+            const colorList = ['#4cc9f0', '#4895ef', '#560bad']
+            return {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: colorList[params.dataIndex % colorList.length] },
+                { offset: 1, color: colorList[(params.dataIndex + 1) % colorList.length] }
+              ]
+            } as any
+          }
+        },
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.1)'
+          }
+        },
+        data: yData
+      }
+    ]
+  }
+
+  typeChart.setOption(option)
+  typeChart.resize()
+}
+
+// 渲染创作趋势图
+const renderTrendChart = () => {
+  if (!trendChartRef.value) return
+
+  if (!trendChart) {
+    trendChart = echarts.init(trendChartRef.value)
+  }
+
+  const dates = trendStats.value.map(item => item.date)
+  const counts = trendStats.value.map(item => item.count)
+
+  const option: echarts.EChartsOption = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#e8f4f8',
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: [12, 16],
+      textStyle: {
+        color: '#2d3748',
+        fontSize: 13
+      },
+      axisPointer: {
+        type: 'cross',
+        crossStyle: {
+          color: '#999'
+        },
+        lineStyle: {
+          color: '#667eea',
+          type: 'dashed'
+        }
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '8%',
+      top: '12%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: dates,
+      axisLine: {
+        lineStyle: {
+          color: '#e8f4f8'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#718096',
+        fontSize: 11,
+        formatter: (value: string) => {
+          const parts = value.split('-')
+          return `${parts[1]}-${parts[2]}`
+        }
+      }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: {
+        lineStyle: {
+          color: '#f0f2f5',
+          type: 'dashed'
+        }
+      },
+      axisLine: {
+        show: false
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        color: '#718096',
+        fontSize: 11
+      }
+    },
+    series: [
+      {
+        name: '创作数量',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        sampling: 'lttb',
+        lineStyle: {
+          width: 3,
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 1,
+            y2: 0,
+            colorStops: [
+              { offset: 0, color: '#667eea' },
+              { offset: 0.5, color: '#4cc9f0' },
+              { offset: 1, color: '#36d399' }
+            ]
+          } as any,
+          shadowColor: 'rgba(102, 126, 234, 0.3)',
+          shadowBlur: 8,
+          shadowOffsetY: 4
+        },
+        itemStyle: {
+          color: '#667eea',
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(102, 126, 234, 0.3)' },
+              { offset: 0.5, color: 'rgba(76, 201, 240, 0.15)' },
+              { offset: 1, color: 'rgba(54, 211, 153, 0.02)' }
+            ]
+          } as any
+        },
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            borderWidth: 3,
+            shadowBlur: 10,
+            shadowColor: 'rgba(102, 126, 234, 0.5)'
+          }
+        },
+        data: counts
+      }
+    ]
+  }
+
+  trendChart.setOption(option)
+  trendChart.resize()
+}
+
+// 渲染所有图表
+const renderAllCharts = () => {
+  renderStatusChart()
+  renderStyleChart()
+  renderTypeChart()
+  renderTrendChart()
+}
+
 // 窗口缩放自适应
 const handleResize = () => {
-  if (statusChart) {
-    statusChart.resize()
-  }
+  statusChart?.resize()
+  styleChart?.resize()
+  typeChart?.resize()
+  trendChart?.resize()
 }
 
 // 获取数据
@@ -635,10 +1126,14 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  if (statusChart) {
-    statusChart.dispose()
-    statusChart = null
-  }
+  statusChart?.dispose()
+  styleChart?.dispose()
+  typeChart?.dispose()
+  trendChart?.dispose()
+  statusChart = null
+  styleChart = null
+  typeChart = null
+  trendChart = null
 })
 </script>
 
@@ -648,13 +1143,11 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   background-color: #f8f9fa;
   font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  max-width: 1400px;
+  margin: 0 auto;
 
-  .my-idea-page {
-    max-width: 1400px;
-    margin: 0 auto;
-
-    // 页面头部
-    .page-header {
+  // 页面头部
+  .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -952,44 +1445,128 @@ onBeforeUnmount(() => {
       }
     }
 
+    // 图表区域行
+    .charts-row {
+      margin-bottom: 24px;
+
+      .ant-col {
+        margin-bottom: 24px;
+      }
+    }
+
     // 图表卡片
     .chart-card {
-      margin-bottom: 32px;
-      border-radius: 16px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-      background-color: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      background: linear-gradient(145deg, #ffffff 0%, #fafbfc 100%);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2, #4cc9f0, #36d399);
+        background-size: 300% 100%;
+        animation: chartGradientShift 8s ease infinite;
+      }
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.15);
+      }
 
       :deep(.ant-card-head) {
-        border-bottom: 1px solid #f0f2f5;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         padding: 16px 24px;
-
-        :deep(.ant-card-head-title) {
-          font-size: 18px;
-          font-weight: 600;
-          color: #2d3748;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
+        background: transparent;
       }
 
       :deep(.ant-card-body) {
-        padding: 24px;
+        padding: 20px 24px 24px;
+      }
+
+      .chart-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #2d3748;
+
+        .chart-title-icon {
+          font-size: 20px;
+          padding: 8px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          &.status-icon {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.1));
+            color: #667eea;
+          }
+
+          &.style-icon {
+            background: linear-gradient(135deg, rgba(76, 201, 240, 0.15), rgba(72, 149, 239, 0.1));
+            color: #4895ef;
+          }
+
+          &.type-icon {
+            background: linear-gradient(135deg, rgba(86, 11, 173, 0.12), rgba(118, 75, 162, 0.1));
+            color: #7c3aed;
+          }
+
+          &.trend-icon {
+            background: linear-gradient(135deg, rgba(54, 211, 153, 0.15), rgba(56, 178, 172, 0.1));
+            color: #36d399;
+          }
+        }
+
+        .trend-tag {
+          margin-left: auto;
+          font-size: 12px;
+          font-weight: 500;
+          border-radius: 12px;
+          padding: 2px 10px;
+        }
       }
 
       .chart-container {
         width: 100%;
-        height: 360px;
+        height: 300px;
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
       }
 
-      .status-chart {
+      .status-chart,
+      .style-chart,
+      .type-chart {
         width: 100%;
         height: 100%;
-        min-width: 300px;
-        max-width: 500px;
+      }
+    }
+
+    // 创作趋势图卡片（全宽）
+    .trend-chart-card {
+      margin-bottom: 32px;
+
+      .trend-chart-container {
+        width: 100%;
+        height: 320px;
+        position: relative;
+      }
+
+      .trend-chart {
+        width: 100%;
+        height: 100%;
       }
     }
 
@@ -1156,7 +1733,6 @@ onBeforeUnmount(() => {
         }
       }
     }
-  }
 }
 
 // 响应式适配
@@ -1164,17 +1740,15 @@ onBeforeUnmount(() => {
   #myIdeaPage {
     padding: 20px;
 
-    .my-idea-page {
-      .page-header {
-        padding: 28px 32px;
+    .page-header {
+      padding: 28px 32px;
 
-        .header-content {
-          .page-title {
-            font-size: 32px;
+      .header-content {
+        .page-title {
+          font-size: 32px;
 
-            .title-icon {
-              font-size: 36px;
-            }
+          .title-icon {
+            font-size: 36px;
           }
         }
       }
@@ -1184,19 +1758,27 @@ onBeforeUnmount(() => {
 
 @media (max-width: 992px) {
   #myIdeaPage {
-    .my-idea-page {
-      .stats-row {
-        .stat-card {
-          padding: 20px;
+    .stats-row {
+      .stat-card {
+        padding: 20px;
 
-          .stat-value {
-            font-size: 32px;
-          }
+        .stat-value {
+          font-size: 32px;
         }
       }
+    }
 
-      .chart-container {
-        height: 320px;
+    .charts-row {
+      .chart-card {
+        .chart-container {
+          height: 280px;
+        }
+      }
+    }
+
+    .trend-chart-card {
+      .trend-chart-container {
+        height: 280px;
       }
     }
   }
@@ -1206,78 +1788,86 @@ onBeforeUnmount(() => {
   #myIdeaPage {
     padding: 16px;
 
-    .my-idea-page {
-      .page-header {
-        flex-direction: column;
-        gap: 20px;
-        align-items: flex-start;
-        padding: 24px;
+    .page-header {
+      flex-direction: column;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 24px;
 
-        .header-content {
-          .page-title {
-            font-size: 28px;
+      .header-content {
+        .page-title {
+          font-size: 28px;
 
-            .title-icon {
-              font-size: 32px;
-            }
-          }
-
-          .page-subtitle {
-            font-size: 16px;
+          .title-icon {
+            font-size: 32px;
           }
         }
 
-        .create-btn {
-          width: 100% !important;
+        .page-subtitle {
+          font-size: 16px;
         }
       }
 
-      .filter-card {
-        :deep(.ant-card-body) {
-          padding: 16px;
+      .create-btn {
+        width: 100% !important;
+      }
+    }
+
+    .filter-card {
+      :deep(.ant-card-body) {
+        padding: 16px;
+      }
+    }
+
+    .stats-row {
+      .ant-col {
+        margin-bottom: 16px;
+      }
+
+      .stat-card {
+        padding: 18px;
+
+        .stat-header {
+          margin-bottom: 12px;
+        }
+
+        .stat-value {
+          font-size: 28px;
+        }
+      }
+    }
+
+    .charts-row {
+      .chart-card {
+        .chart-container {
+          height: 260px;
+        }
+      }
+    }
+
+    .trend-chart-card {
+      .trend-chart-container {
+        height: 260px;
+      }
+    }
+
+    .list-card {
+      :deep(.ant-card-head) {
+        padding: 12px 16px;
+      }
+
+      .list-title {
+        span {
+          font-size: 16px;
         }
       }
 
-      .stats-row {
-        .ant-col {
-          margin-bottom: 16px;
-        }
+      .empty-state {
+        padding: 48px 0;
 
-        .stat-card {
-          padding: 18px;
-
-          .stat-header {
-            margin-bottom: 12px;
-          }
-
-          .stat-value {
-            font-size: 28px;
-          }
-        }
-      }
-
-      .chart-container {
-        height: 280px;
-      }
-
-      .list-card {
-        :deep(.ant-card-head) {
-          padding: 12px 16px;
-        }
-
-        .list-title {
-          span {
-            font-size: 16px;
-          }
-        }
-
-        .empty-state {
-          padding: 48px 0;
-
-          :deep(.ant-empty-image) {
-            img {
-              width: 120px !important;
-            }
+        :deep(.ant-empty-image) {
+          img {
+            width: 120px !important;
           }
         }
       }
@@ -1289,45 +1879,62 @@ onBeforeUnmount(() => {
   #myIdeaPage {
     padding: 12px;
 
-    .my-idea-page {
-      .page-header {
-        padding: 20px 16px;
+    .page-header {
+      padding: 20px 16px;
 
-        .header-content {
-          .page-title {
-            font-size: 24px;
+      .header-content {
+        .page-title {
+          font-size: 24px;
 
-            .title-icon {
-              font-size: 28px;
-            }
+          .title-icon {
+            font-size: 28px;
           }
         }
       }
+    }
 
-      .filter-card {
-        .search-input, .filter-select, .reset-btn {
-          :deep(.ant-input-affix-wrapper),
-          :deep(.ant-select-selector),
-          & {
-            height: 48px !important;
+    .filter-card {
+      .search-input, .filter-select, .reset-btn {
+        :deep(.ant-input-affix-wrapper),
+        :deep(.ant-select-selector),
+        & {
+          height: 48px !important;
+        }
+      }
+    }
+
+    .charts-row {
+      .chart-card {
+        .chart-container {
+          height: 220px;
+        }
+
+        .chart-title {
+          font-size: 14px;
+
+          .chart-title-icon {
+            font-size: 16px;
+            padding: 6px;
           }
         }
       }
+    }
 
-      .chart-container {
-        height: 240px;
+    .trend-chart-card {
+      .trend-chart-container {
+        height: 220px;
+      }
+    }
+
+    .pagination {
+      :deep(.ant-pagination) {
+        flex-wrap: wrap;
       }
 
-      .pagination {
-        :deep(.ant-pagination) {
-          flex-wrap: wrap;
-        }
-
-        :deep(.ant-pagination-show-size-changer) {
-          margin-left: 0 !important;
-          margin-top: 12px !important;
-          width: 100%;
-        }
+      :deep(.ant-pagination-show-size-changer) {
+        margin-left: 0 !important;
+        margin-top: 12px !important;
+        width: 100%;
       }
     }
   }
@@ -1371,5 +1978,11 @@ onBeforeUnmount(() => {
     color: #718096;
     font-size: 13px;
   }
+}
+
+// 图表渐变动画
+@keyframes chartGradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 </style>
