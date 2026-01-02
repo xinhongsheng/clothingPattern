@@ -51,6 +51,8 @@
         :pagination="pagination"
         @change="doTableChange"
         row-key="id"
+        :scroll="{ x: 900 }"
+        class="comment-table"
       >
         <template #bodyCell="{ column, record }">
           <!-- 评论内容 -->
@@ -244,10 +246,15 @@ onMounted(() => {
 <style scoped>
 .comment-manage-page {
   padding: 24px;
+  min-height: 100vh;
+  background: #f0f2f5;
 }
 
 .search-bar {
   margin-bottom: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
 }
 
 .content-cell {
@@ -255,5 +262,203 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 响应式适配 */
+@media (max-width: 992px) {
+  .comment-manage-page {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .comment-manage-page {
+    padding: 16px;
+  }
+
+  .comment-manage-page :deep(.ant-card-head) {
+    padding: 12px 16px;
+  }
+
+  .comment-manage-page :deep(.ant-card-head-title) {
+    font-size: 16px;
+  }
+
+  .search-bar {
+    padding: 12px;
+  }
+
+  .search-bar :deep(.ant-form-inline .ant-form-item) {
+    display: block;
+    margin-right: 0;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .search-bar :deep(.ant-form-item-control) {
+    width: 100%;
+  }
+
+  .search-bar :deep(.ant-input) {
+    width: 100% !important;
+  }
+
+  .search-bar :deep(.ant-space) {
+    width: 100%;
+  }
+
+  .search-bar :deep(.ant-btn) {
+    flex: 1;
+  }
+
+  .comment-table :deep(.ant-table) {
+    font-size: 13px;
+  }
+
+  .comment-table :deep(.ant-table-thead > tr > th) {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .comment-table :deep(.ant-table-tbody > tr > td) {
+    padding: 10px 8px;
+  }
+
+  .content-cell {
+    max-width: 150px;
+    font-size: 12px;
+  }
+
+  .comment-manage-page :deep(.ant-pagination) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .comment-manage-page :deep(.ant-pagination-total-text) {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .comment-manage-page {
+    padding: 12px;
+  }
+
+  .comment-manage-page :deep(.ant-card) {
+    border-radius: 8px;
+  }
+
+  .comment-manage-page :deep(.ant-card-body) {
+    padding: 12px;
+  }
+
+  .comment-manage-page :deep(.ant-card-head) {
+    padding: 10px 12px;
+    min-height: auto;
+  }
+
+  .comment-manage-page :deep(.ant-card-head-title) {
+    font-size: 15px;
+  }
+
+  .search-bar {
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  .search-bar :deep(.ant-form-item-label) {
+    font-size: 13px;
+  }
+
+  .search-bar :deep(.ant-input) {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .search-bar :deep(.ant-btn) {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .comment-table :deep(.ant-table) {
+    font-size: 12px;
+  }
+
+  .comment-table :deep(.ant-table-thead > tr > th) {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  .comment-table :deep(.ant-table-tbody > tr > td) {
+    padding: 8px 6px;
+  }
+
+  .content-cell {
+    max-width: 120px;
+    font-size: 11px;
+  }
+
+  .comment-table :deep(.ant-btn-link) {
+    padding: 2px 6px;
+    font-size: 11px;
+    height: auto;
+  }
+
+  .comment-manage-page :deep(.ant-pagination-item),
+  .comment-manage-page :deep(.ant-pagination-prev),
+  .comment-manage-page :deep(.ant-pagination-next) {
+    min-width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+}
+
+@media (max-width: 375px) {
+  .comment-manage-page {
+    padding: 10px;
+  }
+
+  .comment-manage-page :deep(.ant-card-head) {
+    padding: 8px 10px;
+  }
+
+  .comment-manage-page :deep(.ant-card-head-title) {
+    font-size: 14px;
+  }
+
+  .comment-manage-page :deep(.ant-card-body) {
+    padding: 10px;
+  }
+
+  .search-bar {
+    padding: 8px;
+  }
+
+  .search-bar :deep(.ant-input) {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .search-bar :deep(.ant-btn) {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .comment-table :deep(.ant-table-thead > tr > th),
+  .comment-table :deep(.ant-table-tbody > tr > td) {
+    padding: 6px 4px;
+  }
+
+  .content-cell {
+    max-width: 100px;
+    font-size: 10px;
+  }
+
+  .comment-table :deep(.ant-btn-link) {
+    padding: 1px 4px;
+    font-size: 10px;
+  }
 }
 </style>
