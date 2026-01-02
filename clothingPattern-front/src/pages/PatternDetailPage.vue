@@ -551,22 +551,222 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 992px) {
+  #patternDetailPage {
+    padding: 20px;
+
+    .detail-card {
+      .pattern-info {
+        .pattern-title {
+          font-size: 28px;
+        }
+      }
+    }
+  }
+}
+
 @media (max-width: 768px) {
   #patternDetailPage {
     padding: 16px;
 
     .detail-card {
+      border-radius: 12px;
+
+      .back-btn {
+        margin-bottom: 12px;
+        font-size: 14px;
+      }
+
+      .image-container {
+        border-radius: 10px;
+        margin-bottom: 16px;
+      }
+
       .pattern-info {
         .pattern-title {
-          font-size: 24px;
+          font-size: 22px;
+          margin-bottom: 12px;
+        }
+
+        .status-tag {
+          font-size: 12px;
+          padding: 3px 10px;
+        }
+
+        .info-section {
+          margin: 12px 0;
+
+          h3 {
+            font-size: 15px;
+            margin-bottom: 10px;
+          }
+
+          .description {
+            font-size: 13px;
+            line-height: 1.7;
+          }
         }
 
         .action-buttons {
           flex-direction: column;
+          gap: 10px;
 
           .ant-btn {
             width: 100%;
+            min-width: unset;
           }
+        }
+      }
+
+      .reference-image {
+        padding: 12px;
+        border-radius: 10px;
+
+        :deep(.ant-image) {
+          width: 100% !important;
+          max-width: 280px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  #patternDetailPage {
+    padding: 12px;
+    min-height: auto;
+
+    .detail-card {
+      border-radius: 10px;
+      padding: 12px;
+
+      .back-btn {
+        margin-bottom: 10px;
+        font-size: 13px;
+        padding: 4px 0;
+      }
+
+      .image-container {
+        border-radius: 8px;
+        margin-bottom: 14px;
+
+        .pattern-image {
+          border-radius: 8px;
+        }
+      }
+
+      .pattern-info {
+        .pattern-title {
+          font-size: 18px;
+          margin-bottom: 10px;
+          line-height: 1.3;
+        }
+
+        .status-tag {
+          font-size: 11px;
+          padding: 2px 8px;
+        }
+
+        :deep(.ant-divider) {
+          margin: 12px 0;
+        }
+
+        .info-section {
+          margin: 10px 0;
+
+          h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+          }
+
+          .description {
+            font-size: 12px;
+            line-height: 1.6;
+          }
+        }
+
+        :deep(.ant-descriptions) {
+          font-size: 12px;
+        }
+
+        :deep(.ant-descriptions-item-label) {
+          font-size: 12px;
+          padding: 8px 10px;
+        }
+
+        :deep(.ant-descriptions-item-content) {
+          font-size: 12px;
+          padding: 8px 10px;
+        }
+
+        :deep(.ant-tag) {
+          font-size: 11px;
+        }
+
+        :deep(.ant-avatar) {
+          width: 20px !important;
+          height: 20px !important;
+          font-size: 10px !important;
+        }
+
+        .action-buttons {
+          gap: 8px;
+
+          .ant-btn {
+            height: 38px;
+            font-size: 13px;
+          }
+        }
+      }
+
+      .reference-image {
+        padding: 10px;
+        border-radius: 8px;
+
+        :deep(.ant-image) {
+          width: 100% !important;
+          max-width: 240px;
+        }
+      }
+    }
+  }
+
+  /* 评论区域响应式 */
+  :deep(.comment-section) {
+    margin-top: 16px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 375px) {
+  #patternDetailPage {
+    padding: 10px;
+
+    .detail-card {
+      padding: 10px;
+
+      .pattern-info {
+        .pattern-title {
+          font-size: 16px;
+        }
+
+        .info-section h3 {
+          font-size: 13px;
+        }
+
+        .info-section .description {
+          font-size: 11px;
+        }
+
+        :deep(.ant-descriptions-item-label),
+        :deep(.ant-descriptions-item-content) {
+          font-size: 11px;
+          padding: 6px 8px;
+        }
+
+        .action-buttons .ant-btn {
+          height: 36px;
+          font-size: 12px;
         }
       }
     }
