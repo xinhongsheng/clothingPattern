@@ -110,7 +110,9 @@ public class AiController {
                         @Override
                         public void onChunk(String chunk) {
                             try {
-                                emitter.send(SseEmitter.event().data(chunk));
+                                // SSE 中换行符会导致消息截断，转义为\\n
+                                String escapedChunk = chunk.replace("\n", "\\n");
+                                emitter.send(SseEmitter.event().data(escapedChunk));
                             } catch (IOException e) {
                                 log.error("发送 SSE 消息失败: {}", e.getMessage());
                                 emitter.completeWithError(e);
@@ -129,7 +131,9 @@ public class AiController {
                         @Override
                         public void onChunk(String chunk) {
                             try {
-                                emitter.send(SseEmitter.event().data(chunk));
+                                // SSE 中换行符会导致消息截断，转义为\\n
+                                String escapedChunk = chunk.replace("\n", "\\n");
+                                emitter.send(SseEmitter.event().data(escapedChunk));
                             } catch (IOException e) {
                                 log.error("发送 SSE 消息失败: {}", e.getMessage());
                                 emitter.completeWithError(e);

@@ -1,5 +1,7 @@
 ﻿<script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
 import LeftOne from '@/components/LeftOne.vue'
 import LeftTwo from '@/components/LeftTwo.vue'
 import LeftThree from '@/components/LeftThree.vue'
@@ -160,21 +162,37 @@ const startAiAnalysis = async () => {
     const decoder = new TextDecoder()
 
     if (reader) {
+      let buffer = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const text = decoder.decode(value, { stream: true })
-        const lines = text.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        
+        // 保留最后一个不完整的行
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
           if (line.startsWith('data:')) {
-            const content = line.slice(5).trim()
-            if (content && content !== '[DONE]') {
-              aiResponse.value += content
-              scrollToBottom()
-            }
+            const content = line.slice(5)
+            // 只去掉开头的一个空格（SSE格式）
+            const cleanContent = content.startsWith(' ') ? content.slice(1) : content
+            if (cleanContent === '[DONE]') continue
+            // 将后端转义的 \\n 还原为真正的换行符
+            const decodedContent = cleanContent.replace(/\\n/g, '\n')
+            aiResponse.value += decodedContent
+            scrollToBottom()
           }
+        }
+      }
+      // 处理剩余的buffer
+      if (buffer.startsWith('data:')) {
+        const content = buffer.slice(5)
+        const cleanContent = content.startsWith(' ') ? content.slice(1) : content
+        if (cleanContent && cleanContent !== '[DONE]') {
+          const decodedContent = cleanContent.replace(/\\n/g, '\n')
+          aiResponse.value += decodedContent
         }
       }
     }
@@ -296,7 +314,15 @@ onBeforeUnmount(() => {
             </div>
             <div class="loading-text">正在分析市场数据...</div>
           </div>
-          <div v-else class="ai-content markdown-body" v-html="formatMarkdown(aiResponse)"></div>
+          <div v-else class="ai-content">
+            <MdPreview 
+              :modelValue="aiResponse" 
+              theme="dark" 
+              :showCodeRowNumber="false"
+              previewTheme="github"
+              codeTheme="atom"
+            />
+          </div>
         </div>
         <div class="ai-panel-footer">
           <span class="tip-text">💡 基于当前可视化数据实时分析</span>
@@ -305,54 +331,6 @@ onBeforeUnmount(() => {
     </transition>
   </div>
 </template>
-
-<script>
-// Markdown 格式化（增强版）
-export default {
-  methods: {
-    formatMarkdown(text) {
-      if (!text) return ''
-      
-      let html = text
-        // 分隔线
-        .replace(/^---$/gm, '<hr class="md-hr">')
-        // 标题（带emoji的标题特殊处理）
-        .replace(/^### (.+)$/gm, '<h4 class="md-h4">$1</h4>')
-        .replace(/^## (.+)$/gm, '<h3 class="md-h3">$1</h3>')
-        .replace(/^# (.+)$/gm, '<h2 class="md-h2">$1</h2>')
-        // 粗体
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        // 斜体
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        // 列表项（带特殊符号）
-        .replace(/^[\-\*] (.+)$/gm, '<li class="md-li">$1</li>')
-        .replace(/^✅ (.+)$/gm, '<li class="md-li md-success">✅ $1</li>')
-        .replace(/^💡 (.+)$/gm, '<li class="md-li md-idea">💡 $1</li>')
-        .replace(/^⚠️ (.+)$/gm, '<li class="md-li md-warning">⚠️ $1</li>')
-        .replace(/^❌ (.+)$/gm, '<li class="md-li md-error">❌ $1</li>')
-        // 数字列表
-        .replace(/^(\d+)\. (.+)$/gm, '<li class="md-li md-num">$1. $2</li>')
-        
-      // 处理连续的li元素，包裹成ul
-      html = html.replace(/(<li class="md-li[^"]*">.+?<\/li>\n?)+/g, (match) => {
-        return '<ul class="md-ul">' + match + '</ul>'
-      })
-      
-      // 换行处理（保留段落结构）
-      html = html
-        .replace(/\n\n/g, '</p><p class="md-p">')
-        .replace(/\n/g, '<br>')
-      
-      // 包裹段落
-      if (!html.startsWith('<')) {
-        html = '<p class="md-p">' + html + '</p>'
-      }
-      
-      return html
-    }
-  }
-}
-</script>
 
 <style scoped lang="less">
 html,
@@ -978,129 +956,136 @@ body {
 }
 
 .ai-content {
-  color: #e0f0ff;
-  font-size: 13px;
-  line-height: 1.8;
-
-  // 段落
-  :deep(.md-p) {
-    margin: 0 0 12px;
+  // 覆盖 md-editor-v3 的样式以适配暗色主题
+  :deep(.md-editor-preview-wrapper) {
+    padding: 0;
   }
 
-  // 分隔线
-  :deep(.md-hr) {
-    border: none;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.3), transparent);
-    margin: 16px 0;
-  }
+  :deep(.md-editor-preview) {
+    background: transparent !important;
+    color: #e0f0ff !important;
+    font-size: 13px;
+    line-height: 1.8;
 
-  // 标题样式
-  :deep(.md-h2) {
-    font-size: 17px;
-    color: #00f2ff;
-    margin: 20px 0 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
-    text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  :deep(.md-h3) {
-    font-size: 15px;
-    color: #00f2ff;
-    margin: 16px 0 10px;
-    padding-left: 10px;
-    border-left: 3px solid #00f2ff;
-    text-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
-  }
-
-  :deep(.md-h4) {
-    font-size: 14px;
-    color: #80d8ff;
-    margin: 12px 0 8px;
-    font-weight: 600;
-  }
-
-  // 列表样式
-  :deep(.md-ul) {
-    margin: 10px 0;
-    padding-left: 0;
-    list-style: none;
-  }
-
-  :deep(.md-li) {
-    position: relative;
-    padding: 6px 12px 6px 20px;
-    margin: 4px 0;
-    background: rgba(0, 102, 255, 0.08);
-    border-radius: 6px;
-    border-left: 2px solid rgba(0, 198, 255, 0.4);
-
-    &::before {
-      content: '▸';
-      position: absolute;
-      left: 6px;
-      color: #00f2ff;
+    // 标题样式
+    h1, h2, h3, h4, h5, h6 {
+      color: #00f2ff !important;
+      border-bottom: none !important;
+      margin-top: 16px;
+      margin-bottom: 10px;
     }
-  }
 
-  :deep(.md-li.md-success) {
-    background: rgba(0, 200, 100, 0.1);
-    border-left-color: #00c864;
-
-    &::before {
-      content: '';
+    h2 {
+      font-size: 16px !important;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(0, 242, 255, 0.2) !important;
     }
-  }
 
-  :deep(.md-li.md-idea) {
-    background: rgba(255, 200, 0, 0.1);
-    border-left-color: #ffc800;
-
-    &::before {
-      content: '';
+    h3 {
+      font-size: 14px !important;
+      padding-left: 8px;
+      border-left: 3px solid #00f2ff;
     }
-  }
 
-  :deep(.md-li.md-warning) {
-    background: rgba(255, 150, 0, 0.1);
-    border-left-color: #ff9600;
-
-    &::before {
-      content: '';
+    h4 {
+      font-size: 13px !important;
+      color: #80d8ff !important;
     }
-  }
 
-  :deep(.md-li.md-error) {
-    background: rgba(255, 80, 80, 0.1);
-    border-left-color: #ff5050;
-
-    &::before {
-      content: '';
+    // 段落
+    p {
+      margin: 8px 0;
+      color: #e0f0ff;
     }
-  }
 
-  :deep(.md-li.md-num) {
-    &::before {
-      content: '';
+    // 列表
+    ul, ol {
+      padding-left: 20px;
+      margin: 8px 0;
     }
-  }
 
-  // 粗体和斜体
-  strong {
-    color: #00f2ff;
-    font-weight: 600;
-  }
+    li {
+      margin: 4px 0;
+      color: #e0f0ff;
 
-  em {
-    color: #80d8ff;
-    font-style: normal;
-    background: rgba(0, 198, 255, 0.15);
-    padding: 1px 4px;
-    border-radius: 3px;
+      &::marker {
+        color: #00f2ff;
+      }
+    }
+
+    // 粗体
+    strong {
+      color: #00f2ff !important;
+    }
+
+    // 斜体
+    em {
+      color: #80d8ff !important;
+    }
+
+    // 分隔线
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 242, 255, 0.3), transparent);
+      margin: 14px 0;
+    }
+
+    // 引用
+    blockquote {
+      border-left: 3px solid #00f2ff;
+      padding-left: 12px;
+      margin: 10px 0;
+      color: #80d8ff;
+      background: rgba(0, 102, 255, 0.1);
+      border-radius: 0 6px 6px 0;
+    }
+
+    // 代码块
+    code {
+      background: rgba(0, 102, 255, 0.15) !important;
+      color: #80d8ff !important;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: rgba(0, 20, 40, 0.8) !important;
+      border: 1px solid rgba(0, 198, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    // 表格
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 10px 0;
+
+      th, td {
+        border: 1px solid rgba(0, 198, 255, 0.2);
+        padding: 8px 12px;
+        text-align: left;
+      }
+
+      th {
+        background: rgba(0, 102, 255, 0.15);
+        color: #00f2ff;
+      }
+
+      tr:nth-child(even) {
+        background: rgba(0, 102, 255, 0.05);
+      }
+    }
+
+    // 链接
+    a {
+      color: #00f2ff !important;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 }
 

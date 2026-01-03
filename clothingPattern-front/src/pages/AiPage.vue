@@ -151,7 +151,15 @@
             <div class="content-col">
               <div class="bubble">
                 <a-image v-if="msg.imageUrl" :src="msg.imageUrl" class="chat-img" :width="170" />
-                <div class="text markdown-body" v-html="formatMarkdown(msg.content)"></div>
+                <div class="text markdown-body">
+                  <MdPreview 
+                    :modelValue="msg.content" 
+                    :showCodeRowNumber="false"
+                    previewTheme="default"
+                    codeTheme="atom"
+                    class="ai-md-preview"
+                  />
+                </div>
               </div>
               <div v-if="msg.loading" class="loading-dots">
                 <span>.</span><span>.</span><span>.</span>
@@ -220,6 +228,8 @@ import {
 import { getCommonQuestions } from '@/api/aiController'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import { useRouter } from 'vue-router'
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
 
 // --- 基础配置 ---
 const router = useRouter()
@@ -379,21 +389,38 @@ const handleSend = async (e?: Event) => {
     messages.value[aiMsgIndex].loading = false
 
     if (reader) {
+      let buffer = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const text = decoder.decode(value, { stream: true })
-        const lines = text.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        
+        // 保留最后一个不完整的行
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
           if (line.startsWith('data:')) {
-            const content = line.slice(5).trim()
-            if (content && content !== '[DONE]') {
-              messages.value[aiMsgIndex].content += content
-              scrollToBottom()
-            }
+            const content = line.slice(5)
+            // 只去掉开头的一个空格（SSE格式），保留其他内容
+            const cleanContent = content.startsWith(' ') ? content.slice(1) : content
+            if (cleanContent === '[DONE]') continue
+            // 将后端转义的 \\n 还原为真正的换行符
+            const decodedContent = cleanContent.replace(/\\n/g, '\n')
+            messages.value[aiMsgIndex].content += decodedContent
+            scrollToBottom()
           }
+        }
+      }
+      // 处理剩余的buffer
+      if (buffer.startsWith('data:')) {
+        const content = buffer.slice(5)
+        const cleanContent = content.startsWith(' ') ? content.slice(1) : content
+        if (cleanContent && cleanContent !== '[DONE]') {
+          // 将后端转义的 \\n 还原为真正的换行符
+          const decodedContent = cleanContent.replace(/\\n/g, '\n')
+          messages.value[aiMsgIndex].content += decodedContent
         }
       }
     }
@@ -414,77 +441,6 @@ const scrollToBottom = () => {
       messagesAreaRef.value.scrollTop = messagesAreaRef.value.scrollHeight
     }
   })
-}
-
-// 轻量 Markdown 格式化（提升可读性但不改变内容）
-const formatMarkdown = (text: string) => {
-  if (!text) return ''
-
-  const normalized = text
-    .replace(/\r\n/g, '\n')
-    .replace(/---+/g, '\n---\n')
-    .replace(/(?<!\n)###\s*/g, '\n### ')
-    .replace(/(?<!\n)##\s*/g, '\n## ')
-    .replace(/(?<!\n)#\s*/g, '\n# ')
-    .replace(/(✅|🔹|🚫|💡)\s*/g, '\n$1 ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-
-  const lines = normalized.split('\n')
-  let html = ''
-  let inList = false
-
-  const closeList = () => {
-    if (inList) {
-      html += '</ul>'
-      inList = false
-    }
-  }
-
-  for (const raw of lines) {
-    const line = raw.trim()
-    if (!line) {
-      closeList()
-      continue
-    }
-    if (line === '---') {
-      closeList()
-      html += '<hr />'
-      continue
-    }
-    const headingMatch = line.match(/^(#{1,3})\s*(.*)$/)
-    if (headingMatch) {
-      const content = headingMatch[2]?.trim()
-      if (!content) {
-        continue
-      }
-      closeList()
-      const level = headingMatch[1].length
-      html += `<h${level}>${content}</h${level}>`
-      continue
-    }
-    const listMatch = line.match(/^[-•–—]{1,2}\s+(.*)$/)
-    const emojiMatch = line.match(/^(✅|🔹|🚫|💡)\s+(.*)$/)
-    if (listMatch || emojiMatch) {
-      if (!inList) {
-        html += '<ul>'
-        inList = true
-      }
-      const content = listMatch ? listMatch[1] : `${emojiMatch?.[1]} ${emojiMatch?.[2]}`
-      html += `<li>${content}</li>`
-      continue
-    }
-    closeList()
-    html += `<p>${line}</p>`
-  }
-  closeList()
-
-  return html
-    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-    .replace(
-      /`(.*?)`/g,
-      '<code style="background:rgba(31,26,21,0.06);padding:2px 6px;border-radius:8px;border:1px solid rgba(31,26,21,0.08)">$1</code>',
-    )
 }
 
 onMounted(() => {
@@ -1200,14 +1156,21 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   background: rgba(31, 26, 21, 0.08);
 }
 
-/* ===== Markdown ===== */
-:deep(.markdown-body) {
+/* ===== MdPreview 样式覆盖 ===== */
+:deep(.ai-md-preview) {
+  background: transparent !important;
+  padding: 0 !important;
   font-size: 14px;
   line-height: 1.7;
   color: var(--ink);
 
+  .md-editor-preview-wrapper {
+    padding: 0 !important;
+  }
+
   p {
     margin: 0 0 8px 0;
+    color: var(--ink);
   }
 
   ul,
@@ -1219,15 +1182,21 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   li {
     margin-bottom: 6px;
     padding-left: 2px;
+    color: var(--ink);
   }
 
   h1,
   h2,
-  h3 {
+  h3,
+  h4,
+  h5,
+  h6 {
     margin: 14px 0 8px 0;
     color: var(--accent-2);
     font-weight: 800;
     letter-spacing: -0.2px;
+    border-bottom: none;
+    padding-bottom: 0;
   }
 
   h1 {
@@ -1253,6 +1222,61 @@ onUnmounted(() => window.removeEventListener('resize', checkMobile))
   strong {
     color: var(--ink);
     font-weight: 800;
+  }
+
+  code {
+    background: rgba(31, 26, 21, 0.06);
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(31, 26, 21, 0.08);
+    color: var(--accent);
+  }
+
+  pre {
+    background: rgba(31, 26, 21, 0.04) !important;
+    border-radius: 12px;
+    padding: 12px !important;
+    margin: 10px 0;
+    border: 1px solid rgba(31, 26, 21, 0.08);
+
+    code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: var(--ink);
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent-2);
+    margin: 10px 0;
+    padding-left: 12px;
+    color: var(--muted);
+    background: rgba(42, 157, 143, 0.06);
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 10px 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(31, 26, 21, 0.1);
+  }
+
+  th,
+  td {
+    padding: 8px 12px;
+    border: 1px solid rgba(31, 26, 21, 0.1);
+    text-align: left;
+  }
+
+  th {
+    background: rgba(42, 157, 143, 0.1);
+    color: var(--accent-2);
+    font-weight: 700;
   }
 
   a {
