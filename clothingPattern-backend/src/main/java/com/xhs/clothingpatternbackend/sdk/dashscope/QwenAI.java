@@ -75,6 +75,63 @@ public class QwenAI {
         """;
 
     /**
+     * 市场分析师系统预设 Prompt
+     */
+    private static final String ANALYST_SYSTEM_PROMPT = """
+        【核心指令】
+        你是一位专业的服装图案市场分析师，擅长根据数据分析市场趋势并为设计师提供专业建议。
+        
+        请严格遵守以下规则进行回复：
+        1. **数据驱动**：基于用户提供的数据进行客观分析，不捕风捉影。
+        2. **结构化输出**：回答必须使用 Markdown 格式，条理清晰。
+        3. **实用导向**：给出可落地的建议，对设计师有实际参考价值。
+        
+        **输出框架**：
+        
+        ## 📊 数据概览
+        简要总结当前数据的整体情况。
+        
+        ## 📈 市场趋势
+        分析当前流行的风格、目标人群特点及变化趋势。
+        
+        ## 🔍 深度洞察
+        - **用户增长**：分析平台用户增长的健康度
+        - **内容生产**：分析图案/文章的活跃度
+        - **互动指标**：分析用户参与度和偏好
+        
+        ## 🎯 设计师建议
+        根据数据分析结果，给设计师的创作方向建议：
+        ✅ **热门方向**：当前最受欢迎的风格/人群
+        💡 **蓝海机会**：数据显示的市场空白
+        ⚠️ **风险提示**：需要避免的趋势
+        
+        ## 📝 总结
+        用1-2句话概括核心发现和行动建议。
+        
+        ---
+        
+        **风格要求**：
+        - 专业、客观、数据说话
+        - 使用 Markdown 语法（##, ###, **, ✅, 💡, ⚠️）
+        - 分析要具体，避免空洞说教
+        - 建议要实操，能直接落地
+        """;
+
+    /**
+     * 根据角色获取对应的系统预设
+     *
+     * @param role 角色类型
+     * @return 系统预设 Prompt
+     */
+    private String getSystemPromptByRole(String role) {
+        if ("analyst".equals(role)) {
+            return ANALYST_SYSTEM_PROMPT;
+        }
+        // 默认返回设计师预设
+        return SYSTEM_PROMPT;
+    }
+
+    /**
      * 流式调用服装知识问答（仅文本）
      *
      * @param userQuestion 用户问题
@@ -83,13 +140,29 @@ public class QwenAI {
      * @throws UploadFileException   上传文件异常
      */
     public void streamCallText(String userQuestion, ChunkCallback onChunk) throws NoApiKeyException, UploadFileException {
+        streamCallTextWithRole(userQuestion, null, onChunk);
+    }
+
+    /**
+     * 流式调用服装知识问答（仅文本，支持角色选择）
+     *
+     * @param userQuestion 用户问题
+     * @param role         角色类型（analyst-市场分析师，其他-设计师）
+     * @param onChunk      每次收到文本片段时的回调
+     * @throws NoApiKeyException     API Key 异常
+     * @throws UploadFileException   上传文件异常
+     */
+    public void streamCallTextWithRole(String userQuestion, String role, ChunkCallback onChunk) throws NoApiKeyException, UploadFileException {
         MultiModalConversation conv = new MultiModalConversation();
+
+        // 根据角色获取系统预设
+        String systemPrompt = getSystemPromptByRole(role);
 
         // 构建系统消息
         MultiModalMessage systemMessage = MultiModalMessage.builder()
                 .role(Role.SYSTEM.getValue())
                 .content(Arrays.asList(
-                        Collections.singletonMap("text", SYSTEM_PROMPT)
+                        Collections.singletonMap("text", systemPrompt)
                 ))
                 .build();
 

@@ -89,10 +89,11 @@ public class AiController {
         ThrowUtils.throwIf(aiQuestionRequest == null, ErrorCode.PARAMS_ERROR);
         String question = aiQuestionRequest.getQuestion();
         String imageUrl = aiQuestionRequest.getImageUrl();
+        String role = aiQuestionRequest.getRole();
 
         // 校验问题
         ThrowUtils.throwIf(StrUtil.isBlank(question), ErrorCode.PARAMS_ERROR, "问题不能为空");
-        ThrowUtils.throwIf(question.length() > 1000, ErrorCode.PARAMS_ERROR, "问题过长");
+        ThrowUtils.throwIf(question.length() > 10000, ErrorCode.PARAMS_ERROR, "问题过长");
         // 获取登录用户（必须登录）
         User loginUser = null;
         loginUser = userService.getLoginUser(request);
@@ -123,8 +124,8 @@ public class AiController {
                         }
                     });
                 } else {
-                    // 纯文本的流式问答
-                    qwenAI.streamCallText(question, new QwenAI.ChunkCallback() {
+                    // 纯文本的流式问答（支持角色选择）
+                    qwenAI.streamCallTextWithRole(question, role, new QwenAI.ChunkCallback() {
                         @Override
                         public void onChunk(String chunk) {
                             try {

@@ -23,5 +23,12 @@ public class AiQuestionRequest implements Serializable {
      */
     private String imageUrl;
 
+    /**
+     * AI 角色类型（可选）
+     * - designer: 服装设计师（默认）
+     * - analyst: 市场分析师
+     */
+    private String role;
+
     private static final long serialVersionUID = 1L;
 }
