@@ -23,6 +23,11 @@ declare namespace API {
   type AiQuestionRequest = {
     question?: string
     imageUrl?: string
+    role?: string
+  }
+
+  type analyzeImageParams = {
+    imageUrl: string
   }
 
   type Article = {
@@ -577,10 +582,10 @@ declare namespace API {
     sorts?: string
     createTime?: string
     updateTime?: string
-    localImageUrlList?: string[]
-    tempImageUrlList?: string[]
-    origPromptList?: string[]
     sortList?: number[]
+    origPromptList?: string[]
+    tempImageUrlList?: string[]
+    localImageUrlList?: string[]
   }
 
   type likeArticleParams = {

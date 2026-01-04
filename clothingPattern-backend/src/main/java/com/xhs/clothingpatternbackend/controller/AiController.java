@@ -3,6 +3,8 @@ package com.xhs.clothingpatternbackend.controller;
 import cn.hutool.core.util.StrUtil;
 import com.xhs.clothingpatternbackend.common.BaseResponse;
 import com.xhs.clothingpatternbackend.common.ResultUtils;
+import com.xhs.clothingpatternbackend.config.CosClientConfig;
+import com.xhs.clothingpatternbackend.exception.BusinessException;
 import com.xhs.clothingpatternbackend.exception.ErrorCode;
 import com.xhs.clothingpatternbackend.exception.ThrowUtils;
 import com.xhs.clothingpatternbackend.model.dto.ai.AiQuestionRequest;
@@ -10,10 +12,14 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.vo.AiAnswerVO;
 import com.xhs.clothingpatternbackend.sdk.dashscope.QwenAI;
 import com.xhs.clothingpatternbackend.service.UserService;
+import com.xhs.clothingpatternbackend.utils.CosImageUploadUtils;
+import com.xhs.clothingpatternbackend.utils.CosUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +40,12 @@ public class AiController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private CosUtils cosUtils;
+
+    @Resource
+    private CosClientConfig cosClientConfig;
 
     /**
      * 同步问答（返回完整答案）
@@ -156,6 +168,84 @@ public class AiController {
         });
 
         return emitter;
+    }
+
+    /**
+     * 分析参考图片，提取设计元素（用于以图生图功能）
+     *
+     * @param imageUrl 图片URL
+     * @param request  HTTP 请求
+     * @return 图片分析结果
+     */
+    @PostMapping("/analyze-image")
+    public BaseResponse<String> analyzeImage(@RequestParam("imageUrl") String imageUrl,
+                                              HttpServletRequest request) {
+        // 参数校验
+        ThrowUtils.throwIf(StrUtil.isBlank(imageUrl), ErrorCode.PARAMS_ERROR, "图片URL不能为空");
+
+        // 获取登录用户（必须登录）
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+
+        // 用于分析图片的专用提示词
+        String analysisPrompt =
+                "你是一名【Surface Pattern / 面料花型】设计分析师。输入图片可能是成衣Mockup（图案贴在衬衫/衣服上）。你的任务是：只还原“平面图案本体（pattern tile）”，提取可用于生成【无缝平铺花型】的设计要素。\n" +
+                        "\n" +
+                        "严格规则（非常重要）：\n" +
+                        "1) 【禁止】在任何输出里出现服装载体相关词或描述：shirt, clothing, garment, apparel, collar, button, pocket, sleeve, mannequin, model, outfit, mockup, drape, fold, fabric texture, photo, studio，以及“衬衫/衣服/衣领/纽扣/口袋/袖子/模特/人像/褶皱/垂坠/拍摄/影棚”等。\n" +
+                        "2) 只输出图案本体：图案主体、辅助元素、配色、线条与上色方式、重复结构与排布方式（把衣服当作不存在）。\n" +
+                        "3) 每个字段只用【关键词/短语】，用中文逗号“，”分隔；不写完整句子，不解释，不复述规则。\n" +
+                        "4) 不确定就写“不明确”，不要猜测。\n" +
+                        "\n" +
+                        "最后输出三行（仍然用中文字段名，但内容用于直接拼接MJ提示词）：\n" +
+                        "TilePrompt：把以上要点整合为一条英文逗号短语，并且【必须包含】seamless repeating pattern, surface pattern design, flat 2D, pattern swatch, clean outlines\n" +
+                        "MotifPrompt：把以上要点整合为一条英文逗号短语，并且【必须包含】isolated motifs, flat 2D, clean outlines, plain background\n" +
+                        "Negative：输出英文负面词，并且【必须包含】mockup, shirt, clothing, garment, collar, buttons, pocket, mannequin, model, folds, photo, watermark, text, logo";
+
+        try {
+            // 调用 AI 服务分析图片
+            String analysisResult = qwenAI.syncCallWithImage(analysisPrompt, imageUrl);
+            log.info("图片分析完成，用户ID: {}, 图片URL: {}", loginUser.getId(), imageUrl);
+            return ResultUtils.success(analysisResult);
+        } catch (Exception e) {
+            log.error("图片分析失败: {}", e.getMessage(), e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片分析失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 上传参考图片（用于以图生图功能）
+     *
+     * @param file 图片文件
+     * @return 图片URL
+     */
+    @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BaseResponse<String> uploadReferenceImage(@RequestParam("file") MultipartFile file) {
+        try {
+            // 校验文件大小（10MB限制）
+            if (file.getSize() > 10 * 1024 * 1024) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "图片大小不能超过10MB");
+            }
+
+            // 上传到COS
+            String url = CosImageUploadUtils.uploadImageToCos(
+                    file,
+                    0L,
+                    cosUtils,
+                    cosClientConfig,
+                    "img2img_ref_",
+                    "img2img-reference/",
+                    true
+            );
+
+            log.info("参考图片上传成功，URL: {}", url);
+            return ResultUtils.success(url);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("参考图片上传失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败：" + e.getMessage());
+        }
     }
 
     /**
