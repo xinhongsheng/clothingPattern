@@ -608,10 +608,7 @@ const handleUpload = async (type: 'person' | 'top' | 'bottom', file: File) => {
   }
 
   try {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await upload(formData as any)
+    const res = await upload({}, file)
     const url = res?.data
     if (!url) {
       throw new Error('上传失败，未获取到图片地址')
@@ -681,10 +678,7 @@ const handleSubmit = async () => {
         const blob = await response.blob()
         const file = new File([blob], model.name + '.png', { type: blob.type || 'image/png' })
 
-        const formData = new FormData()
-        formData.append('file', file)
-
-        const uploadRes = await upload(formData as any)
+        const uploadRes = await upload({}, file)
         const url = uploadRes?.data
         if (!url) {
           throw new Error('上传预设模特失败，未获取到图片地址')

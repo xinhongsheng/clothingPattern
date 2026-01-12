@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -56,18 +57,19 @@ public class AiTryOnController {
     private TryOnGenerateProducer tryOnGenerateProducer;
 
     // 上传图片到OSS，返回公网URL
-    @PostMapping("/upload")
-    public String upload(@RequestParam("file") MultipartFile file,HttpServletRequest  request) throws Exception {
+    @PostMapping(value="/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String upload(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws Exception {
         User loginUser = userService.getLoginUser(request);
-        return CosImageUploadUtils.uploadImageToCos(file,loginUser.getId(),cosUtils,cosClientConfig,"try_on_", "ai/tryOn/",true);
+        return CosImageUploadUtils.uploadImageToCos(file, loginUser.getId(), cosUtils, cosClientConfig, "try_on_",
+                "ai/tryOn/", true);
     }
 
     // 提交试衣任务
     @PostMapping("/submit")
-    public String submit(@RequestParam @NotBlank(message = "人物图片URL不能为空")String personImageUrl,
-                         @RequestParam(required = false) String topGarmentUrl,
-                         @RequestParam(required = false)String bottomGarmentUrl,
-                         HttpServletRequest  request) throws  IOException {
+    public String submit(@RequestParam @NotBlank(message = "人物图片URL不能为空") String personImageUrl,
+            @RequestParam(required = false) String topGarmentUrl,
+            @RequestParam(required = false) String bottomGarmentUrl,
+            HttpServletRequest request) throws IOException {
         if (StringUtils.isEmpty(topGarmentUrl) && StringUtils.isEmpty(bottomGarmentUrl)) {
             throw new IllegalArgumentException("请上传上衣或裤子(上装或者下装)");
         }
@@ -95,6 +97,7 @@ public class AiTryOnController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
     /**
      * 获取用户试衣的历史记录
      */
@@ -104,11 +107,13 @@ public class AiTryOnController {
         List<QueryTaskHistoryResultVO> taskHistory = tryOnTaskService.getTryOnHistory(userId);
         return ResultUtils.success(taskHistory);
     }
+
     /**
      * 删除试衣记录
      */
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteTryOnRecord(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteTryOnRecord(@RequestBody DeleteRequest deleteRequest,
+            HttpServletRequest request) {
         ThrowUtils.throwIf(deleteRequest == null, ErrorCode.PARAMS_ERROR);
         ThrowUtils.throwIf(deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
