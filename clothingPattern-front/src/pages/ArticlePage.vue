@@ -154,8 +154,8 @@
             </a-spin>
           </div>
 
-          <!-- 推广/广告位 -->
-          <div class="sidebar-card promotion-card card-glass">
+          <!-- 推广/广告位 - 仅管理员可见 -->
+          <div v-if="isAdmin" class="sidebar-card promotion-card card-glass">
             <div class="promo-orb orb-a"></div>
             <div class="promo-orb orb-b"></div>
 
@@ -163,7 +163,7 @@
               <div class="promo-eyebrow">Community</div>
               <h4>分享你的灵感</h4>
               <p>加入我们的社区，发布你的第一篇设计文章。</p>
-              <a-button type="primary" block class="promo-btn">立即发布</a-button>
+              <a-button type="primary" block class="promo-btn" @click="goToPublishArticle">立即发布</a-button>
             </div>
           </div>
         </aside>
@@ -173,13 +173,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Empty } from 'ant-design-vue'
 import { EyeOutlined, LikeOutlined, MessageOutlined, FireOutlined } from '@ant-design/icons-vue'
 import { getArticleList } from '@/api/articleController'
 import { getBannerList } from '@/api/bannerController'
 import { getCategories } from '@/api/articleCategoryController'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
@@ -188,6 +189,15 @@ dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 const router = useRouter()
+const loginUserStore = useLoginUserStore()
+
+// 管理员判断
+const isAdmin = computed(() => loginUserStore.loginUser?.userRole === 'admin')
+
+// 跳转到发布文章页面
+const goToPublishArticle = () => {
+  router.push('/admin/article/edit')
+}
 
 // 数据定义
 const categories = ref<API.ArticleCategory[]>([])
