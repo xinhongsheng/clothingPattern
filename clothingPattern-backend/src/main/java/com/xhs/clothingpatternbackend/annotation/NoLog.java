@@ -1,4 +1,4 @@
-package com.xhs.clothingpatternbackend.log;
+package com.xhs.clothingpatternbackend.annotation;
 
 import java.lang.annotation.*;
 

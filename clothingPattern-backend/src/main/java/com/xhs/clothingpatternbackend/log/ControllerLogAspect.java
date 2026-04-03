@@ -1,6 +1,7 @@
 package com.xhs.clothingpatternbackend.log;
 
 import cn.hutool.json.JSONUtil;
+import com.xhs.clothingpatternbackend.annotation.NoLog;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
