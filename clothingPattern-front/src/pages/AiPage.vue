@@ -152,8 +152,8 @@
               <div class="bubble">
                 <a-image v-if="msg.imageUrl" :src="msg.imageUrl" class="chat-img" :width="170" />
                 <div class="text markdown-body">
-                  <MdPreview 
-                    :modelValue="msg.content" 
+                  <MdPreview
+                    :modelValue="msg.content"
                     :showCodeRowNumber="false"
                     previewTheme="default"
                     codeTheme="atom"
@@ -368,7 +368,7 @@ const handleSend = async (e?: Event) => {
   `.trim()
 
   try {
-    const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
+    const response = await fetch('https://bishe.xhsre.top/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -396,7 +396,7 @@ const handleSend = async (e?: Event) => {
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
-        
+
         // 保留最后一个不完整的行
         buffer = lines.pop() || ''
 

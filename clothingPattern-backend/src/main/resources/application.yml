@@ -11,5 +11,5 @@ spring:
   application:
     name: clothingPattern-backend
   profiles:
-    active: dev
+    active: prod
 

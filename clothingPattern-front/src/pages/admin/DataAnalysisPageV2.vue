@@ -144,11 +144,11 @@ const startAiAnalysis = async () => {
     const prompt = buildAnalysisPrompt(dashboardData)
 
     // 调用AI流式接口（使用市场分析师角色）
-    const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
+    const response = await fetch('https://bishe.xhsre.top/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         question: prompt,
         role: 'analyst'  // 使用市场分析师角色预设
       }),
@@ -169,7 +169,7 @@ const startAiAnalysis = async () => {
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
-        
+
         // 保留最后一个不完整的行
         buffer = lines.pop() || ''
 
@@ -315,9 +315,9 @@ onBeforeUnmount(() => {
             <div class="loading-text">正在分析市场数据...</div>
           </div>
           <div v-else class="ai-content">
-            <MdPreview 
-              :modelValue="aiResponse" 
-              theme="dark" 
+            <MdPreview
+              :modelValue="aiResponse"
+              theme="dark"
               :showCodeRowNumber="false"
               previewTheme="github"
               codeTheme="atom"
