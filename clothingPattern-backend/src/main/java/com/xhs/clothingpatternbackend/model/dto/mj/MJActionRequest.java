@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-28
- * @Description: Midjourney 动作请求参数（用于upsample、variation等操作）
+ * @Description: 图片生成动作请求参数
  * @Version: 1.0
  */
 @Data

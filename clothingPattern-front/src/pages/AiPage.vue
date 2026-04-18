@@ -368,7 +368,7 @@ const handleSend = async (e?: Event) => {
   `.trim()
 
   try {
-    const response = await fetch('https://bishe.xhsre.top/api/ai/ask/stream', {
+    const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

@@ -12,7 +12,7 @@ import { useTryOnTaskStore } from '@/stores/useTryOnTaskStore'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { getImagineStatus } from '@/api/midjourneyjiekou'
+import { getImagineStatus } from '@/api/bailianImageApi'
 import { getResults, queryStatus } from '@/api/imageFusionController'
 import { getStatus as getTryOnStatus } from '@/api/aiTryOnController'
 

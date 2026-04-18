@@ -3,7 +3,7 @@ package com.xhs.clothingpatternbackend.mq;
 import com.xhs.clothingpatternbackend.config.MJGenerateRabbitConfig;
 import com.xhs.clothingpatternbackend.model.dto.mj.MJGenerateMessage;
 import com.xhs.clothingpatternbackend.model.vo.MJImagineVO;
-import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
+import com.xhs.clothingpatternbackend.sdk.dashscope.BailianImageClient;
 import com.xhs.clothingpatternbackend.service.MJGenerateTaskService;
 import com.xhs.clothingpatternbackend.service.PromptTranslateService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,14 +16,14 @@ import org.springframework.stereotype.Component;
 public class MJGenerateConsumer {
 
     private final MJGenerateTaskService taskService;
-    private final MJGenImage mjGenImage;
+    private final BailianImageClient bailianImageClient;
     private final PromptTranslateService promptTranslateService;
 
     public MJGenerateConsumer(MJGenerateTaskService taskService,
-                              MJGenImage mjGenImage,
+                              BailianImageClient bailianImageClient,
                               PromptTranslateService promptTranslateService) {
         this.taskService = taskService;
-        this.mjGenImage = mjGenImage;
+        this.bailianImageClient = bailianImageClient;
         this.promptTranslateService = promptTranslateService;
     }
 
@@ -53,14 +53,15 @@ public class MJGenerateConsumer {
             );
             message.getRequest().setPrompt(optimizedPrompt);
 
-            MJImagineVO response = mjGenImage.imagine(message.getRequest());
+            MJImagineVO response = bailianImageClient.imagine(message.getRequest());
             if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
                 taskService.markFailed(taskId, "Image generation failed");
                 return;
             }
+            response.setTaskId(taskId);
             taskService.markSucceeded(taskId, response);
         } catch (Exception e) {
-            log.error("MJ generation failed, taskId={}", taskId, e);
+            log.error("Bailian image generation failed, taskId={}", taskId, e);
             taskService.markFailed(taskId, e.getMessage());
         }
     }

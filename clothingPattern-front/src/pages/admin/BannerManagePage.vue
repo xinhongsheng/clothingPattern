@@ -31,7 +31,7 @@
             <span v-else class="text-gray">无图片</span>
           </template>
 
-          <!-- ״̬ -->
+          <!-- 状态 -->
           <template v-else-if="column.key === 'status'">
             <a-tag :color="record?.status === 1 ? 'success' : 'default'">
               {{ record?.status === 1 ? '启用' : '禁用' }}
@@ -97,7 +97,7 @@
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="״̬">
+        <a-form-item label="状态">
           <a-select v-model:value="form.status" style="width: 100%">
             <a-select-option :value="1">启用</a-select-option>
             <a-select-option :value="0">禁用</a-select-option>
@@ -172,7 +172,7 @@ const columns = [
     width: 80,
   },
   {
-    title: '״̬',
+    title: '状态',
     dataIndex: 'status',
     key: 'status',
     width: 80,

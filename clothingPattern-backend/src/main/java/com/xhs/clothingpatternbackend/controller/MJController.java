@@ -21,7 +21,7 @@ import com.xhs.clothingpatternbackend.model.entity.User;
 import com.xhs.clothingpatternbackend.model.enums.GenerationTypeEnum;
 import com.xhs.clothingpatternbackend.model.enums.PatternGenerateStatusEnum;
 import com.xhs.clothingpatternbackend.mq.MJGenerateProducer;
-import com.xhs.clothingpatternbackend.sdk.mj.MJGenImage;
+import com.xhs.clothingpatternbackend.sdk.dashscope.BailianImageClient;
 import com.xhs.clothingpatternbackend.service.MJGenerateTaskService;
 import com.xhs.clothingpatternbackend.service.PatternService;
 import com.xhs.clothingpatternbackend.service.PromptTranslateService;
@@ -49,17 +49,17 @@ import java.util.stream.Collectors;
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-28
- * @Description: Midjourney图片生成接口
+ * @Description: Bailian image generation API
  * @Version: 1.0
  */
 @Slf4j
 @RestController
 @RequestMapping("/mj")
-@Tag(name = "Midjourney接口")
+@Tag(name = "阿里百炼图片生成接口")
 public class MJController {
     
     @Resource
-    private MJGenImage mjGenImage;
+    private BailianImageClient bailianImageClient;
     
     @Resource
     private PatternService patternService;
@@ -121,18 +121,17 @@ public class MJController {
             // 使用优化后的 prompt
             request.setPrompt(optimizedPrompt);
             
-            // 调用Midjourney API
-            MJImagineVO response = mjGenImage.imagine(request);
+            MJImagineVO response = bailianImageClient.imagine(request);
 
             // 检查是否成功
             if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
-                log.error("Midjourney图片生成失败，响应：{}", response);
+                log.error("Bailian image generation failed, response: {}", response);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败");
             }
 
             return ResultUtils.success(response);
         } catch (IOException e) {
-            log.error("调用Midjourney API异常", e);
+            log.error("Bailian image generation API exception", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片生成失败：" + e.getMessage());
         }
     }
@@ -201,18 +200,21 @@ public class MJController {
         ThrowUtils.throwIf(StringUtils.isBlank(action), ErrorCode.PARAMS_ERROR, "动作类型不能为空");
         
         try {
-            // 调用Midjourney API
-            MJImagineVO response = mjGenImage.executeAction(taskId, imageId, action);
+            MJGenerateTaskInfo taskInfo = mjGenerateTaskService.getTask(taskId);
+            MJImagineVO response = bailianImageClient.executeAction(
+                    taskInfo == null ? null : taskInfo.getResult(),
+                    action
+            );
             
             // 检查是否成功
             if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
-                log.error("Midjourney动作执行失败，响应：{}", response);
+                log.error("Bailian image action failed, response: {}", response);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "动作执行失败");
             }
             
             return ResultUtils.success(response);
         } catch (IOException e) {
-            log.error("调用Midjourney API异常", e);
+            log.error("Bailian image action exception", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "动作执行失败：" + e.getMessage());
         }
     }
@@ -253,7 +255,7 @@ public class MJController {
             // 从请求参数中获取图案名称（前端传入）
             String patternName = request.getPatternName();
             if (StringUtils.isBlank(patternName)) {
-                patternName = "MJ-图案-" + System.currentTimeMillis();
+                patternName = "百炼图案-" + System.currentTimeMillis();
             }
             
             // 获取额外字段
@@ -277,7 +279,7 @@ public class MJController {
                 fileSize = (int) tempFile.length();
                 
                 // 上传到 COS
-                String key = "mj-pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
+                String key = "bailian-pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
                 com.qcloud.cos.model.PutObjectResult putResult = cosUtils.putPictureObject(key, tempFile);
                 
                 // 从COS处理结果中获取实际的图片URL
@@ -307,10 +309,10 @@ public class MJController {
                     cosThumbUrl = cosPatternUrl;
                 }
                 
-                log.info("MJ图片已上传到COS，URL: {}，文件大小: {} bytes", cosPatternUrl, fileSize);
+                log.info("Bailian image uploaded to COS, URL: {}, fileSize: {} bytes", cosPatternUrl, fileSize);
             } else {
                 // 下载失败，使用原始URL
-                log.warn("下载MJ图片失败，使用原始URL");
+                log.warn("Failed to download Bailian image, using original URL");
                 cosPatternUrl = rawImageUrl;
                 cosThumbUrl = StringUtils.isNotBlank(imageUrl) ? imageUrl : rawImageUrl;
             }
@@ -319,8 +321,8 @@ public class MJController {
             Pattern pattern = new Pattern();
             pattern.setUserId(loginUser.getId());
             pattern.setPatternName(patternName);
-            pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "Midjourney生成的图案");
-            pattern.setGenerationType(GenerationTypeEnum.MJ_GENERATED.getValue());
+            pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "百炼生成的图案");
+            pattern.setGenerationType(GenerationTypeEnum.BAILIAN_GENERATED.getValue());
             pattern.setPatternUrl(cosPatternUrl);
             pattern.setThumbUrl(cosThumbUrl);
             pattern.setFileSize(fileSize);  // 保存文件大小
@@ -330,14 +332,14 @@ public class MJController {
             pattern.setTargetAudience(targetAudience);
             patternService.fillReviewParams(pattern, loginUser);
             
-            // 将MJ响应信息保存到generationParams字段
+            // Save generation response metadata.
             pattern.setGenerationParams(JSON.toJSONString(request));
             
             // 保存到数据库
             boolean saved = patternService.save(pattern);
             ThrowUtils.throwIf(!saved, ErrorCode.SYSTEM_ERROR, "保存图案失败");
 
-            log.info("MJ图片保存成功，图案ID：{}，用户ID：{}，文件大小：{} bytes，风格：{}，季节：{}，受众：{}",
+            log.info("Bailian image saved, patternId={}, userId={}, fileSize={} bytes, style={}, season={}, targetAudience={}",
                     pattern.getId(), loginUser.getId(), fileSize, style, season, targetAudience);
 
             // 清空图案列表缓存，确保前端能立即看到新图案
@@ -345,7 +347,7 @@ public class MJController {
 
             return ResultUtils.success(pattern.getId());
         } catch (Exception e) {
-            log.error("保存MJ图片失败", e);
+            log.error("Failed to save Bailian image", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "保存失败：" + e.getMessage());
         } finally {
             // 清理临时文件
@@ -395,7 +397,7 @@ public class MJController {
             String suffix = getFileExtensionFromContentType(contentType);
             
             inputStream = connection.getInputStream();
-            File tempFile = File.createTempFile("mj_image_", suffix);
+            File tempFile = File.createTempFile("bailian_image_", suffix);
             Files.copy(inputStream, tempFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             
             log.info("图片下载成功，临时文件: {}，大小: {} bytes，类型: {}", 
@@ -468,18 +470,17 @@ public class MJController {
                 ErrorCode.PARAMS_ERROR, "图片数量必须在2-5张之间");
         
         try {
-            // 调用Midjourney Blend API
-            MJImagineVO response = mjGenImage.blend(request);
+            MJImagineVO response = bailianImageClient.blend(request);
             
             // 检查是否成功
             if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
-                log.error("Midjourney Blend失败，响应：{}", response);
+                log.error("Bailian blend failed, response: {}", response);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Blend失败");
             }
             
             return ResultUtils.success(response);
         } catch (IOException e) {
-            log.error("调用Midjourney Blend API异常", e);
+            log.error("Bailian blend API exception", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Blend失败：" + e.getMessage());
         }
     }

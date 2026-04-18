@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-28
- * @Description: Midjourney Blend（垫图/混合）请求参数
+ * @Description: 图片融合请求参数
  * @Version: 1.0
  */
 @Data

@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @Author: 小辛同学
  * @CreateTime: 2025-11-28
- * @Description: Midjourney Imagine响应结果
+ * @Description: 图片生成响应结果
  * @Version: 1.0
  */
 @Data

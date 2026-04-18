@@ -180,7 +180,7 @@ const startAiAnalysis = async () => {
     const prompt = buildAnalysisPrompt(dashboardData)
 
     // 调用AI流式接口（使用市场分析师角色）
-    const response = await fetch('https://bishe.xhsre.top/api/ai/ask/stream', {
+    const response = await fetch('http://localhost:8123/api/ai/ask/stream', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

@@ -5,7 +5,7 @@
 import * as userController from './userController'
 import * as aiTryOnController from './aiTryOnController'
 import * as patternController from './patternController'
-import * as midjourneyjiekou from './midjourneyjiekou'
+import * as bailianImageApi from './bailianImageApi'
 import * as likeController from './likeController'
 import * as imageFusionController from './imageFusionController'
 import * as homeController from './homeController'
@@ -19,7 +19,7 @@ export default {
   userController,
   aiTryOnController,
   patternController,
-  midjourneyjiekou,
+  bailianImageApi,
   likeController,
   imageFusionController,
   homeController,

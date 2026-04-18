@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MJGenerateTaskService {
 
-    private static final String TASK_KEY_PREFIX = "xhs_mj:generate_task:";
+    private static final String TASK_KEY_PREFIX = "xhs_bailian:generate_task:";
     private static final long TASK_TTL_SECONDS = 86400;
 
     @Resource

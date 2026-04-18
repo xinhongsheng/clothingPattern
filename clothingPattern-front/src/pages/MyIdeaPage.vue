@@ -732,7 +732,7 @@ const renderTypeChart = () => {
   const typeNames: Record<number, string> = {
     0: '手动上传',
     1: 'AI智能生成',
-    2: 'Midjourney'
+    2: '百炼生成'
   }
 
   const colors = ['#4cc9f0', '#4895ef', '#560bad']

@@ -24,20 +24,20 @@ export const AUDIT_STATUS_OPTIONS = Object.keys(AUDIT_STATUS_MAP).map((key) => {
   };
 });
 
-// 生成类型枚举（新增 MJ_GENERATED）
+// 生成类型枚举
 export const GENERATION_TYPE_ENUM = {
   TEXT_GENERATED: 'TEXT_GENERATED',
   IMAGE_REFERENCED: 'IMAGE_REFERENCED',
-  MJ_GENERATED: 'MJ_GENERATED', // 新增：Midjourney生成
-  MANUAL_UPLOAD: '手动上传', // 新增：手动上传
+  BAILIAN_GENERATED: 'BAILIAN_GENERATED',
+  MANUAL_UPLOAD: '手动上传',
 } as const;
 
-// 生成类型文本映射（新增对应中文描述）
+// 生成类型文本映射
 export const GENERATION_TYPE_MAP: Record<string, string> = {
   TEXT_GENERATED: '文字生成',
   IMAGE_REFERENCED: '图片参考生成',
-  MJ_GENERATED: '高清生成', // 新增：与枚举对应
-  '手动上传': '手动上传', // 新增：用户上传
+  BAILIAN_GENERATED: '百炼生成',
+  '手动上传': '手动上传',
 };
 
 // 生成类型选项（用于下拉框）
@@ -59,6 +59,6 @@ export const AUDIT_STATUS_COLOR_MAP: Record<string, string> = {
 export const GENERATION_TYPE_COLOR_MAP: Record<string, string> = {
   TEXT_GENERATED: 'blue',
   IMAGE_REFERENCED: 'purple',
-  MJ_GENERATED: 'blue',
-  '手动上传': 'green', // 新增：用户上传
+  BAILIAN_GENERATED: 'blue',
+  '手动上传': 'green',
 };

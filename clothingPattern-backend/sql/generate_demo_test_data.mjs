@@ -1,4 +1,4 @@
-import crypto from 'node:crypto'
+﻿import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -397,7 +397,7 @@ const patterns = patternIds.map((id, index) => ({
   userId: userIds[index % userIds.length],
   patternName: patternNames[index],
   description: `用于${audienceList[index % audienceList.length]}系列的${styleList[index % styleList.length]}图案，适合上新企划、款式审核、用户点赞和个性化推荐场景。`,
-  generationType: index % 3 === 0 ? 'TEXT_GENERATED' : index % 3 === 1 ? 'IMAGE_REFERENCED' : 'MJ_GENERATED',
+  generationType: index % 3 === 0 ? 'TEXT_GENERATED' : index % 3 === 1 ? 'IMAGE_REFERENCED' : 'BAILIAN_GENERATED',
   referenceImageUrl: index % 3 === 1 ? `https://picsum.photos/seed/ref-${imageSeeds[index]}/800/800` : null,
   patternUrl: `https://picsum.photos/seed/pattern-${imageSeeds[index]}/1024/1024`,
   thumbUrl: `https://picsum.photos/seed/thumb-${imageSeeds[index]}/480/480`,

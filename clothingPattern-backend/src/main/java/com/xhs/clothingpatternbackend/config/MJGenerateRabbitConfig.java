@@ -11,9 +11,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MJGenerateRabbitConfig {
 
-    public static final String MJ_GENERATE_EXCHANGE = "mj.generate.exchange";
-    public static final String MJ_GENERATE_QUEUE = "mj.generate.queue";
-    public static final String MJ_GENERATE_ROUTING_KEY = "mj.generate";
+    public static final String MJ_GENERATE_EXCHANGE = "bailian.generate.exchange";
+    public static final String MJ_GENERATE_QUEUE = "bailian.generate.queue";
+    public static final String MJ_GENERATE_ROUTING_KEY = "bailian.generate";
 
     @Bean
     public DirectExchange mjGenerateExchange() {

@@ -124,7 +124,7 @@
             <version>2.0.53</version>
         </dependency>
 
-        <!-- OkHttp for Midjourney API -->
+        <!-- OkHttp for image and DashScope helper clients -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>

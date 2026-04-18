@@ -1,4 +1,4 @@
--- 用户表
+﻿-- 用户表
 create table if not exists user
 (
     id           bigint auto_increment comment 'id' primary key,
@@ -21,7 +21,7 @@ CREATE TABLE `pattern`  (
                             `userId` bigint NOT NULL COMMENT '关联用户ID（创建者）',
                             `patternName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图案名称',
                             `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '图案描述（用户输入的文字信息）',
-                            `generationType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成类型：TEXT_GENERATED（文字生成）、IMAGE_REFERENCED（图片参考生成）',
+                            `generationType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成类型：TEXT_GENERATED（文字生成）、IMAGE_REFERENCED（图片参考生成）、BAILIAN_GENERATED（百炼生成）',
                             `referenceImageUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '参考图片URL（图片参考生成时使用）',
                             `patternUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成图案的最终URL（云存储地址）',
                             `thumbUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '图案缩略图URL（列表页展示用）',
@@ -319,7 +319,7 @@ CREATE TABLE IF NOT EXISTS `pattern` (
                                          `userId` bigint NOT NULL COMMENT '关联用户ID（创建者）',
                                          `patternName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图案名称',
                                          `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT '图案描述（用户输入的文字信息）',
-                                         `generationType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成类型：TEXT_GENERATED（文字生成）、IMAGE_REFERENCED（图片参考生成）、MJ_GENERATED（MJ生成）',
+                                         `generationType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成类型：TEXT_GENERATED（文字生成）、IMAGE_REFERENCED（图片参考生成）、BAILIAN_GENERATED（百炼生成）',
                                          `referenceImageUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '参考图片URL（图片参考生成时使用）',
                                          `patternUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '生成图案的最终URL（云存储地址）',
                                          `thumbUrl` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '图案缩略图URL（列表页展示用）',

@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="mj-pattern-generation-page">
+  <div class="bailian-pattern-generation-page">
     <!-- 背景层：霓虹渐变 + 网格 + 噪点 + 浮动光团 -->
     <div class="bg-layer" aria-hidden="true">
       <span class="blob b1" />
@@ -505,7 +505,7 @@ import {
   executeAction as mjExecuteAction,
   savePattern,
   expandPrompt,
-} from '@/api/midjourneyjiekou'
+} from '@/api/bailianImageApi'
 import { analyzeImage, uploadReferenceImage } from '@/api/aiController'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
@@ -1127,7 +1127,7 @@ const executeAction = async () => {
 
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
-        saveForm.patternName = `MJ-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
+        saveForm.patternName = `百炼-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
       selectedAction.value = null
@@ -1182,7 +1182,7 @@ const executeContinueAction = async () => {
 
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
-        saveForm.patternName = `MJ-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
+        saveForm.patternName = `百炼-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
       selectedAction.value = null
@@ -1317,7 +1317,7 @@ const handleExpandPrompt = async () => {
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:wght@400;600;700&display=swap');
 
 /* ========= 灵感社区一致的暖调主题变量 ========= */
-.mj-pattern-generation-page {
+.bailian-pattern-generation-page {
   --ink: #1f1a15;
   --muted: #7a6f66;
   --muted-2: #a39a92;
@@ -2744,7 +2744,7 @@ const handleExpandPrompt = async () => {
 
 /* 平板端 (769px - 992px) */
 @media (max-width: 992px) {
-  .mj-pattern-generation-page {
+  .bailian-pattern-generation-page {
     height: auto;
     min-height: 100vh;
     overflow: visible;
@@ -2853,7 +2853,7 @@ const handleExpandPrompt = async () => {
 
 /* 手机端 (≤576px) */
 @media (max-width: 576px) {
-  .mj-pattern-generation-page {
+  .bailian-pattern-generation-page {
     height: auto;
     min-height: 100vh;
     overflow-x: hidden;

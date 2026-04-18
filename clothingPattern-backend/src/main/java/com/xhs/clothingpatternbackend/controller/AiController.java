@@ -197,7 +197,7 @@ public class AiController {
                         "3) 每个字段只用【关键词/短语】，用中文逗号“，”分隔；不写完整句子，不解释，不复述规则。\n" +
                         "4) 不确定就写“不明确”，不要猜测。\n" +
                         "\n" +
-                        "最后输出三行（仍然用中文字段名，但内容用于直接拼接MJ提示词）：\n" +
+                          "最后输出三行（仍然用中文字段名，但内容用于直接拼接百炼图片提示词）：\n" +
                         "TilePrompt：把以上要点整合为一条英文逗号短语，并且【必须包含】seamless repeating pattern, surface pattern design, flat 2D, pattern swatch, clean outlines\n" +
                         "MotifPrompt：把以上要点整合为一条英文逗号短语，并且【必须包含】isolated motifs, flat 2D, clean outlines, plain background\n" +
                         "Negative：输出英文负面词，并且【必须包含】mockup, shirt, clothing, garment, collar, buttons, pocket, mannequin, model, folds, photo, watermark, text, logo";
