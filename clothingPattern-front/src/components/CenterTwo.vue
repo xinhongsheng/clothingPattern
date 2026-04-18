@@ -1,18 +1,45 @@
-﻿# CenterTwo.vue
-
 <template>
-  <div ref="chartRef" class="tech-map-container"></div>
+  <div class="tech-map-wrapper">
+    <div ref="chartRef" class="tech-map-container"></div>
+    <div v-if="loading" class="map-loading">省份数据加载中...</div>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as echarts from 'echarts'
-import chinaJson from '@/assets/china.json' // 导入 JSON 文件
+import chinaJson from '@/assets/china.json'
 import { getProvinceUserCount } from '@/api/homeController'
+import { mapProvinceUserCountData } from '@/utils/provinceMapData'
+
+const props = defineProps({
+  provinceData: {
+    type: Array,
+    default: () => [],
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const emit = defineEmits(['province-click'])
 
 const chartRef = ref(null)
 let chartInstance = null
-const provinceData = ref([])
+const localProvinceData = ref([])
+const mapRegionNames = Array.isArray(chinaJson.features)
+  ? chinaJson.features.map((feature) => feature.properties?.name).filter(Boolean)
+  : []
+
+const mapProvinceData = (data) => {
+  return mapProvinceUserCountData(data, mapRegionNames)
+}
+
+const chartProvinceData = computed(() => {
+  const parentData = mapProvinceData(props.provinceData)
+  return parentData.length > 0 ? parentData : localProvinceData.value
+})
 
 onMounted(async () => {
   await initChart()
@@ -26,35 +53,24 @@ onBeforeUnmount(() => {
 
 const initChart = async () => {
   try {
-    // 获取省份用户统计数据
-    await fetchProvinceData()
+    if (!props.provinceData.length) {
+      await fetchProvinceData()
+    }
 
-    // 初始化图表
     chartInstance = echarts.init(chartRef.value, 'tech')
-
-    // 注册地图数据
     echarts.registerMap('china', chinaJson)
-
-    // 设置图表配置
     chartInstance.setOption(getChartOption())
-
-    // 添加点击事件
     chartInstance.on('click', handleMapClick)
   } catch (error) {
     console.error('地图初始化失败:', error)
   }
 }
 
-// 获取省份用户统计数据
 const fetchProvinceData = async () => {
   try {
     const res = await getProvinceUserCount()
     if (res.data.code === 0 && res.data.data) {
-      // 转换数据格式为 ECharts 需要的格式
-      provinceData.value = res.data.data.map((item) => ({
-        name: item.province,
-        value: item.count,
-      }))
+      localProvinceData.value = mapProvinceData(res.data.data)
     }
   } catch (error) {
     console.error('获取省份统计数据失败:', error)
@@ -66,7 +82,6 @@ const handleMapClick = (params) => {
     const provinceName = params.name
     emit('province-click', provinceName)
 
-    // 高亮选中的省份
     chartInstance.dispatchAction({
       type: 'highlight',
       seriesIndex: 0,
@@ -76,19 +91,20 @@ const handleMapClick = (params) => {
 }
 
 const getChartOption = () => {
-  // 计算最大值用于 visualMap
-  const maxValue = provinceData.value.length > 0
-    ? Math.max(...provinceData.value.map(item => item.value || 0), 100)
-    : 100
+  const currentProvinceData = chartProvinceData.value
+  const maxValue =
+    currentProvinceData.length > 0
+      ? Math.max(...currentProvinceData.map((item) => item.value || 0), 10)
+      : 100
 
   return {
     backgroundColor: 'transparent',
     title: {
-      text: "服务器各省用户分布统计",
+      text: '服务器各省用户分布统计',
       left: 'center',
       textStyle: {
         color: '#00f2ff',
-        fontSize: getResponsiveFontSize(window.innerWidth, 24, 16), // 根据屏幕宽度调整字体大小
+        fontSize: getResponsiveFontSize(window.innerWidth, 24, 16),
         fontWeight: 'bold',
         textShadow: '0 0 10px rgba(0, 242, 255, 0.7)',
       },
@@ -129,11 +145,12 @@ const getChartOption = () => {
         map: 'china',
         roam: true,
         zoom: 1.2,
-        data: provinceData.value, // 使用接口返回的数据
+        data: currentProvinceData,
         label: {
           show: true,
           color: '#fff',
-          fontSize: getResponsiveFontSize(window.innerWidth, 10, 8), // 根据屏幕宽度调整字体大小
+          fontSize: getResponsiveFontSize(window.innerWidth, 10, 8),
+          formatter: (params) => `${params.name}\n${params.value || 0}人`,
         },
         itemStyle: {
           areaColor: '#0c2c5a',
@@ -145,7 +162,7 @@ const getChartOption = () => {
         emphasis: {
           label: {
             color: '#fff',
-            fontSize: getResponsiveFontSize(window.innerWidth, 12, 10), // 根据屏幕宽度调整字体大小
+            fontSize: getResponsiveFontSize(window.innerWidth, 12, 10),
             fontWeight: 'bold',
           },
           itemStyle: {
@@ -157,7 +174,7 @@ const getChartOption = () => {
         select: {
           label: {
             color: '#ff0',
-            fontSize: getResponsiveFontSize(window.innerWidth, 12, 10), // 根据屏幕宽度调整字体大小
+            fontSize: getResponsiveFontSize(window.innerWidth, 12, 10),
             fontWeight: 'bold',
           },
           itemStyle: {
@@ -171,16 +188,17 @@ const getChartOption = () => {
 }
 
 const resizeChart = () => {
-  chartInstance?.resize()
-  chartInstance.setOption(getChartOption()) // 重新设置选项以应用响应式调整
+  if (!chartInstance) {
+    return
+  }
+  chartInstance.resize()
+  chartInstance.setOption(getChartOption())
 }
 
-// 根据屏幕宽度调整字体大小
 const getResponsiveFontSize = (width, largeSize, smallSize) => {
   return width < 768 ? smallSize : largeSize
 }
 
-// 注册科技感主题
 echarts.registerTheme('tech', {
   backgroundColor: 'rgba(0, 10, 30, 0.8)',
   color: ['#00f2ff', '#1990ff', '#0b5bce', '#0a2dae'],
@@ -190,12 +208,41 @@ echarts.registerTheme('tech', {
     },
   },
 })
+
+watch(
+  chartProvinceData,
+  () => {
+    if (chartInstance) {
+      chartInstance.setOption(getChartOption())
+    }
+  },
+  { deep: true },
+)
 </script>
 
 <style scoped>
+.tech-map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .tech-map-container {
   width: 100%;
   height: 100%;
   overflow: hidden !important;
+}
+
+.map-loading {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 242, 255, 0.45);
+  border-radius: 6px;
+  background: rgba(0, 20, 50, 0.72);
+  color: #00f2ff;
+  font-size: 12px;
+  box-shadow: 0 0 14px rgba(0, 242, 255, 0.2);
 }
 </style>

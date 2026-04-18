@@ -19,6 +19,7 @@ import {
   getStylePreference,
   getInteraction,
   getArticleTopOne,
+  getProvinceUserCount,
 } from '@/api/homeController'
 
 // 定义一个响应式变量来存储当前时间
@@ -42,11 +43,41 @@ const showAiAssistant = ref(false)
 const aiLoading = ref(false)
 const aiResponse = ref('')
 const aiChatRef = ref(null)
+const provinceUserCountData = ref([])
+const provinceUserCountLoading = ref(false)
+const selectedProvince = ref('')
+
+const loadProvinceUserCountData = async () => {
+  provinceUserCountLoading.value = true
+  try {
+    const res = await getProvinceUserCount()
+    provinceUserCountData.value = res.data.code === 0 && Array.isArray(res.data.data) ? res.data.data : []
+  } catch (error) {
+    console.error('获取省份用户统计失败:', error)
+    provinceUserCountData.value = []
+  } finally {
+    provinceUserCountLoading.value = false
+  }
+}
+
+const handleProvinceClick = (provinceName) => {
+  selectedProvince.value = provinceName
+}
 
 // 收集可视化数据
 const collectDashboardData = async () => {
   try {
-    const [userCountRes, patternCountRes, userGrowthRes, targetAudienceRes, hotStyleRes, stylePreferenceRes, interactionRes, articleTopRes] = await Promise.all([
+    const [
+      userCountRes,
+      patternCountRes,
+      userGrowthRes,
+      targetAudienceRes,
+      hotStyleRes,
+      stylePreferenceRes,
+      interactionRes,
+      articleTopRes,
+      provinceUserCountRes,
+    ] = await Promise.all([
       getUserCount(),
       getPatternCount(),
       getUserGrowth(),
@@ -55,6 +86,7 @@ const collectDashboardData = async () => {
       getStylePreference(),
       getInteraction(),
       getArticleTopOne(),
+      getProvinceUserCount(),
     ])
 
     const data = {
@@ -66,6 +98,7 @@ const collectDashboardData = async () => {
       stylePreference: stylePreferenceRes.data.code === 0 ? stylePreferenceRes.data.data : [],
       interaction: interactionRes.data.code === 0 ? interactionRes.data.data : [],
       articleTop: articleTopRes.data.code === 0 ? articleTopRes.data.data : [],
+      provinceUserCount: provinceUserCountRes.data.code === 0 ? provinceUserCountRes.data.data : [],
     }
     return data
   } catch (error) {
@@ -102,6 +135,9 @@ ${data.interaction.map(item => `${item.patternName}: 评分${item.score}`).join(
 
 ## 文章互动趋势
 ${data.articleTop.slice(0, 10).map(item => `${item.date_day} ${item.type}: ${item.count}`).join('\n')}
+
+## 用户省份分布
+${data.provinceUserCount.map(item => `${item.province}: ${item.count}人`).join('\n')}
 
 请从以下方面进行分析：
 1. **市场趋势**: 当前流行的风格和目标人群特点
@@ -215,6 +251,7 @@ const toggleAiAssistant = () => {
 
 // 在组件挂载时启动定时器
 onMounted(() => {
+  loadProvinceUserCountData()
   timer = setInterval(() => {
     currentTime.value = getCurrentDateTime()
   }, 1000)
@@ -267,7 +304,14 @@ onBeforeUnmount(() => {
           </div>
         </dv-border-box-1>
         <dv-border-box-1 class="center-bottom">
-          <CenterTwo />
+          <CenterTwo
+            :province-data="provinceUserCountData"
+            :loading="provinceUserCountLoading"
+            @province-click="handleProvinceClick"
+          />
+          <div v-if="selectedProvince" class="selected-province">
+            当前选中：{{ selectedProvince }}
+          </div>
         </dv-border-box-1>
       </div>
 
@@ -463,12 +507,27 @@ body {
   }
 
   .center-bottom {
+    position: relative;
     display: flex;
     width: 100%;
     height: 75%;
     background-color: #000;
     border-radius: 8px;
     box-shadow: inset 0 0 15px rgba(0, 98, 255, 0.2);
+  }
+
+  .selected-province {
+    position: absolute;
+    left: 18px;
+    bottom: 14px;
+    padding: 6px 12px;
+    border: 1px solid rgba(0, 242, 255, 0.45);
+    border-radius: 6px;
+    background: rgba(0, 20, 50, 0.72);
+    color: #00f2ff;
+    font-size: 12px;
+    box-shadow: 0 0 14px rgba(0, 242, 255, 0.2);
+    pointer-events: none;
   }
 }
 
