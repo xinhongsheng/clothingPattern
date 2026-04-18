@@ -100,7 +100,7 @@ const getChartOption = () => {
   return {
     backgroundColor: 'transparent',
     title: {
-      text: '服务器各省用户分布统计',
+      text: '各省用户分布统计',
       left: 'center',
       textStyle: {
         color: '#00f2ff',
