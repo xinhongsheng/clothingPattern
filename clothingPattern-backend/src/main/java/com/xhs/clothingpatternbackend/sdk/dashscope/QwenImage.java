@@ -70,8 +70,18 @@ public class  QwenImage {
 
     /**
      * 根据文字描述生成图片
+     * @param description 描述文字
+
+     * @param size 图片尺寸，格式：宽*高，如 1024*1024，范围：512*512 到 2048*2048
+     * @param negativePrompt 负面提示词
+
+
+
+                                 * @param promptExtend 是否扩展提示词
+     * @param maxImages 生成图片数量，范围 1-6 张，默认1张
+     * @return 生成的图片文件列表
      */
-    public File generateImageByText(String description, String size, String negativePrompt, Boolean promptExtend) {
+    public List<File> generateImageByText(String description, String size, String negativePrompt, Boolean promptExtend, Integer maxImages) {
         try {
             MultiModalConversation conv = new MultiModalConversation();
 
@@ -90,18 +100,27 @@ public class  QwenImage {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("watermark", false);
             parameters.put("prompt_extend", promptExtend != null ? promptExtend : true);
-            
+
             // 设置默认负面提示词，避免生成低质量或不适合服装的图案
             String defaultNegativePrompt = "模糊、低质量、变形、杂乱、水印、文字、人物脚部、人物手部、不完整、裁剪、过暴、过于复杂";
-            String finalNegativePrompt = StrUtil.isNotBlank(negativePrompt) 
-                    ? negativePrompt + ", " + defaultNegativePrompt 
+            String finalNegativePrompt = StrUtil.isNotBlank(negativePrompt)
+                    ? negativePrompt + ", " + defaultNegativePrompt
                     : defaultNegativePrompt;
             parameters.put("negative_prompt", finalNegativePrompt);
-            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1328*1328");
+
+            // 校验并设置图片尺寸（512*512 到 2048*2048）
+            String validatedSize = validateAndGetSize(size);
+            parameters.put("size", validatedSize);
+
+            // 校验并设置生成张数（1-6张）
+            int validatedMaxImages = validateAndGetMaxImages(maxImages);
+            parameters.put("n", validatedMaxImages);
+
+            log.info("生成参数 - 尺寸: {}, 张数: {}", validatedSize, validatedMaxImages);
 
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(tongYiConfig.getDashscopeApiKey())
-                    .model("qwen-image-plus")
+                    .model("qwen-image-2.0-pro")  // 使用 qwen-image-2.0-pro 支持多图生成 (n=1-6)
                     .messages(Collections.singletonList(userMessage))
                     .parameters(parameters)
                     .build();
@@ -109,25 +128,80 @@ public class  QwenImage {
             MultiModalConversationResult result = conv.call(param);
             log.info("Qwen API response: {}", result);
 
-            String imageUrl = extractImageUrl(result);
-            if (StrUtil.isBlank(imageUrl)) {
+            // 详细打印API响应结构（用于调试多图生成）
+            if (result != null && result.getOutput() != null) {
+                MultiModalConversationOutput output = result.getOutput();
+                List<MultiModalConversationOutput.Choice> choices = output.getChoices();
+                log.info("API响应详情 - choices数量: {}", choices != null ? choices.size() : 0);
+
+                if (choices != null) {
+                    for (int i = 0; i < choices.size(); i++) {
+                        MultiModalConversationOutput.Choice choice = choices.get(i);
+                        MultiModalMessage message = choice != null ? choice.getMessage() : null;
+                        List<Map<String, Object>> messageContent = message != null ? message.getContent() : null;
+
+                        log.info("Choice[{}] - message存在: {}, content数量: {}",
+                                i,
+                                message != null,
+                                messageContent != null ? messageContent.size() : 0);
+
+                        if (messageContent != null) {
+                            for (int j = 0; j < messageContent.size(); j++) {
+                                Map<String, Object> item = messageContent.get(j);
+                                log.info("Choice[{}].content[{}] - keys: {}", i, j, item != null ? item.keySet() : "null");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 提取所有图片URL
+            List<String> imageUrls = extractAllImageUrls(result);
+            if (imageUrls.isEmpty()) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI图片生成失败：未获取到图片URL");
             }
 
-            return downloadImageToTempFile(imageUrl);
+            log.info("成功获取 {} 张图片URL", imageUrls.size());
+
+            // 下载所有图片
+            List<File> imageFiles = new ArrayList<>();
+            for (int i = 0; i < imageUrls.size(); i++) {
+                try {
+                    File imageFile = downloadImageToTempFile(imageUrls.get(i));
+                    imageFiles.add(imageFile);
+                    log.info("已下载第 {}/{} 张图片", i + 1, imageUrls.size());
+                } catch (IOException e) {
+                    log.error("下载第 {} 张图片失败", i + 1, e);
+                    // 清理已下载的文件
+                    imageFiles.forEach(this::deleteTempFile);
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片下载失败：" + e.getMessage());
+                }
+            }
+
+            return imageFiles;
         } catch (ApiException | NoApiKeyException | UploadFileException e) {
             log.error("Qwen API调用失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI图片生成失败：" + e.getMessage());
-        } catch (IOException e) {
-            log.error("图片下载失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片下载失败：" + e.getMessage());
         }
     }
 
     /**
-     * 根据参考图片生成图片
+     * 兼容旧接口：单张图片生成
      */
-    public File generateImageByReference(String referenceImageUrl, String description, String size) {
+    public File generateImageByText(String description, String size, String negativePrompt, Boolean promptExtend) {
+        List<File> files = generateImageByText(description, size, negativePrompt, promptExtend, 1);
+        return files.isEmpty() ? null : files.get(0);
+    }
+
+    /**
+     * 根据参考图片生成图片
+     * @param referenceImageUrl 参考图片URL
+     * @param description 描述文字
+     * @param size 图片尺寸，格式：宽*高，如 1024*1024，范围：512*512 到 2048*2048
+     * @param maxImages 生成图片数量，范围 1-6 张，默认1张
+     * @return 生成的图片文件列表
+     */
+    public List<File> generateImageByReference(String referenceImageUrl, String description, String size, Integer maxImages) {
         File uploadedTempFile = null;
         try {
             MultiModalConversation conv = new MultiModalConversation();
@@ -182,11 +256,20 @@ public class  QwenImage {
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("watermark", false);
-            parameters.put("size", StrUtil.isNotBlank(size) ? size : "1328*1328");
+
+            // 校验并设置图片尺寸（512*512 到 2048*2048）
+            String validatedSize = validateAndGetSize(size);
+            parameters.put("size", validatedSize);
+
+            // 校验并设置生成张数（1-6张）
+            int validatedMaxImages = validateAndGetMaxImages(maxImages);
+            parameters.put("n", validatedMaxImages);
+
+            log.info("生成参数 - 尺寸: {}, 张数: {}", validatedSize, validatedMaxImages);
 
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(tongYiConfig.getDashscopeApiKey())
-                    .model("qwen-image-plus")
+                    .model("qwen-image-2.0-pro")  // 使用 qwen-image-2.0-pro 支持多图生成 (n=1-6)
                     .messages(Collections.singletonList(userMessage))
                     .parameters(parameters)
                     .build();
@@ -196,19 +279,61 @@ public class  QwenImage {
             log.info("Response output: {}", result.getOutput());
             log.info("Response usage: {}", result.getUsage());
 
-            String imageUrl = extractImageUrl(result);
-            if (StrUtil.isBlank(imageUrl)) {
-                log.error("Failed to extract image URL from response: {}", result);
+            // 详细打印API响应结构（用于调试多图生成）
+            if (result != null && result.getOutput() != null) {
+                MultiModalConversationOutput output = result.getOutput();
+                List<MultiModalConversationOutput.Choice> choices = output.getChoices();
+                log.info("API响应详情 - choices数量: {}", choices != null ? choices.size() : 0);
+
+                if (choices != null) {
+                    for (int i = 0; i < choices.size(); i++) {
+                        MultiModalConversationOutput.Choice choice = choices.get(i);
+                        MultiModalMessage message = choice != null ? choice.getMessage() : null;
+                        List<Map<String, Object>> messageContent = message != null ? message.getContent() : null;
+
+                        log.info("Choice[{}] - message存在: {}, content数量: {}",
+                                i,
+                                message != null,
+                                messageContent != null ? messageContent.size() : 0);
+
+                        if (messageContent != null) {
+                            for (int j = 0; j < messageContent.size(); j++) {
+                                Map<String, Object> item = messageContent.get(j);
+                                log.info("Choice[{}].content[{}] - keys: {}", i, j, item != null ? item.keySet() : "null");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 提取所有图片URL
+            List<String> imageUrls = extractAllImageUrls(result);
+            if (imageUrls.isEmpty()) {
+                log.error("Failed to extract image URLs from response: {}", result);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI图片生成失败：未获取到图片URL");
             }
 
-            return downloadImageToTempFile(imageUrl);
+            log.info("成功获取 {} 张图片URL", imageUrls.size());
+
+            // 下载所有图片
+            List<File> imageFiles = new ArrayList<>();
+            for (int i = 0; i < imageUrls.size(); i++) {
+                try {
+                    File imageFile = downloadImageToTempFile(imageUrls.get(i));
+                    imageFiles.add(imageFile);
+                    log.info("已下载第 {}/{} 张图片", i + 1, imageUrls.size());
+                } catch (IOException e) {
+                    log.error("下载第 {} 张图片失败", i + 1, e);
+                    // 清理已下载的文件
+                    imageFiles.forEach(this::deleteTempFile);
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片下载失败：" + e.getMessage());
+                }
+            }
+
+            return imageFiles;
         } catch (ApiException | NoApiKeyException | UploadFileException e) {
             log.error("Qwen API调用失败", e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI图片生成失败：" + e.getMessage());
-        } catch (IOException e) {
-            log.error("图片下载失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "图片下载失败：" + e.getMessage());
         } finally {
             // 清理上传的临时文件
             if (uploadedTempFile != null && uploadedTempFile.exists()) {
@@ -216,6 +341,203 @@ public class  QwenImage {
             }
         }
     }
+
+    /**
+     * 兼容旧接口：单张图片生成（图片参考模式）
+     */
+    public File generateImageByReference(String referenceImageUrl, String description, String size) {
+        List<File> files = generateImageByReference(referenceImageUrl, description, size, 1);
+        return files.isEmpty() ? null : files.get(0);
+    }
+
+    /**
+     * 校验并获取图片尺寸
+     * 支持格式：宽*高，范围：512*512 到 2048*2048
+     */
+    private String validateAndGetSize(String size) {
+        // 默认尺寸
+        if (StrUtil.isBlank(size)) {
+            return "1024*1024";
+        }
+
+        // 解析尺寸
+        String[] parts = size.split("\\*");
+        if (parts.length != 2) {
+            log.warn("无效的尺寸格式: {}, 使用默认值 1024*1024", size);
+            return "1024*1024";
+        }
+
+        try {
+            int width = Integer.parseInt(parts[0].trim());
+            int height = Integer.parseInt(parts[1].trim());
+
+            // 校验总像素：512*512 (262,144) 到 2048*2048 (4,194,304)
+            int totalPixels = width * height;
+            int minPixels = 512 * 512;
+            int maxPixels = 2048 * 2048;
+
+            if (totalPixels < minPixels || totalPixels > maxPixels) {
+                log.warn("图片尺寸超出范围 (总像素: {}), 必须在 {}({}) 到 {}({}) 之间，使用默认值 1024*1024",
+                        totalPixels, "512*512", minPixels, "2048*2048", maxPixels);
+                return "1024*1024";
+            }
+
+            // 校验单边尺寸：最小512，最大2048
+            if (width < 512 || width > 2048 || height < 512 || height > 2048) {
+                log.warn("图片宽高超出范围 ({}*{}), 宽高必须在 512-2048 之间，使用默认值 1024*1024", width, height);
+                return "1024*1024";
+            }
+
+            return width + "*" + height;
+        } catch (NumberFormatException e) {
+            log.warn("尺寸解析失败: {}, 使用默认值 1024*1024", size);
+            return "1024*1024";
+        }
+    }
+
+    /**
+     * 校验并获取生成图片数量
+     * 范围：1-6 张
+     */
+    private int validateAndGetMaxImages(Integer maxImages) {
+        if (maxImages == null || maxImages < 1) {
+            return 1; // 默认1张
+        }
+        if (maxImages > 6) {
+            log.warn("图片数量超出限制: {}, 最多支持6张，已调整为6", maxImages);
+            return 6;
+        }
+        return maxImages;
+    }
+
+    /**
+     * 提取所有图片URL（支持多张图片）
+     *
+     * 千问API返回格式说明：
+     * - 当 n=1 时：返回1个choice，该choice的content中有1个图片URL
+     * - 当 n>1 时：返回n个choices，每个choice的content中有1个图片URL
+     */
+    private List<String> extractAllImageUrls(MultiModalConversationResult result) {
+        List<String> imageUrls = new ArrayList<>();
+
+        if (result == null) {
+            log.error("MultiModalConversationResult is null");
+            return imageUrls;
+        }
+
+        MultiModalConversationOutput output = result.getOutput();
+        if (output == null) {
+            log.error("MultiModalConversationResult.getOutput() is null");
+            return imageUrls;
+        }
+
+        List<MultiModalConversationOutput.Choice> choices = output.getChoices();
+        if (choices == null || choices.isEmpty()) {
+            log.error("Output.choices is null or empty");
+            return imageUrls;
+        }
+
+        log.info("API返回了 {} 个choices", choices.size());
+
+        // 遍历所有Choices（每个choice对应一张图片）
+        for (int i = 0; i < choices.size(); i++) {
+            MultiModalConversationOutput.Choice choice = choices.get(i);
+            log.info("处理第 {} 个choice", i + 1);
+
+            MultiModalMessage message = choice.getMessage();
+            if (message == null) {
+                log.warn("Choice[{}].message is null, skip", i);
+                continue;
+            }
+
+            List<Map<String, Object>> content = message.getContent();
+            if (content == null || content.isEmpty()) {
+                log.warn("Choice[{}].message.content is null or empty, skip", i);
+                continue;
+            }
+
+            log.info("Choice[{}] 包含 {} 个content items", i, content.size());
+
+            // 提取当前choice中的所有图片URL（通常每个choice只有1个图片）
+            for (int j = 0; j < content.size(); j++) {
+                Map<String, Object> contentItem = content.get(j);
+                String imageUrl = extractSingleImageUrl(contentItem);
+                if (StrUtil.isNotBlank(imageUrl)) {
+                    imageUrls.add(imageUrl);
+                    log.info("成功提取图片URL[{}]: {}", imageUrls.size(), imageUrl);
+                } else {
+                    log.warn("Choice[{}].content[{}] 未找到图片URL，内容: {}", i, j, contentItem);
+                }
+            }
+        }
+
+        log.info("共提取到 {} 张图片URL", imageUrls.size());
+
+        // 打印所有URL用于调试
+        for (int i = 0; i < imageUrls.size(); i++) {
+            log.info("图片URL[{}]: {}", i + 1, imageUrls.get(i));
+        }
+
+        return imageUrls;
+    }
+
+    /**
+     * 从单个content item中提取图片URL
+     *
+     * 支持的格式：
+     * 1. {"image_url": "https://xxx.png"}
+     * 2. {"image_url": {"url": "https://xxx.png"}}
+     * 3. {"image": "https://xxx.png"}
+     */
+    private String extractSingleImageUrl(Map<String, Object> contentItem) {
+        if (contentItem == null || contentItem.isEmpty()) {
+            return null;
+        }
+
+        // 格式1：contentItem = {"image_url": "https://xxx.png"}
+        if (contentItem.containsKey("image_url")) {
+            Object imageUrlObj = contentItem.get("image_url");
+
+            // 直接是字符串
+            if (imageUrlObj instanceof String) {
+                String url = (String) imageUrlObj;
+                log.debug("提取到图片URL (格式1 - 直接字符串): {}", url);
+                return url;
+            }
+
+            // 格式2：contentItem = {"image_url": {"url": "https://xxx.png"}}
+            if (imageUrlObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> imageUrlMap = (Map<String, Object>) imageUrlObj;
+                Object urlObj = imageUrlMap.get("url");
+                if (urlObj instanceof String) {
+                    String url = (String) urlObj;
+                    log.debug("提取到图片URL (格式2 - 嵌套Map): {}", url);
+                    return url;
+                }
+            }
+        }
+
+        // 格式3（兼容）：{"image": "https://xxx.png"}
+        if (contentItem.containsKey("image")) {
+            Object imageObj = contentItem.get("image");
+            if (imageObj instanceof String) {
+                String url = (String) imageObj;
+                log.debug("提取到图片URL (格式3 - 兼容格式): {}", url);
+                return url;
+            }
+        }
+
+        // 未找到图片URL，记录详细信息用于调试
+        log.warn("未能从content item中提取图片URL，keys: {}, values types: {}",
+                contentItem.keySet(),
+                contentItem.values().stream()
+                        .map(v -> v == null ? "null" : v.getClass().getSimpleName())
+                        .toArray());
+
+        return null;
+    }
+
     private String extractImageUrl(MultiModalConversationResult result) {
         if (result == null) {
             log.error("MultiModalConversationResult is null");

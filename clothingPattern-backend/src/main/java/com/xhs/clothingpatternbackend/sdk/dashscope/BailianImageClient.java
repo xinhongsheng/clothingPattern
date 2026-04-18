@@ -104,6 +104,7 @@ public class BailianImageClient {
             parameters.put("prompt_extend", !Boolean.FALSE.equals(bailianImageConfig.getPromptExtend()));
             parameters.put("negative_prompt", bailianImageConfig.getNegativePrompt());
             parameters.put("size", getConfiguredSize());
+            parameters.put("n", 4);
 
             MultiModalConversationParam param = MultiModalConversationParam.builder()
                     .apiKey(resolveApiKey())
@@ -116,16 +117,21 @@ public class BailianImageClient {
             String resultJson = JsonUtils.toJson(result);
             log.info("Bailian Qwen Image response: {}", resultJson);
 
-            String imageUrl = BailianImageResponseParser.extractImageUrl(resultJson);
-            if (StrUtil.isBlank(imageUrl)) {
+            List<String> allImageUrls = BailianImageResponseParser.extractAllImageUrls(resultJson);
+            if (allImageUrls.isEmpty()) {
                 throw new IOException("Bailian image response has no image url");
             }
+            String imageUrl = allImageUrls.get(0);
 
             String traceId = BailianImageResponseParser.extractTraceId(resultJson);
             if (StrUtil.isBlank(traceId)) {
                 traceId = UUID.randomUUID().toString().replace("-", "");
             }
-            return toImagineVO(imageUrl, traceId, prompt, style, season, targetAudience, action);
+            MJImagineVO vo = toImagineVO(imageUrl, traceId, prompt, style, season, targetAudience, action);
+            if (allImageUrls.size() > 1) {
+                vo.setSubImageUrls(allImageUrls);
+            }
+            return vo;
         } catch (ApiException | NoApiKeyException | UploadFileException e) {
             throw new IOException("Bailian Qwen Image API failed: " + e.getMessage(), e);
         }

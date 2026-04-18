@@ -24,7 +24,7 @@
                   </svg>
                 </div>
                 <div class="upload-text">上传图片</div>
-                <div class="upload-tip">支持JPG、JPEG、PNG、BMPͼƬ<br>格式，大小不超过5M</div>
+                <div class="upload-tip">支持JPG、JPEG、PNG、WEBP图片<br>格式，大小不超过5M</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">
@@ -53,7 +53,7 @@
                   </svg>
                 </div>
                 <div class="upload-text">上传图片</div>
-                <div class="upload-tip">支持JPG、JPEG、PNG、BMPͼƬ<br>格式，大小不超过5M</div>
+                <div class="upload-tip">支持JPG、JPEG、PNG、WEBP图片<br>格式，大小不超过5M</div>
               </div>
             </a-upload>
             <div v-else class="uploaded-preview">

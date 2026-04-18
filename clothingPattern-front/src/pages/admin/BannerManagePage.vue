@@ -19,7 +19,7 @@
       >
         <!-- 使用新的 bodyCell 插槽 -->
         <template #bodyCell="{ column, record }">
-          <!-- ͼƬ -->
+          <!-- 图片 -->
           <template v-if="column.key === 'imageUrl'">
             <a-image
               v-if="record?.imageUrl"
@@ -70,7 +70,7 @@
         <a-form-item label="标题" required>
           <a-input v-model:value="form.title" placeholder="请输入轮播图标题" />
         </a-form-item>
-        <a-form-item label="ͼƬ" required>
+        <a-form-item label="图片" required>
           <a-upload
             list-type="picture-card"
             :file-list="fileList"
@@ -155,7 +155,7 @@ const columns = [
     key: 'title',
   },
   {
-    title: 'ͼƬ',
+    title: '图片',
     dataIndex: 'imageUrl',
     key: 'imageUrl',
     width: 150,

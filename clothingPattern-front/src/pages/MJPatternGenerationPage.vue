@@ -338,8 +338,8 @@
             >
               <div class="thumb-frame">
                 <a-image
-                  :src="getQuadrantImage(mjResponse.imageUrl, i)"
-                  :preview="{ src: mjResponse.rawImageUrl }"
+                  :src="getQuadrantImage(mjResponse.imageUrl, i, mjResponse.subImageUrls)"
+                  :preview="{ src: mjResponse.subImageUrls?.[i - 1] ?? mjResponse.rawImageUrl }"
                   :fallback="fallbackSvgSmall"
                 />
                 <span class="glow-ring" />
@@ -441,8 +441,8 @@
               >
                 <div class="thumb-frame">
                   <a-image
-                    :src="getQuadrantImage(finalResult.imageUrl, i)"
-                    :preview="{ src: finalResult.rawImageUrl }"
+                    :src="getQuadrantImage(finalResult.imageUrl, i, finalResult.subImageUrls)"
+                    :preview="{ src: finalResult.subImageUrls?.[i - 1] ?? finalResult.rawImageUrl }"
                     :fallback="fallbackSvgSmall"
                   />
                   <span class="glow-ring" />
@@ -716,8 +716,13 @@ const selectImage = (index: number) => {
   selectedImageIndex.value = selectedImageIndex.value === index ? null : index
 }
 
-// 获取四象限图片（项目如有裁剪可在此实现）
-const getQuadrantImage = (imageUrl: string, _index?: number) => imageUrl
+// 获取四象限图片：优先使用 subImageUrls 中对应索引的图片
+const getQuadrantImage = (imageUrl: string, index?: number, subImageUrls?: string[]) => {
+  if (subImageUrls && subImageUrls.length > 0 && index != null) {
+    return subImageUrls[index - 1] ?? imageUrl
+  }
+  return imageUrl
+}
 
 // 放大图片操作
 const handleUpsample = async (index: number) => {
@@ -1108,9 +1113,9 @@ const executeAction = async () => {
     })
 
     const res = await mjExecuteAction({
-      taskId: mjResponse.value.taskId,
       imageId: mjResponse.value.imageId,
       action: selectedAction.value,
+      sourceResult: mjResponse.value,  // 传递完整的原始结果
     })
 
     if (res.data.code === 0 && res.data.data) {
@@ -1163,9 +1168,9 @@ const executeContinueAction = async () => {
     })
 
     const res = await mjExecuteAction({
-      taskId: finalResult.value.taskId,
       imageId: finalResult.value.imageId,
       action: selectedAction.value,
+      sourceResult: finalResult.value,  // 传递完整的变体结果
     })
 
     if (res.data.code === 0 && res.data.data) {

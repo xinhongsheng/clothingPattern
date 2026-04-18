@@ -194,24 +194,61 @@ public class MJController {
         String taskId = request.getTaskId();
         String imageId = request.getImageId();
         String action = request.getAction();
-        
-        ThrowUtils.throwIf(StringUtils.isBlank(taskId), ErrorCode.PARAMS_ERROR, "任务ID不能为空");
+        MJImagineVO sourceResult = request.getSourceResult();
+
         ThrowUtils.throwIf(StringUtils.isBlank(imageId), ErrorCode.PARAMS_ERROR, "图片ID不能为空");
         ThrowUtils.throwIf(StringUtils.isBlank(action), ErrorCode.PARAMS_ERROR, "动作类型不能为空");
-        
+
         try {
-            MJGenerateTaskInfo taskInfo = mjGenerateTaskService.getTask(taskId);
+            MJImagineVO originalResult = null;
+
+            // 方式1：优先使用直接传递的sourceResult（前端保存的完整结果）
+            if (sourceResult != null) {
+                log.info("使用前端传递的原始生成结果执行变体操作，action: {}", action);
+                originalResult = sourceResult;
+            }
+            // 方式2：通过taskId从Redis查询
+            else if (StringUtils.isNotBlank(taskId)) {
+                log.info("通过taskId查询原始生成结果，taskId: {}", taskId);
+                MJGenerateTaskInfo taskInfo = mjGenerateTaskService.getTask(taskId);
+
+                // 检查任务是否存在
+                if (taskInfo == null) {
+                    log.error("任务不存在，taskId: {}，建议前端直接传递sourceResult", taskId);
+                    throw new BusinessException(ErrorCode.NOT_FOUND_ERROR,
+                            "原始生成任务不存在或已过期，请重新生成或在生成时保存完整结果");
+                }
+
+                // 检查任务结果是否存在
+                if (taskInfo.getResult() == null) {
+                    log.error("任务结果为空，taskId: {}", taskId);
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR,
+                            "原始生成任务未完成或结果丢失");
+                }
+
+                originalResult = taskInfo.getResult();
+            }
+            // 两种方式都没有提供
+            else {
+                log.error("既没有提供taskId也没有提供sourceResult");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR,
+                        "必须提供taskId或sourceResult参数");
+            }
+
+            // 执行动作
             MJImagineVO response = bailianImageClient.executeAction(
-                    taskInfo == null ? null : taskInfo.getResult(),
+                    originalResult,
                     action
             );
-            
+
             // 检查是否成功
             if (response == null || !Boolean.TRUE.equals(response.getSuccess())) {
                 log.error("Bailian image action failed, response: {}", response);
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "动作执行失败");
             }
-            
+
+            log.info("变体操作执行成功，action: {}, resultImageUrl: {}", action, response.getImageUrl());
+
             return ResultUtils.success(response);
         } catch (IOException e) {
             log.error("Bailian image action exception", e);

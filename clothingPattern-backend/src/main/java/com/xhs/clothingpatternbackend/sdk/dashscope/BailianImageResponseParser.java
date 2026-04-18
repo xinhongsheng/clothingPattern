@@ -5,11 +5,50 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public final class BailianImageResponseParser {
 
     private BailianImageResponseParser() {
+    }
+
+    public static List<String> extractAllImageUrls(String resultJson) {
+        List<String> urls = new ArrayList<>();
+        if (StrUtil.isBlank(resultJson)) {
+            return urls;
+        }
+        Object root = JSON.parse(resultJson);
+        Object target = root;
+        if (root instanceof JSONObject rootObject) {
+            Object output = rootObject.get("output");
+            if (output != null) {
+                target = output;
+            }
+        }
+        collectImageUrls(target, urls);
+        return urls;
+    }
+
+    private static void collectImageUrls(Object node, List<String> urls) {
+        if (node == null) {
+            return;
+        }
+        if (node instanceof JSONObject object) {
+            String direct = extractKnownImageField(object);
+            if (StrUtil.isNotBlank(direct) && !urls.contains(direct)) {
+                urls.add(direct);
+                return;
+            }
+            for (Map.Entry<String, Object> entry : object.entrySet()) {
+                collectImageUrls(entry.getValue(), urls);
+            }
+        } else if (node instanceof JSONArray array) {
+            for (Object item : array) {
+                collectImageUrls(item, urls);
+            }
+        }
     }
 
     public static String extractImageUrl(String resultJson) {

@@ -86,7 +86,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         String generationType = patternGenerateRequest.getGenerationType();
         String description = patternGenerateRequest.getDescription();
         String referenceImageUrl = patternGenerateRequest.getReferenceImageUrl();
-        // String serviceType = patternGenerateRequest.getServiceType(); // 已废弃，仅兼容旧参数
+        Integer maxImages = patternGenerateRequest.getMaxImages();
 
         // 校验生成类型
         GenerationTypeEnum typeEnum = GenerationTypeEnum.getEnumByValue(generationType);
@@ -99,31 +99,31 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             ThrowUtils.throwIf(StrUtil.isBlank(referenceImageUrl), ErrorCode.PARAMS_ERROR, "参考图片URL不能为空");
         }
 
-        File generatedImageFile = null;
+        List<File> generatedImageFiles = null;
         String finalReferenceImageUrl = null; // 用于保存到数据库的参考图片URL
+
         try {
-            // 使用千问服务（支持文生图和图生图）
+            // 使用千问服务（支持文生图和图生图，支持多图生成）
             if (GenerationTypeEnum.TEXT_GENERATED.equals(typeEnum)) {
                 // 文字生成模式，不需要参考图片URL
-                generatedImageFile = qwenImage.generateImageByText(
+                generatedImageFiles = qwenImage.generateImageByText(
                         description,
                         patternGenerateRequest.getSize(),
                         patternGenerateRequest.getNegativePrompt(),
-                        patternGenerateRequest.getPromptExtend());
+                        patternGenerateRequest.getPromptExtend(),
+                        maxImages);
                 // 文生图模式，参考图片URL为空
                 finalReferenceImageUrl = null;
             } else if (GenerationTypeEnum.IMAGE_REFERENCED.equals(typeEnum)) {
                 // 图片参考生成模式
-                // 如果是base64图片，会在generateImageByReference方法中上传到COS并返回COS URL
-                generatedImageFile = qwenImage.generateImageByReference(
+                generatedImageFiles = qwenImage.generateImageByReference(
                         referenceImageUrl,
                         description,
-                        patternGenerateRequest.getSize());
+                        patternGenerateRequest.getSize(),
+                        maxImages);
 
                 // 如果原始URL是base64，需要上传到COS并获取URL用于保存到数据库
                 if (referenceImageUrl.startsWith("data:image")) {
-                    // base64图片已经在generateImageByReference中上传到COS
-                    // 需要重新上传一份作为参考图片记录（或者从generateImageByReference返回COS URL）
                     try {
                         // 解码base64
                         String base64Data = referenceImageUrl;
@@ -153,6 +153,16 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
                     finalReferenceImageUrl = referenceImageUrl;
                 }
             }
+
+            // 如果生成了多张图片，批量保存
+            if (generatedImageFiles != null && generatedImageFiles.size() > 1) {
+                log.info("生成了 {} 张图片，开始批量保存", generatedImageFiles.size());
+                return saveBatchPatterns(generatedImageFiles, patternGenerateRequest, loginUser, finalReferenceImageUrl);
+            }
+
+            // 单张图片处理（兼容旧逻辑）
+            File generatedImageFile = (generatedImageFiles != null && !generatedImageFiles.isEmpty())
+                    ? generatedImageFiles.get(0) : null;
 
             // 上传到COS并生成缩略图
             String key = "pattern/" + loginUser.getId() + "/" + System.currentTimeMillis() + ".png";
@@ -243,7 +253,9 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
             return pattern.getId();
         } finally {
             // 删除临时文件，清理资源
-            deleteTempFile(generatedImageFile);
+            if (generatedImageFiles != null) {
+                generatedImageFiles.forEach(this::deleteTempFile);
+            }
         }
     }
 
