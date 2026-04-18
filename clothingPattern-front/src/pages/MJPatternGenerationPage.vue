@@ -1132,7 +1132,7 @@ const executeAction = async () => {
 
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
-        saveForm.patternName = `百炼-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
+        saveForm.patternName = `${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
       selectedAction.value = null
@@ -1187,7 +1187,7 @@ const executeContinueAction = async () => {
 
       if (!isVariationResult.value) {
         const timestamp = new Date().getTime()
-        saveForm.patternName = `百炼-${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
+        saveForm.patternName = `${originalPrompt.value.substring(0, 15)}-${timestamp.toString().slice(-6)}`
       }
 
       selectedAction.value = null
@@ -1228,6 +1228,7 @@ const saveToDatabase = async () => {
       style: formState.style,
       season: formState.season,
       targetAudience: formState.targetAudience,
+      referenceImageUrl: referenceImageUrl.value || undefined,
     }
 
     const res = await savePattern(saveData)

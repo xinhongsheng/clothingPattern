@@ -119,5 +119,10 @@ public class MJImagineVO implements Serializable {
      * 目标受众
      */
     private String targetAudience;
+
+    /**
+     * 参考图片URL（有值时为图片生成类型，否则为文字生成类型）
+     */
+    private String referenceImageUrl;
 }
 

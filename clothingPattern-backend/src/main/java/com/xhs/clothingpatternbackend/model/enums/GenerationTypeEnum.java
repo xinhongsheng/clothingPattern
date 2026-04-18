@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 public enum GenerationTypeEnum {
     TEXT_GENERATED("文字生成", "TEXT_GENERATED"),
+    IMAGE_GENERATED("图片生成", "IMAGE_GENERATED"),
     IMAGE_REFERENCED("图片参考生成", "IMAGE_REFERENCED"),
-    BAILIAN_GENERATED("百炼生成", "BAILIAN_GENERATED"),
     MANUAL_UPLOAD("手动上传", "手动上传");
 
     private final String text;

@@ -184,7 +184,7 @@ public class BailianImageClient {
     }
 
     private String buildPatternName(String prompt, String action) {
-        String prefix = StrUtil.isNotBlank(action) ? "百炼图案-" + action : "百炼图案";
+        String prefix = StrUtil.isNotBlank(action) ? "图案-" + action : "图案";
         String text = StrUtil.blankToDefault(prompt, "智能生成");
         text = text.replaceAll("\\s+", "");
         if (text.length() > 12) {

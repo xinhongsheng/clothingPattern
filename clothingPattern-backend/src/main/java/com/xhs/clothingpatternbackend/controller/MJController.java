@@ -292,7 +292,7 @@ public class MJController {
             // 从请求参数中获取图案名称（前端传入）
             String patternName = request.getPatternName();
             if (StringUtils.isBlank(patternName)) {
-                patternName = "百炼图案-" + System.currentTimeMillis();
+                patternName = "图案-" + System.currentTimeMillis();
             }
             
             // 获取额外字段
@@ -358,8 +358,11 @@ public class MJController {
             Pattern pattern = new Pattern();
             pattern.setUserId(loginUser.getId());
             pattern.setPatternName(patternName);
-            pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "百炼生成的图案");
-            pattern.setGenerationType(GenerationTypeEnum.BAILIAN_GENERATED.getValue());
+            pattern.setDescription(request.getPrompt() != null ? request.getPrompt() : "AI生成的图案");
+            String generationType = StringUtils.isNotBlank(request.getReferenceImageUrl())
+                    ? GenerationTypeEnum.IMAGE_GENERATED.getValue()
+                    : GenerationTypeEnum.TEXT_GENERATED.getValue();
+            pattern.setGenerationType(generationType);
             pattern.setPatternUrl(cosPatternUrl);
             pattern.setThumbUrl(cosThumbUrl);
             pattern.setFileSize(fileSize);  // 保存文件大小
