@@ -27,16 +27,14 @@ export const AUDIT_STATUS_OPTIONS = Object.keys(AUDIT_STATUS_MAP).map((key) => {
 // 生成类型枚举
 export const GENERATION_TYPE_ENUM = {
   TEXT_GENERATED: 'TEXT_GENERATED',
-  IMAGE_REFERENCED: 'IMAGE_REFERENCED',
-  BAILIAN_GENERATED: 'BAILIAN_GENERATED',
+  IMAGE_GENERATED: 'IMAGE_GENERATED',
   MANUAL_UPLOAD: '手动上传',
 } as const;
 
 // 生成类型文本映射
 export const GENERATION_TYPE_MAP: Record<string, string> = {
   TEXT_GENERATED: '文字生成',
-  IMAGE_REFERENCED: '图片参考生成',
-  BAILIAN_GENERATED: '百炼生成',
+  IMAGE_GENERATED: '图片生成',
   '手动上传': '手动上传',
 };
 
@@ -58,7 +56,6 @@ export const AUDIT_STATUS_COLOR_MAP: Record<string, string> = {
 // 生成类型颜色映射
 export const GENERATION_TYPE_COLOR_MAP: Record<string, string> = {
   TEXT_GENERATED: 'blue',
-  IMAGE_REFERENCED: 'purple',
-  BAILIAN_GENERATED: 'blue',
+  IMAGE_GENERATED: 'purple',
   '手动上传': 'green',
 };

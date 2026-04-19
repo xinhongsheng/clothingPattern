@@ -344,6 +344,7 @@ import PatternList from '@/components/PatternList.vue'
 import {
   AUDIT_STATUS_OPTIONS,
   GENERATION_TYPE_OPTIONS,
+  GENERATION_TYPE_MAP,
   AUDIT_STATUS_ENUM,
 } from '@/constants/pattern'
 
@@ -729,15 +730,7 @@ const renderTypeChart = () => {
     typeChart = echarts.init(typeChartRef.value)
   }
 
-  const typeNames: Record<number, string> = {
-    0: '手动上传',
-    1: 'AI智能生成',
-    2: '百炼生成'
-  }
-
-  const colors = ['#4cc9f0', '#4895ef', '#560bad']
-
-  const xData = Object.keys(typeStats.value).map(key => typeNames[Number(key)] || `类型${key}`)
+  const xData = Object.keys(typeStats.value).map(key => GENERATION_TYPE_MAP[key] || key)
   const yData = Object.values(typeStats.value)
 
   const option: echarts.EChartsOption = {

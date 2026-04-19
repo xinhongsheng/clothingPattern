@@ -33,13 +33,11 @@
         <a-form-item label="生成方式" name="generationType">
           <a-select
             v-model:value="searchParams.generationType"
+            :options="GENERATION_TYPE_OPTIONS"
             placeholder="请选择生成方式"
             style="width: 180px"
             allow-clear
-          >
-            <a-select-option value="TEXT_GENERATED">文字生成</a-select-option>
-            <a-select-option value="IMAGE_REFERENCED">图片参考生成</a-select-option>
-          </a-select>
+          />
         </a-form-item>
 
         <a-form-item label="审核状态" name="auditStatus">
