@@ -17,9 +17,11 @@ public class CommentQueryRequest extends PageRequest implements Serializable {
 
     private Long parentId; // 查询指定父评论的回复
 
-    private String userName; // 按用户名搜索
+    private String userName; // 按用户名搜索（模糊）
 
-    private String patternName; // 按图案名搜索
+    private String patternName; // 按图案名搜索（模糊）
+
+    private String content; // 按评论内容搜索（模糊）
 
     private static final long serialVersionUID = 1L;
 }

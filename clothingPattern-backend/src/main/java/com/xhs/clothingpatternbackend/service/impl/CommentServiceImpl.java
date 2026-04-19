@@ -367,9 +367,43 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment>
         Long parentId = commentQueryRequest.getParentId();
         String sortOrder = commentQueryRequest.getSortOrder();
         String sortField = commentQueryRequest.getSortField();
+        String userName = commentQueryRequest.getUserName();
+        String patternName = commentQueryRequest.getPatternName();
+        String content = commentQueryRequest.getContent();
+
         QueryWrapper<Comment> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq(ObjUtil.isNotNull(patternId), "patternId", patternId);
         queryWrapper.eq(ObjUtil.isNotNull(parentId), "parentId", parentId);
+
+        // 按评论内容模糊搜索（comment 表直接有该字段）
+        queryWrapper.like(StrUtil.isNotBlank(content), "content", content);
+
+        // 按用户名模糊搜索：先查出匹配的 userId 集合，再用 IN 过滤
+        if (StrUtil.isNotBlank(userName)) {
+            List<Long> matchedUserIds = userMapper.selectList(
+                    new QueryWrapper<User>().like("userName", userName)
+            ).stream().map(User::getId).collect(Collectors.toList());
+            if (matchedUserIds.isEmpty()) {
+                // 没有匹配用户，返回空结果
+                queryWrapper.eq("userId", -1L);
+            } else {
+                queryWrapper.in("userId", matchedUserIds);
+            }
+        }
+
+        // 按图案名模糊搜索：先查出匹配的 patternId 集合，再用 IN 过滤
+        if (StrUtil.isNotBlank(patternName)) {
+            List<Long> matchedPatternIds = patternMapper.selectList(
+                    new QueryWrapper<Pattern>().like("patternName", patternName)
+            ).stream().map(Pattern::getId).collect(Collectors.toList());
+            if (matchedPatternIds.isEmpty()) {
+                // 没有匹配图案，返回空结果
+                queryWrapper.eq("patternId", -1L);
+            } else {
+                queryWrapper.in("patternId", matchedPatternIds);
+            }
+        }
+
         queryWrapper.orderBy(StrUtil.isNotBlank(sortField), sortOrder.equals("ascend"), sortField);
 
         return queryWrapper;

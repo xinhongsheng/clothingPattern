@@ -421,6 +421,7 @@ declare namespace API {
     parentId?: number
     userName?: string
     patternName?: string
+    content?: string
   }
 
   type CommentStatisticsVO = {
