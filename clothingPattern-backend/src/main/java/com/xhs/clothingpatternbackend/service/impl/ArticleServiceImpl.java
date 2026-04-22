@@ -116,6 +116,13 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article>
         // 3. 使用convertToVO方法转换为VO
         ArticleVO articleVO = convertToVO(article);
 
+        // 3.5 累加Redis中未同步的浏览量增量
+        String viewKey = ARTICLE_VIEW_KEY_PREFIX + id;
+        String redisViewCount = stringRedisTemplate.opsForValue().get(viewKey);
+        if (redisViewCount != null) {
+            articleVO.setViewCount(article.getViewCount() + Integer.parseInt(redisViewCount));
+        }
+
         // 4. 设置用户交互状态
         if (currentUserId != null) {
             boolean liked = getLikeStatusFromRedis(id, currentUserId);
