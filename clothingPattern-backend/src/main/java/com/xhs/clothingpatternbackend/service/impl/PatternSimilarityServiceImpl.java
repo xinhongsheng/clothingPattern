@@ -8,6 +8,7 @@ import com.xhs.clothingpatternbackend.mapper.PatternSimilarityMapper;
 import com.xhs.clothingpatternbackend.mapper.UserBehaviorMapper;
 import com.xhs.clothingpatternbackend.model.entity.Pattern;
 import com.xhs.clothingpatternbackend.model.entity.PatternSimilarity;
+import com.xhs.clothingpatternbackend.model.entity.UserBehavior;
 import com.xhs.clothingpatternbackend.model.enums.AuditStatusEnum;
 import com.xhs.clothingpatternbackend.model.vo.PatternVO;
 import com.xhs.clothingpatternbackend.service.PatternService;
@@ -17,10 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -47,7 +45,7 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
 
     private static final String REDIS_REC_PREFIX = "rec:user:";
     private static final String REDIS_HOT_PATTERNS_KEY = "rec:hot:patterns";
-    private static final long HOT_PATTERNS_EXPIRE_HOURS = 2; // 热门图案缓存2小时
+    private static final long HOT_PATTERNS_EXPIRE_HOURS = 2;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -57,7 +55,7 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
             return getHotPatterns(limit);
         }
 
-        // 1. 尝试从 Redis 获取推荐 ID 列表
+        // 1. 尝试从 Redis 获取协同过滤预计算的推荐 ID 列表
         String key = REDIS_REC_PREFIX + userId;
         List<Long> patternIds = null;
         try {
@@ -69,22 +67,72 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
             log.warn("从Redis获取推荐列表失败: {}", e.getMessage());
         }
 
-        // 2. 如果 Redis 里没数据（冷启动问题），则返回热门图案
-        if (CollUtil.isEmpty(patternIds)) {
-            log.debug("用户 {} 无推荐数据，返回热门图案", userId);
+        if (CollUtil.isNotEmpty(patternIds)) {
+            List<Long> finalPatternIds = patternIds.stream().limit(limit).collect(Collectors.toList());
+            List<Pattern> patterns = patternMapper.selectBatchIds(finalPatternIds);
+            if (CollUtil.isNotEmpty(patterns)) {
+                return patternService.getPatternVOList(patterns, userId);
+            }
+        }
+
+        // 2. Redis 无预计算数据，基于用户行为做实时内容推荐
+        return getContentBasedRecommendations(userId, limit);
+    }
+
+    /**
+     * 基于用户行为的实时内容推荐
+     * 分析用户浏览/点赞过的图案偏好（风格、季节），推荐相似图案
+     */
+    private List<PatternVO> getContentBasedRecommendations(Long userId, int limit) {
+        // 1. 获取用户交互过的图案ID
+        List<Long> interactedPatternIds = userBehaviorMapper.selectPatternIdsByUserId(userId);
+        if (CollUtil.isEmpty(interactedPatternIds)) {
+            log.debug("用户 {} 无行为记录，返回热门图案", userId);
             return getHotPatterns(limit);
         }
 
-        // 3. 根据 ID 列表去数据库查详细信息
-        List<Long> finalPatternIds = patternIds.stream().limit(limit).collect(Collectors.toList());
-        List<Pattern> patterns = patternMapper.selectBatchIds(finalPatternIds);
-
-        if (CollUtil.isEmpty(patterns)) {
-            return getHotPatterns(limit);
+        // 2. 查询用户交互过的图案，提取偏好特征
+        List<Pattern> interactedPatterns = patternMapper.selectBatchIds(interactedPatternIds);
+        Set<String> preferredStyles = new HashSet<>();
+        Set<String> preferredSeasons = new HashSet<>();
+        Set<String> preferredAudiences = new HashSet<>();
+        for (Pattern p : interactedPatterns) {
+            if (p.getStyle() != null && !p.getStyle().isEmpty()) preferredStyles.add(p.getStyle());
+            if (p.getSeason() != null && !p.getSeason().isEmpty()) preferredSeasons.add(p.getSeason());
+            if (p.getTargetAudience() != null && !p.getTargetAudience().isEmpty()) preferredAudiences.add(p.getTargetAudience());
         }
 
-        // 4. 转换为 VO
-        return patternService.getPatternVOList(patterns, userId);
+        // 3. 查询符合偏好但未看过的图案
+        QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue())
+                .eq("isDelete", 0)
+                .notIn("id", interactedPatternIds);
+
+        // 至少匹配一个偏好维度（风格 > 季节 > 人群）
+        boolean hasPreference = false;
+        if (!preferredStyles.isEmpty()) {
+            queryWrapper.in("style", preferredStyles);
+            hasPreference = true;
+        } else if (!preferredSeasons.isEmpty()) {
+            queryWrapper.in("season", preferredSeasons);
+            hasPreference = true;
+        } else if (!preferredAudiences.isEmpty()) {
+            queryWrapper.in("targetAudience", preferredAudiences);
+            hasPreference = true;
+        }
+
+        if (hasPreference) {
+            queryWrapper.orderByDesc("likeCount").last("LIMIT " + limit);
+            List<Pattern> recommended = patternMapper.selectList(queryWrapper);
+            if (CollUtil.isNotEmpty(recommended)) {
+                log.debug("基于内容推荐为用户 {} 推荐 {} 个图案（偏好: style={}, season={}）",
+                        userId, recommended.size(), preferredStyles, preferredSeasons);
+                return patternService.getPatternVOList(recommended, userId);
+            }
+        }
+
+        // 4. 偏好匹配无结果，返回热门图案（排除已看过的）
+        return getHotPatternsExcluding(limit, new HashSet<>(interactedPatternIds));
     }
 
     /**
@@ -92,7 +140,6 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
      */
     @SuppressWarnings("unchecked")
     private List<Long> getHotPatternIds(int limit) {
-        // 1. 尝试从 Redis 获取热门图案 ID 列表
         try {
             Object cached = redisTemplate.opsForValue().get(REDIS_HOT_PATTERNS_KEY);
             if (cached instanceof List) {
@@ -106,24 +153,21 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
             log.warn("从Redis获取热门图案列表失败: {}", e.getMessage());
         }
 
-        // 2. Redis 未命中，从数据库查询
         QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue());
         queryWrapper.eq("isDelete", 0);
         queryWrapper.orderByDesc("likeCount");
-        queryWrapper.last("LIMIT " + Math.max(limit, 20)); // 多查一些用于缓存
+        queryWrapper.last("LIMIT " + Math.max(limit, 20));
 
         List<Pattern> patterns = patternMapper.selectList(queryWrapper);
         List<Long> hotPatternIds = patterns.stream()
                 .map(Pattern::getId)
                 .collect(Collectors.toList());
 
-        // 3. 存入 Redis 缓存
         if (!hotPatternIds.isEmpty()) {
             try {
-                redisTemplate.opsForValue().set(REDIS_HOT_PATTERNS_KEY, hotPatternIds, 
+                redisTemplate.opsForValue().set(REDIS_HOT_PATTERNS_KEY, hotPatternIds,
                         HOT_PATTERNS_EXPIRE_HOURS, TimeUnit.HOURS);
-                log.debug("热门图案ID列表已缓存到Redis，共{}个", hotPatternIds.size());
             } catch (Exception e) {
                 log.warn("缓存热门图案列表到Redis失败: {}", e.getMessage());
             }
@@ -134,20 +178,34 @@ public class PatternSimilarityServiceImpl extends ServiceImpl<PatternSimilarityM
 
     @Override
     public List<PatternVO> getHotPatterns(int limit) {
-        // 1. 获取热门图案 ID 列表（带缓存）
         List<Long> hotPatternIds = getHotPatternIds(limit);
-        
         if (CollUtil.isEmpty(hotPatternIds)) {
             return new ArrayList<>();
         }
-
-        // 2. 根据 ID 查询详细信息
         List<Pattern> patterns = patternMapper.selectBatchIds(hotPatternIds);
         if (CollUtil.isEmpty(patterns)) {
             return new ArrayList<>();
         }
+        return patternService.getPatternVOList(patterns, null);
+    }
 
-        // 3. 转换为 VO
+    /**
+     * 获取热门图案（排除已浏览过的）
+     */
+    private List<PatternVO> getHotPatternsExcluding(int limit, Set<Long> excludeIds) {
+        QueryWrapper<Pattern> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("auditStatus", AuditStatusEnum.APPROVED.getValue());
+        queryWrapper.eq("isDelete", 0);
+        if (!excludeIds.isEmpty()) {
+            queryWrapper.notIn("id", excludeIds);
+        }
+        queryWrapper.orderByDesc("likeCount");
+        queryWrapper.last("LIMIT " + limit);
+
+        List<Pattern> patterns = patternMapper.selectList(queryWrapper);
+        if (CollUtil.isEmpty(patterns)) {
+            return new ArrayList<>();
+        }
         return patternService.getPatternVOList(patterns, null);
     }
 }
