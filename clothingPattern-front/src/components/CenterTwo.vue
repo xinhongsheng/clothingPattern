@@ -100,7 +100,7 @@ const getChartOption = () => {
   return {
     backgroundColor: 'transparent',
     title: {
-      text: '各省用户分布统计',
+      text: '全国图案创作版图',
       left: 'center',
       textStyle: {
         color: '#00f2ff',

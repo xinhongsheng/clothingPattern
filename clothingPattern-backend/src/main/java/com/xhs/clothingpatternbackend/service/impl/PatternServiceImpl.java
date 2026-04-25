@@ -1008,6 +1008,7 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
      */
 
     // 日期格式化器（统一返回yyyy-MM-dd格式）
+    private static final int STYLE_PREFERENCE_DAYS = 7;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     // 系统默认时区
     private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
@@ -1018,8 +1019,12 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
 
         // 1. 生成过去7天的日期（包含今天，共7天）
         LocalDate today = LocalDate.now();
+        LocalDate currentStartDate = today.minusDays(STYLE_PREFERENCE_DAYS - 1L);
+        boolean currentRangeHasData = countStylePreferencePatterns(currentStartDate, today) > 0;
+        Date latestCreateTime = getLatestStylePreferenceCreateTime();
+        List<LocalDate> statisticDates = resolveStylePreferenceDates(today, latestCreateTime, currentRangeHasData);
         for (int i = 6; i >= 0; i--) { // 从7天前到今天，倒序遍历（也可正序，根据需求调整）
-            LocalDate currentDate = today.minusDays(i);
+            LocalDate currentDate = statisticDates.get(STYLE_PREFERENCE_DAYS - 1 - i);
             String dateStr = currentDate.format(DATE_FORMATTER);
 
             // 2. 构建当天的时间范围：00:00:00 到 23:59:59
@@ -1068,5 +1073,50 @@ public class PatternServiceImpl extends ServiceImpl<PatternMapper, Pattern>
         }
 
         return dailyResultList;
+    }
+
+    static List<LocalDate> resolveStylePreferenceDates(LocalDate today, Date latestCreateTime,
+                                                       boolean currentRangeHasData) {
+        LocalDate endDate = today;
+        if (!currentRangeHasData && latestCreateTime != null) {
+            endDate = latestCreateTime.toInstant().atZone(DEFAULT_ZONE).toLocalDate();
+        }
+
+        List<LocalDate> dates = new ArrayList<>();
+        for (int i = STYLE_PREFERENCE_DAYS - 1; i >= 0; i--) {
+            dates.add(endDate.minusDays(i));
+        }
+        return dates;
+    }
+
+    private long countStylePreferencePatterns(LocalDate startDate, LocalDate endDate) {
+        QueryWrapper<Pattern> queryWrapper = buildStylePreferenceBaseQuery()
+                .ge("createTime", toStartTime(startDate))
+                .le("createTime", toEndTime(endDate));
+        return this.count(queryWrapper);
+    }
+
+    private Date getLatestStylePreferenceCreateTime() {
+        QueryWrapper<Pattern> queryWrapper = buildStylePreferenceBaseQuery()
+                .orderByDesc("createTime")
+                .last("limit 1");
+        Pattern latestPattern = this.getOne(queryWrapper, false);
+        return latestPattern == null ? null : latestPattern.getCreateTime();
+    }
+
+    private QueryWrapper<Pattern> buildStylePreferenceBaseQuery() {
+        return new QueryWrapper<Pattern>()
+                .eq("isDelete", 0)
+                .eq("auditStatus", AuditStatusEnum.APPROVED.getValue())
+                .isNotNull("style")
+                .ne("style", "");
+    }
+
+    private Date toStartTime(LocalDate date) {
+        return Date.from(date.atStartOfDay().atZone(DEFAULT_ZONE).toInstant());
+    }
+
+    private Date toEndTime(LocalDate date) {
+        return Date.from(date.atTime(23, 59, 59).atZone(DEFAULT_ZONE).toInstant());
     }
 }
