@@ -39,6 +39,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -495,14 +496,17 @@ public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMappe
 
         // 2. 验证选中的URL是否在结果列表中
         List<String> localUrls = task.getLocalImageUrlList();
-        if (localUrls == null || !localUrls.contains(selectedImageUrl)) {
-            log.error("保存选中图片失败：选中的URL不在结果列表中，URL={}", selectedImageUrl);
+        List<String> tempUrls = task.getTempImageUrlList();
+        String resolvedImageUrl = resolveSelectedImageUrl(localUrls, tempUrls, selectedImageUrl);
+        if (StrUtil.isBlank(resolvedImageUrl)) {
+            log.error("保存选中图片失败：选中的URL不在结果列表中，URL={}，localUrls={}，tempUrls={}",
+                    selectedImageUrl, localUrls, tempUrls);
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "选中的图片不在结果列表中");
         }
 
         // 3. 将选中的URL设置为唯一的结果URL（替换原有的多个URL）
-        task.setLocalImageUrls(selectedImageUrl);
-        task.setTempImageUrls(selectedImageUrl);
+        task.setLocalImageUrls(resolvedImageUrl);
+        task.setTempImageUrls(resolvedImageUrl);
         task.setOrigPrompts(""); // 清空原始提示词列表
         task.setSorts("1"); // 只有一张图片，排序为1
         task.setUpdateTime(LocalDateTime.now());
@@ -516,6 +520,93 @@ public class ImageFusionTaskServiceImpl extends ServiceImpl<ImageFusionTaskMappe
         }
 
         return updated;
+    }
+
+    static String resolveSelectedImageUrl(List<String> localUrls, List<String> tempUrls, String selectedImageUrl) {
+        if (StrUtil.isBlank(selectedImageUrl)) {
+            return null;
+        }
+
+        String matchedLocalUrl = findMatchedUrl(localUrls, selectedImageUrl);
+        if (StrUtil.isNotBlank(matchedLocalUrl)) {
+            return matchedLocalUrl;
+        }
+
+        int tempIndex = findMatchedIndex(tempUrls, selectedImageUrl);
+        if (tempIndex >= 0) {
+            if (localUrls != null && tempIndex < localUrls.size() && StrUtil.isNotBlank(localUrls.get(tempIndex))) {
+                return localUrls.get(tempIndex).trim();
+            }
+            return tempUrls.get(tempIndex).trim();
+        }
+
+        return null;
+    }
+
+    private static String findMatchedUrl(List<String> urls, String selectedImageUrl) {
+        int index = findMatchedIndex(urls, selectedImageUrl);
+        if (index < 0) {
+            return null;
+        }
+        return urls.get(index).trim();
+    }
+
+    private static int findMatchedIndex(List<String> urls, String selectedImageUrl) {
+        if (CollUtil.isEmpty(urls)) {
+            return -1;
+        }
+        for (int i = 0; i < urls.size(); i++) {
+            if (isSameImageUrl(urls.get(i), selectedImageUrl)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean isSameImageUrl(String leftUrl, String rightUrl) {
+        if (StrUtil.isBlank(leftUrl) || StrUtil.isBlank(rightUrl)) {
+            return false;
+        }
+        String left = leftUrl.trim();
+        String right = rightUrl.trim();
+        if (left.equals(right)) {
+            return true;
+        }
+        String leftPath = normalizeImagePath(left);
+        String rightPath = normalizeImagePath(right);
+        return StrUtil.isNotBlank(leftPath) && leftPath.equals(rightPath);
+    }
+
+    private static String normalizeImagePath(String imageUrl) {
+        if (StrUtil.isBlank(imageUrl)) {
+            return "";
+        }
+        String value = imageUrl.trim();
+        try {
+            URI uri = URI.create(value);
+            if (StrUtil.isNotBlank(uri.getPath())) {
+                return uri.getPath();
+            }
+        } catch (Exception ignored) {
+            // 兼容历史数据中的非标准 URL 字符串。
+        }
+
+        int queryIndex = value.indexOf('?');
+        if (queryIndex >= 0) {
+            value = value.substring(0, queryIndex);
+        }
+        int fragmentIndex = value.indexOf('#');
+        if (fragmentIndex >= 0) {
+            value = value.substring(0, fragmentIndex);
+        }
+        int protocolIndex = value.indexOf("://");
+        if (protocolIndex >= 0) {
+            int pathIndex = value.indexOf('/', protocolIndex + 3);
+            if (pathIndex >= 0) {
+                return value.substring(pathIndex);
+            }
+        }
+        return value;
     }
 }
 
