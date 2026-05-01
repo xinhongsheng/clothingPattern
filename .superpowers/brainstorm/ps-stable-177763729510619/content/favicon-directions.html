@@ -1,0 +1,156 @@
+<style>
+  .favicon-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+  }
+  .favicon-card {
+    border: 1px solid #e8e4dc;
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  .favicon-card:hover {
+    border-color: #7c6b59;
+    box-shadow: 0 16px 36px rgba(45, 35, 25, .12);
+    transform: translateY(-2px);
+  }
+  .favicon-stage {
+    min-height: 210px;
+    display: grid;
+    place-items: center;
+    background:
+      linear-gradient(45deg, #f5f3ef 25%, transparent 25%),
+      linear-gradient(-45deg, #f5f3ef 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #f5f3ef 75%),
+      linear-gradient(-45deg, transparent 75%, #f5f3ef 75%);
+    background-size: 22px 22px;
+    background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+  }
+  .favicon-preview {
+    width: 116px;
+    height: 116px;
+    border-radius: 24px;
+    box-shadow: 0 18px 40px rgba(37, 28, 20, .16);
+  }
+  .tiny-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px 0;
+  }
+  .tiny-row svg {
+    flex: 0 0 auto;
+    box-shadow: 0 4px 10px rgba(37, 28, 20, .12);
+  }
+  .tiny-label {
+    color: #6c6258;
+    font-size: 13px;
+  }
+  .favicon-body {
+    padding: 14px 16px 18px;
+  }
+  .favicon-body h3 {
+    margin: 0 0 7px;
+  }
+  .favicon-body p {
+    margin: 0;
+    color: #6c6258;
+    line-height: 1.5;
+  }
+  @media (max-width: 900px) {
+    .favicon-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>选择线上网站图标方向</h2>
+<p class="subtitle">我根据当前项目的“服装图案、智能创作、AI 试衣”定位做了 3 个 favicon 方向。点击你偏好的方向，或直接在终端告诉我想混合哪几个元素。</p>
+
+<div class="favicon-grid">
+  <div class="favicon-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="favicon-stage">
+      <svg class="favicon-preview" viewBox="0 0 128 128" role="img" aria-label="Needle pattern favicon">
+        <rect width="128" height="128" rx="28" fill="#f7efe6"/>
+        <path d="M19 93c20-27 45-45 90-58" fill="none" stroke="#2f2118" stroke-width="11" stroke-linecap="round"/>
+        <path d="M31 44c13-16 36-21 60-10" fill="none" stroke="#c95d3f" stroke-width="10" stroke-linecap="round"/>
+        <path d="M82 27l21-8 7 19-21 8z" fill="#2f2118"/>
+        <circle cx="91" cy="33" r="5" fill="#f7efe6"/>
+        <path d="M36 82l21 21 35-36" fill="none" stroke="#1f9d8a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="tiny-row">
+      <svg width="32" height="32" viewBox="0 0 128 128" aria-hidden="true">
+        <rect width="128" height="128" rx="28" fill="#f7efe6"/>
+        <path d="M19 93c20-27 45-45 90-58" fill="none" stroke="#2f2118" stroke-width="11" stroke-linecap="round"/>
+        <path d="M31 44c13-16 36-21 60-10" fill="none" stroke="#c95d3f" stroke-width="10" stroke-linecap="round"/>
+        <path d="M82 27l21-8 7 19-21 8z" fill="#2f2118"/>
+        <circle cx="91" cy="33" r="5" fill="#f7efe6"/>
+        <path d="M36 82l21 21 35-36" fill="none" stroke="#1f9d8a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="tiny-label">32px 预览</span>
+    </div>
+    <div class="favicon-body">
+      <h3>A. 针线与图案</h3>
+      <p>更像服装图案平台本体，识别度高，温暖但不幼稚，适合长期品牌化。</p>
+    </div>
+  </div>
+
+  <div class="favicon-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="favicon-stage">
+      <svg class="favicon-preview" viewBox="0 0 128 128" role="img" aria-label="AI apparel favicon">
+        <rect width="128" height="128" rx="28" fill="#151b22"/>
+        <path d="M38 43c0-13 11-24 26-24s26 11 26 24v44c0 13-11 22-26 22s-26-9-26-22z" fill="#f2eee8"/>
+        <path d="M42 48h44M42 68h44M48 88h32" fill="none" stroke="#151b22" stroke-width="7" stroke-linecap="round"/>
+        <path d="M23 73c15-4 26-14 32-32M105 73c-15-4-26-14-32-32" fill="none" stroke="#27c6a7" stroke-width="8" stroke-linecap="round"/>
+        <path d="M95 22l5 11 11 5-11 5-5 11-5-11-11-5 11-5z" fill="#ffd166"/>
+      </svg>
+    </div>
+    <div class="tiny-row">
+      <svg width="32" height="32" viewBox="0 0 128 128" aria-hidden="true">
+        <rect width="128" height="128" rx="28" fill="#151b22"/>
+        <path d="M38 43c0-13 11-24 26-24s26 11 26 24v44c0 13-11 22-26 22s-26-9-26-22z" fill="#f2eee8"/>
+        <path d="M42 48h44M42 68h44M48 88h32" fill="none" stroke="#151b22" stroke-width="7" stroke-linecap="round"/>
+        <path d="M23 73c15-4 26-14 32-32M105 73c-15-4-26-14-32-32" fill="none" stroke="#27c6a7" stroke-width="8" stroke-linecap="round"/>
+        <path d="M95 22l5 11 11 5-11 5-5 11-5-11-11-5 11-5z" fill="#ffd166"/>
+      </svg>
+      <span class="tiny-label">32px 预览</span>
+    </div>
+    <div class="favicon-body">
+      <h3>B. AI 服装创作</h3>
+      <p>强调智能创作与 AI 试衣，黑底对浏览器标签页更醒目，但品牌气质更科技。</p>
+    </div>
+  </div>
+
+  <div class="favicon-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="favicon-stage">
+      <svg class="favicon-preview" viewBox="0 0 128 128" role="img" aria-label="Pattern grid favicon">
+        <rect width="128" height="128" rx="28" fill="#fbf8f1"/>
+        <path d="M29 28h70v72H29z" fill="#ffffff" stroke="#30251d" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M48 28v72M80 28v72M29 52h70M29 76h70" stroke="#d6c7b7" stroke-width="5"/>
+        <path d="M45 92c6-16 16-25 35-32 9-4 15-10 17-20" fill="none" stroke="#db6b4b" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="43" cy="93" r="8" fill="#1f9d8a"/>
+        <circle cx="97" cy="39" r="7" fill="#ffd166"/>
+      </svg>
+    </div>
+    <div class="tiny-row">
+      <svg width="32" height="32" viewBox="0 0 128 128" aria-hidden="true">
+        <rect width="128" height="128" rx="28" fill="#fbf8f1"/>
+        <path d="M29 28h70v72H29z" fill="#ffffff" stroke="#30251d" stroke-width="8" stroke-linejoin="round"/>
+        <path d="M48 28v72M80 28v72M29 52h70M29 76h70" stroke="#d6c7b7" stroke-width="5"/>
+        <path d="M45 92c6-16 16-25 35-32 9-4 15-10 17-20" fill="none" stroke="#db6b4b" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="43" cy="93" r="8" fill="#1f9d8a"/>
+        <circle cx="97" cy="39" r="7" fill="#ffd166"/>
+      </svg>
+      <span class="tiny-label">32px 预览</span>
+    </div>
+    <div class="favicon-body">
+      <h3>C. 图案画布</h3>
+      <p>偏“图案管理/设计画板”的感觉，干净专业，和社区、资讯、管理功能都比较中性。</p>
+    </div>
+  </div>
+</div>

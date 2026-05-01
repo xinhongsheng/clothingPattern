@@ -135,7 +135,7 @@ import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { userRegister } from '@/api/userController.ts'
 import AuthCharacters from '@/components/auth/AuthCharacters.vue'
-import logoUrl from '@/assets/logo.svg'
+import logoUrl from '@/assets/logo.png'
 
 const router = useRouter()
 
@@ -366,16 +366,19 @@ const handleSubmit = async (values: API.UserRegisterRequest) => {
   position: absolute;
   top: 50%;
   right: 12px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
+  padding: 0;
   color: #64727e;
   border: 0;
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  line-height: 0;
+  transform: translateY(-50%);
 }
 
 .password-toggle:hover {
@@ -385,6 +388,8 @@ const handleSubmit = async (values: API.UserRegisterRequest) => {
 
 .password-toggle svg,
 .submit-button svg {
+  display: block;
+  flex: 0 0 auto;
   width: 20px;
   height: 20px;
   fill: none;
