@@ -1,119 +1,455 @@
-﻿<template>
-  <!-- 新增外层容器：承载背景图 + 居中登录框 -->
-  <div class="login-container">
-    <div id="userLoginPage">
-      <h2 class="title">服装图案智能创作平台-用户登录</h2>
-      <div class="desc">服装图案智能创作平台</div>
-      <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
-        <a-form-item
-          name="userAccount"
-          :rules="[{ required: true ,message: '请输入账号!' }]"
-        >
-          <a-input v-model:value="formState.userAccount" placeholder="请输入账号" />
+<template>
+  <main class="auth-page">
+    <section class="auth-stage" aria-label="登录装饰动画">
+      <RouterLink to="/" class="brand-link">
+        <img :src="logoUrl" alt="服装图案智能创作平台" class="brand-logo" />
+        <span>服装图案智能创作平台</span>
+      </RouterLink>
+
+      <div class="characters-wrap">
+        <AuthCharacters
+          :is-typing="isTyping"
+          :show-password="showPassword"
+          :password-length="(formState.userPassword || '').length"
+          :login-failed="authFailed"
+          :login-success="authSuccess"
+        />
+      </div>
+
+      <div class="stage-copy">
+        <h1>欢迎回来</h1>
+        <p>继续探索纹样灵感、智能生成和衣图融合效果。</p>
+      </div>
+    </section>
+
+    <section class="auth-panel" aria-label="用户登录">
+      <div class="mobile-brand">
+        <img :src="logoUrl" alt="服装图案智能创作平台" class="brand-logo" />
+        <span>服装图案智能创作平台</span>
+      </div>
+
+      <div class="form-header">
+        <p class="eyebrow">Account Login</p>
+        <h2>用户登录</h2>
+        <p>输入账号和密码，进入你的创作工作台。</p>
+      </div>
+
+      <a-form :model="formState" name="loginForm" autocomplete="off" class="auth-form" @finish="handleSubmit">
+        <a-form-item name="userAccount" :rules="[{ required: true, message: '请输入账号!' }]">
+          <label class="field-label" for="login-account">账号</label>
+          <input
+            id="login-account"
+            v-model="formState.userAccount"
+            class="auth-input"
+            placeholder="请输入账号"
+            autocomplete="username"
+            @focus="markTyping(true)"
+            @blur="markTyping(false)"
+          />
         </a-form-item>
 
         <a-form-item
           name="userPassword"
-          :rules="[{ required: true, message: '请输入密码!' },
-          { min: 8, message: '密码不能少于8位' }]"
+          :rules="[
+            { required: true, message: '请输入密码!' },
+            { min: 8, message: '密码不能少于8位' },
+          ]"
         >
-          <a-input-password v-model:value="formState.userPassword" placeholder='请输入密码'  />
+          <label class="field-label" for="login-password">密码</label>
+          <div class="password-field">
+            <input
+              id="login-password"
+              v-model="formState.userPassword"
+              class="auth-input"
+              :type="showPassword ? 'text' : 'password'"
+              placeholder="请输入密码"
+              autocomplete="current-password"
+              @focus="markTyping(true)"
+              @blur="markTyping(false)"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              :aria-label="showPassword ? '隐藏密码' : '显示密码'"
+              @click="showPassword = !showPassword"
+            >
+              <svg v-if="showPassword" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3l18 18" />
+                <path d="M10.6 10.6A2.8 2.8 0 0 0 12 14.8c.8 0 1.5-.3 2-.8" />
+                <path d="M7.4 7.7C4.4 9.4 2.5 12 2.5 12s3.5 6 9.5 6c1.8 0 3.4-.5 4.8-1.2" />
+                <path d="M12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.1 2.5" />
+              </svg>
+            </button>
+          </div>
         </a-form-item>
+
+        <p v-if="errorMessage" class="auth-error">{{ errorMessage }}</p>
 
         <div class="tips">
           没有账号？<RouterLink to="/user/register">去注册</RouterLink>
         </div>
-        <a-form-item >
-          <a-button type="primary" html-type="submit">登录</a-button>
+
+        <a-form-item>
+          <button class="submit-button" type="submit" :disabled="submitting">
+            <span>{{ submitting ? '登录中...' : '登录' }}</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14" />
+              <path d="m13 6 6 6-6 6" />
+            </svg>
+          </button>
         </a-form-item>
       </a-form>
-    </div>
-  </div>
+    </section>
+  </main>
 </template>
+
 <script lang="ts" setup>
-import { reactive } from 'vue'
-import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
-import { userLogin } from '@/api/userController.ts'
-import { useRouter, useRoute } from 'vue-router'
+import { reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { userLogin } from '@/api/userController.ts'
+import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
+import AuthCharacters from '@/components/auth/AuthCharacters.vue'
+import logoUrl from '@/assets/logo.svg'
 
 const router = useRouter()
 const route = useRoute()
-/** 表单数据 */
+const loginUserStore = useLoginUserStore()
+
 const formState = reactive<API.UserLoginRequest>({
   userAccount: '',
   userPassword: '',
-  remember: true,
 })
 
-const loginUserStore = useLoginUserStore();
-// 登录提交
-const handleSubmit = async(values: any) => {
-  const res=await userLogin(values)
-  if (res.data.code === 0&& res.data.data) {
-    await loginUserStore.fetchLoginUser()
-    message.success('登录成功')
-    
-    // 获取redirect参数，如果有则跳转回原页面，否则跳转到首页
-    const redirect = route.query.redirect as string || '/'
-    router.push({
-      path: redirect,
-      replace: true
-    })
-  } else {
-    message.error('登录失败'+res.data.message)
+const isTyping = ref(false)
+const showPassword = ref(false)
+const submitting = ref(false)
+const authFailed = ref(false)
+const authSuccess = ref(false)
+const errorMessage = ref('')
+let feedbackTimer: ReturnType<typeof setTimeout> | null = null
+
+const markTyping = (typing: boolean) => {
+  isTyping.value = typing
+}
+
+const resetFeedbackLater = (key: 'failed' | 'success', delay = 2600) => {
+  if (feedbackTimer) {
+    clearTimeout(feedbackTimer)
+  }
+  feedbackTimer = setTimeout(() => {
+    if (key === 'failed') authFailed.value = false
+    if (key === 'success') authSuccess.value = false
+  }, delay)
+}
+
+const handleSubmit = async (values: API.UserLoginRequest) => {
+  submitting.value = true
+  authFailed.value = false
+  authSuccess.value = false
+  errorMessage.value = ''
+  try {
+    const res = await userLogin(values)
+    if (res.data.code === 0 && res.data.data) {
+      await loginUserStore.fetchLoginUser()
+      authSuccess.value = true
+      message.success('登录成功')
+
+      const redirect = (route.query.redirect as string) || '/'
+      window.setTimeout(() => {
+        router.push({
+          path: redirect,
+          replace: true,
+        })
+      }, 650)
+    } else {
+      throw new Error(res.data.message || '账号或密码错误')
+    }
+  } catch (error: any) {
+    authFailed.value = true
+    errorMessage.value = error?.message || '登录失败，请稍后重试'
+    message.error('登录失败：' + errorMessage.value)
+    resetFeedbackLater('failed')
+  } finally {
+    submitting.value = false
   }
 }
 </script>
 
 <style scoped>
-/* 外层容器：全屏背景图 + 居中登录框 */
-.login-container {
-  position: fixed; /* 固定定位，占满整个视口 */
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  /* 背景图核心属性 */
-  background-image: url('@/assets/backgroundImage/loginAndRegister.png');
-  background-size: cover; /* 覆盖整个容器，自适应拉伸 */
-  background-position: center; /* 背景图居中显示 */
-  background-repeat: no-repeat; /* 禁止重复 */
-  /* 让登录框水平+垂直居中 */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+  overflow: hidden;
+  background: #f7fbff;
+}
+
+.auth-stage {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 46px;
+  color: #10201e;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(135deg, #dff4ef 0%, #f7fbff 42%, #e7efff 100%);
+  background-size:
+    22px 22px,
+    22px 22px,
+    auto;
+}
+
+.brand-link,
+.mobile-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #10201e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.characters-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 470px;
+}
+
+.stage-copy {
+  max-width: 520px;
+}
+
+.stage-copy h1 {
+  margin: 0 0 10px;
+  font-size: 36px;
+  line-height: 1.2;
+  color: #0f1720;
+}
+
+.stage-copy p {
+  margin: 0;
+  color: #40544f;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  padding: 48px clamp(32px, 7vw, 88px);
+  background: #ffffff;
+}
+
+.mobile-brand {
+  display: none;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.form-header {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: #2f8f83;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.form-header h2 {
+  margin: 0 0 10px;
+  color: #101820;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+.form-header p {
+  margin: 0;
+  color: #5b6670;
+  line-height: 1.6;
+}
+
+.auth-form {
+  width: 100%;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #26323d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.auth-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  color: #101820;
+  font-size: 16px;
+  border: 1px solid #d8e1e8;
+  border-radius: 8px;
+  outline: none;
+  background: #fbfdff;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.auth-input:focus {
+  border-color: #2f8f83;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(47, 143, 131, 0.14);
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field .auth-input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #64727e;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
 }
 
-#userLoginPage {
-  max-width: 360px;
-  padding: 24px; /* 内边距，提升美观度 */
-  background-color: rgba(255, 255, 255, 0.5); /* 登录框半透明白色背景，避免文字看不清 */
-  border-radius: 8px; /* 圆角 */
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); /* 轻微阴影，提升层次感 */
+.password-toggle:hover {
+  color: #101820;
+  background: #edf5f3;
 }
 
-.title {
-  text-align: center;
-  margin-bottom: 16px;
-  color: #333;
+.password-toggle svg,
+.submit-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.desc {
-  text-align: center;
-  color: #666;
-  margin-bottom: 24px;
+.auth-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  color: #b42318;
+  border: 1px solid rgba(180, 35, 24, 0.24);
+  border-radius: 8px;
+  background: #fff2f0;
 }
 
 .tips {
-  margin-bottom: 16px;
-  color: #666;
-  font-size: 13px;
+  margin-bottom: 18px;
+  color: #5b6670;
+  font-size: 14px;
   text-align: right;
 }
 
-/* 修复按钮宽度：通过深度选择器覆盖antd组件样式 */
-:deep(.ant-btn) {
-  width: 100%; /* 按钮占满宽度 */
+.tips a {
+  color: #2f8f83;
+  font-weight: 700;
+}
+
+.submit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  border: 0;
+  border-radius: 8px;
+  background: #101820;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(16, 24, 32, 0.18);
+}
+
+.submit-button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+  .auth-page {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .auth-stage {
+    min-height: 300px;
+    padding: 24px 20px 0;
+  }
+
+  .auth-stage .brand-link,
+  .stage-copy {
+    display: none;
+  }
+
+  .characters-wrap {
+    min-height: 250px;
+  }
+
+  .auth-panel {
+    flex: 1;
+    padding: 28px 22px 40px;
+  }
+
+  .mobile-brand {
+    display: flex;
+  }
+
+  .form-header {
+    text-align: center;
+  }
 }
 </style>
